@@ -6,7 +6,7 @@
     "views": [
       {
         "path": "home",
-        "title": "Home",
+        "title": "Світло",
         "include_floors": {
           "floor_1": [
             "vitalnia",
@@ -24,6 +24,11 @@
             "pralnia"
           ]
         }
+      },
+      {
+        "path": "klimat",
+        "title": "Клімат",
+        "include_rooms": []
       }
     ]
   },

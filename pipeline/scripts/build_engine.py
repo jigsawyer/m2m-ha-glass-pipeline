@@ -306,7 +306,11 @@ def compile_hierarchical_view(env, hardware_map, content_map, view_def, room_con
 
 def compile_flat_view(env, hardware_map, view_def, room_content):
     """Legacy flat room_content → card list."""
-    include_rooms = view_def.get("include_rooms") or list(room_content.keys())
+    # Missing key = all rooms; explicit [] = empty view (do not use falsy `or`).
+    if "include_rooms" in view_def:
+        include_rooms = view_def["include_rooms"]
+    else:
+        include_rooms = list(room_content.keys())
     card_blocks = []
     for room_id in include_rooms:
         components = room_content.get(room_id)
@@ -519,9 +523,10 @@ def build_dashboard(dashboard_id):
                 )
                 strategy = "flat"
                 floor_count = 0
-                room_count = len(
-                    view_def.get("include_rooms") or list(room_content.keys())
-                )
+                if "include_rooms" in view_def:
+                    room_count = len(view_def["include_rooms"])
+                else:
+                    room_count = len(room_content)
 
             try:
                 home_template = env.get_template("layout/home_view.yaml")

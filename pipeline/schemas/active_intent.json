@@ -3,7 +3,7 @@
   "intent_class": "STRUCTURAL",
   "target_agent": "@architect",
   "payload": {
-    "action_summary": "Rename switch_button label for spalnia_balkon_svitlo from 'Світло балкон' to 'Балкон'",
-    "requested_entities": ["spalnia_balkon_svitlo"]
+    "action_summary": "Rename SPA view title Home → Світло; add empty Клімат view (path klimat, include_rooms: [])",
+    "requested_entities": []
   }
 }
