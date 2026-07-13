@@ -1,0 +1,50 @@
+{
+  "floor_1_disable": { "domain": "floor", "entity_id": "1st_floor" },
+  "vitalnia_svitlo_switch": { "domain": "switch", "entity_id": "switch.vitalnia_svitlo_switch" },
+  "vitalnia_svitlo_switch_2": { "domain": "switch", "entity_id": "switch.vitalnia_svitlo_switch_2" },
+  "vitalnia_disable": { "domain": "area", "entity_id": "prikhozha" },
+
+  "dushova_svitlo_switch_2": { "domain": "switch", "entity_id": "switch.vimikach_switch_2" },
+  "dushova_vitiazhka_switch": { "domain": "switch", "entity_id": "switch.vimikach_switch" },
+  "dushova_disable": { "domain": "area", "entity_id": "dushova" },
+
+  "kukhnia_pidsvitka_switch": { "domain": "switch", "entity_id": "switch.pidsvitka_switch" },
+  "kukhnia_svitlo_switch_3": { "domain": "switch", "entity_id": "switch.svitlo_switch_3" },
+  "kukhnia_svitlo_switch_4": { "domain": "switch", "entity_id": "switch.svitlo_switch_4" },
+  "kukhnia_balkon_svitlo": { "domain": "switch", "entity_id": "switch.svitlo_3" },
+  "kukhnia_disable": { "domain": "area", "entity_id": "kitchen" },
+
+  "zal_pidsvitka_switch": { "domain": "switch", "entity_id": "switch.zal_switch_2" },
+  "zal_tochki_switch": { "domain": "switch", "entity_id": "switch.zal_switch" },
+  "zal_balkon_svitlo": { "domain": "switch", "entity_id": "switch.svitlo_4" },
+  "zal_disable": { "domain": "area", "entity_id": "living_room" },
+
+  "kabinet_svitlo_switch": { "domain": "switch", "entity_id": "switch.kabinet_vimikach_kabinet" },
+
+  "skhody_svitlo_switch": { "domain": "switch", "entity_id": "switch.svitlo_switch" },
+  "korydor_svitlo_switch_2": { "domain": "switch", "entity_id": "switch.svitlo_switch_2" },
+  "korydor_disable": { "domain": "area", "entity_id": "skhodi" },
+
+  "floor_2_disable": { "domain": "floor", "entity_id": "2nd_floor" },
+  "spalnia_pidsvitka_switch": { "domain": "switch", "entity_id": "switch.vimikach_bilia_vkhodu_switch_2" },
+  "spalnia_tochki_switch": { "domain": "switch", "entity_id": "switch.vimikach_bilia_vkhodu_switch" },
+  "spalnia_balkon_svitlo": { "domain": "switch", "entity_id": "switch.balkon_spalnia_svitlo_switch" },
+  "spalnia_disable": { "domain": "area", "entity_id": "bedroom" },
+
+  "ditiacha_pidsvitka_switch": { "domain": "switch", "entity_id": "switch.pidsvitka" },
+  "ditiacha_livi_tochki_switch": { "domain": "switch", "entity_id": "switch.ditiacha_svitlo_switch" },
+  "ditiacha_pravi_tochki_switch": { "domain": "switch", "entity_id": "switch.ditiacha_svitlo_switch_2" },
+  "ditiacha_terasa_switch": { "domain": "switch", "entity_id": "switch.ditiacha_pidsvitka_terasi" },
+  "ditiacha_balkon_svitlo": { "domain": "switch", "entity_id": "switch.svitlo_2" },
+  "ditiacha_disable": { "domain": "area", "entity_id": "ditiacha" },
+
+  "vanna_svitlo_switch": { "domain": "switch", "entity_id": "switch.lumi_lumi_ctrl_ln1_aq1" },
+  "vanna_vitiazhka_switch": { "domain": "switch", "entity_id": "switch.vitiazhka" },
+  "vanna_disable": { "domain": "area", "entity_id": "vanna" },
+
+  "tualet_svitlo_switch": { "domain": "switch", "entity_id": "switch.svitlo" },
+
+  "pralnia_svitlo_switch": { "domain": "switch", "entity_id": "switch.pralnia_switch" },
+
+  "svitlo_floor_tab": { "domain": "input_select", "entity_id": "input_select.svitlo_floor_tab" }
+}

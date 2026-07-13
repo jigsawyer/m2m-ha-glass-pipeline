@@ -1,0 +1,18 @@
+{# Room glass card — centered 1-column switch stack (equal L/R gutters) #}
+{# Width via room_container :host tokens — grid-layout ignores flex view_layout #}
+type: custom:button-card
+template: room_container
+name: {{ name }}
+custom_fields:
+  content:
+    card:
+      type: custom:layout-card
+      layout_type: custom:grid-layout
+      layout:
+        grid-template-columns: "1fr"
+        place-items: start center
+        grid-gap: "var(--lg_space_gap_sm)"
+        margin: "0"
+        padding: "0"
+      cards:
+{{ cards | yaml_cards(8) }}

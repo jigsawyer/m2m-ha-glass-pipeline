@@ -1,0 +1,1440 @@
+{# Figma Master_design_system 1:1090 — global button_card_templates dictionary
+   Option 1: physical values = theme CSS vars; structural rules = extra_styles only.
+   No native styles: objects (those become inline style="" on DOM).
+   BAN color_type: blank-card on visual templates — button-card early-returns
+   empty spacer before extra_styles (blank viewport). Default color_type: icon. #}
+{% macro lg_glass_stack_extra_styles(radius_token) -%}
+      .lg-glass-stack {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+        overflow: hidden;
+        clip-path: inset(0 round var({{ radius_token }}));
+        isolation: isolate;
+        pointer-events: none;
+      }
+      .lg-glass-stack__fill,
+      .lg-glass-stack__frost,
+      .lg-glass-stack__luminosity {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+      }
+      .lg-glass-stack__fill {
+        background: var(--lg_color_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_container)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_container)) saturate(var(--lg_saturate_glass));
+      }
+      .lg-glass-stack__frost {
+        background: var(--lg_color_glass_frost);
+        mix-blend-mode: plus-lighter;
+      }
+      .lg-glass-stack__luminosity {
+        background: var(--lg_color_glass_luminosity);
+        mix-blend-mode: soft-light;
+      }
+{%- endmacro %}
+{% macro lg_room_glass_stack_extra_styles(radius_token) -%}
+      .lg-glass-stack {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+        overflow: hidden;
+        clip-path: inset(0 round var({{ radius_token }}));
+        isolation: isolate;
+        pointer-events: none;
+      }
+      .lg-glass-stack__fill,
+      .lg-glass-stack__frost,
+      .lg-glass-stack__luminosity {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+      }
+      .lg-glass-stack__fill {
+        background: var(--lg_color_room_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_room_glass)) saturate(var(--lg_saturate_room_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_room_glass)) saturate(var(--lg_saturate_room_glass));
+      }
+      .lg-glass-stack__frost {
+        background: var(--lg_color_room_glass_frost);
+        mix-blend-mode: plus-lighter;
+      }
+      .lg-glass-stack__luminosity {
+        background: var(--lg_color_room_glass_luminosity);
+        mix-blend-mode: soft-light;
+      }
+{%- endmacro %}
+{% macro lg_glass_stack_html() -%}
+<div class="lg-glass-stack"><div class="lg-glass-stack__fill"></div><div class="lg-glass-stack__frost"></div><div class="lg-glass-stack__luminosity"></div></div>
+{%- endmacro %}
+{% macro lg_liquid_clip_shell_extra_styles() -%}
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        pointer-events: none;
+      }
+{%- endmacro %}
+{% macro lg_liquid_clip_shell_html() -%}
+<div class="lg-liquid-clip-shell"></div>
+{%- endmacro %}
+{% macro lg_distort_shell_extra_styles() -%}
+      .lg-distort-shell {
+        border-radius: var(--lg_radius_liquid);
+        width: 100%;
+        height: 100%;
+      }
+{%- endmacro %}
+{% macro lg_distort_shell_html() -%}
+<div class="lg-distort-shell"></div>
+{%- endmacro %}
+{% macro lg_container_grid_extra_styles() -%}
+      {# !important required: button-card default styles.grid become inline and beat extra_styles #}
+      #container {
+        display: grid !important;
+        grid-template-areas: "n" "content" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        justify-items: center !important;
+        justify-content: center !important;
+        align-content: start !important;
+      }
+{%- endmacro %}
+{% macro lg_glass_card_shell_extra_styles(radius_token, width_token, height_value) -%}
+      #card {
+        position: relative;
+        overflow: visible;
+        box-sizing: border-box;
+        width: min(100%, var({{ width_token }}));
+        max-width: min(100%, var({{ width_token }}));
+        min-width: 0;
+        min-height: 0;
+        height: {{ height_value }};
+        border-radius: var({{ radius_token }});
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        background: transparent;
+        box-shadow: var(--lg_shadow_container);
+        transition: var(--lg_transition_smooth);
+        padding: var(--lg_space_label_top) var(--lg_space_gap_md) var(--lg_space_gap_md);
+      }
+      #glass_layers {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+        overflow: hidden;
+        clip-path: inset(0 round var({{ radius_token }}));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+      }
+{%- endmacro %}
+{% macro lg_room_folder_shell_extra_styles(width_token) -%}
+      {# iOS folder: #container grid — title row 1; #content + #glass_layers share panel row 2.
+         button-card grid host is #container (not #card); custom fields use inline grid-area. #}
+      #card {
+        position: relative;
+        overflow: visible;
+        box-sizing: border-box;
+        width: min(100%, var({{ width_token }}));
+        max-width: min(100%, var({{ width_token }}));
+        min-width: 0;
+        min-height: 0;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        transition: var(--lg_transition_smooth);
+        /* Layout shell — not a control; docs: tap_action none removes pointer (#1038) */
+        cursor: default;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "room_title" "room_panel" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        justify-items: center !important;
+        align-content: start !important;
+        width: 100% !important;
+      }
+      #name {
+        grid-area: room_title !important;
+        margin-bottom: var(--lg_space_room_title_gap);
+      }
+      #content,
+      #glass_layers {
+        grid-area: room_panel !important;
+      }
+      #content {
+        position: relative;
+        z-index: 2;
+        padding: var(--lg_space_gap_md);
+        border-radius: var(--lg_radius_room);
+        border: var(--lg_stroke_glass) solid var(--lg_color_room_glass_rim);
+        box-shadow: var(--lg_shadow_room_container);
+        overflow: hidden;
+        margin-top: 0;
+        box-sizing: border-box;
+      }
+      #glass_layers {
+        z-index: 1;
+        align-self: stretch !important;
+        justify-self: stretch !important;
+        position: relative;
+        width: 100%;
+        min-height: 0;
+        border-radius: var(--lg_radius_room);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_room));
+        isolation: isolate;
+        pointer-events: none;
+      }
+{%- endmacro %}
+{% macro lg_floor_folder_shell_extra_styles() -%}
+      {# iOS folder: floor title above panel; glass only on #content row.
+         Same #container grid-area pattern as room folder (button-card SoT). #}
+      #card {
+        position: relative;
+        overflow: visible;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        min-height: 0;
+        height: auto;
+        padding: 0;
+        margin: 0 auto;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        transition: var(--lg_transition_smooth);
+        /* Layout shell — not a control; docs: tap_action none removes pointer (#1038) */
+        cursor: default;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "floor_title" "floor_panel" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        justify-items: center !important;
+        align-content: start !important;
+        width: 100% !important;
+      }
+      #name {
+        grid-area: floor_title !important;
+        margin-bottom: var(--lg_space_floor_title_gap);
+      }
+      #content,
+      #glass_layers {
+        grid-area: floor_panel !important;
+      }
+      #content {
+        position: relative;
+        z-index: 2;
+        padding: var(--lg_space_floor_inset);
+        border-radius: var(--lg_radius_container);
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        box-shadow: var(--lg_shadow_container);
+        overflow: hidden;
+        margin-top: 0;
+        box-sizing: border-box;
+      }
+      #glass_layers {
+        z-index: 1;
+        align-self: stretch !important;
+        justify-self: stretch !important;
+        position: relative;
+        width: 100%;
+        min-height: 0;
+        border-radius: var(--lg_radius_container);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_container));
+        isolation: isolate;
+        pointer-events: none;
+      }
+{%- endmacro %}
+{% macro lg_name_label_extra_styles(size_token, weight_token, tracking_token, line_height_token) -%}
+      #name {
+        position: relative;
+        z-index: 2;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var({{ size_token }});
+        font-weight: var({{ weight_token }});
+        letter-spacing: var({{ tracking_token }});
+        -webkit-font-smoothing: var(--lg_font_smoothing);
+        -moz-osx-font-smoothing: var(--lg_font_smoothing_moz);
+        line-height: var({{ line_height_token }});
+        justify-self: center !important;
+        align-self: start !important;
+        text-align: center !important;
+        width: 100% !important;
+      }
+{%- endmacro %}
+{% macro lg_icon_vertical_center_extra_styles(include_name=true) -%}
+      #icon,
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 0 !important;
+        margin: 0 !important;
+      }
+      #icon {
+        transform: translateY(var(--lg_space_icon_optical_nudge));
+      }
+{%- if include_name %}
+      #name {
+        display: flex !important;
+        align-items: center !important;
+        line-height: var(--lg_line_height_label) !important;
+      }
+{%- endif %}
+{%- endmacro %}
+{% macro lg_switch_button_layout_extra_styles() -%}
+      [[[
+        const on = entity && entity.state === 'on';
+        return `
+      :host {
+        width: var(--lg_size_switch_w) !important;
+        max-width: var(--lg_size_switch_w) !important;
+        min-width: var(--lg_size_switch_w) !important;
+        height: var(--lg_size_switch_h);
+        max-height: var(--lg_size_switch_h);
+        display: block;
+        box-sizing: border-box;
+        justify-self: center;
+        align-self: start;
+        margin: 0 auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: var(--lg_size_switch_w) !important;
+        max-width: var(--lg_size_switch_w) !important;
+        min-width: var(--lg_size_switch_w) !important;
+        height: var(--lg_size_switch_h) !important;
+        max-height: var(--lg_size_switch_h) !important;
+        min-height: var(--lg_size_switch_h) !important;
+        aspect-ratio: unset !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        background-clip: padding-box !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        pointer-events: none;
+      }
+      .lg-distort-shell {
+        border-radius: var(--lg_radius_liquid);
+        width: 100%;
+        height: 100%;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "i n" !important;
+        grid-template-columns: auto auto !important;
+        grid-template-rows: var(--lg_size_switch_h) !important;
+        justify-content: center !important;
+        align-items: center !important;
+        justify-items: center !important;
+        place-content: center !important;
+        column-gap: var(--lg_space_gap_sm);
+      }
+      #card {
+        position: relative;
+        overflow: visible;
+        box-sizing: border-box;
+        width: var(--lg_size_switch_w);
+        max-width: var(--lg_size_switch_w);
+        min-width: var(--lg_size_switch_w);
+        height: var(--lg_size_switch_h);
+        max-height: var(--lg_size_switch_h);
+        min-height: var(--lg_size_switch_h);
+        aspect-ratio: unset;
+        padding: 0 var(--lg_space_pad_x);
+        margin: 0;
+        border-radius: var(--lg_radius_liquid);
+        border: none;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: ${on ? 'var(--lg_glow_switch_on)' : 'none'} !important;
+        filter: none;
+        transition: var(--lg_transition_press);
+        cursor: pointer;
+      }
+      #name {
+        position: relative;
+        z-index: 1;
+        color: ${on ? 'var(--lg_color_switch_on_icon)' : 'var(--lg_color_text)'} !important;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_switch_label_size);
+        font-weight: var(--lg_font_body_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        -webkit-font-smoothing: var(--lg_font_smoothing);
+        -moz-osx-font-smoothing: var(--lg_font_smoothing_moz);
+        justify-self: center !important;
+        align-self: center !important;
+        text-align: center !important;
+        white-space: nowrap;
+        overflow: visible;
+      }
+      #label, #state {
+        display: none !important;
+      }
+      #icon {
+        position: relative;
+        z-index: 1;
+        color: ${on ? 'var(--lg_color_switch_on_icon)' : 'var(--lg_color_text)'} !important;
+        width: var(--lg_size_switch_icon) !important;
+        height: var(--lg_size_switch_icon) !important;
+        max-width: var(--lg_size_switch_icon) !important;
+        max-height: var(--lg_size_switch_icon) !important;
+        --mdc-icon-size: var(--lg_size_switch_icon);
+        filter: ${on ? 'var(--lg_filter_switch_on_icon)' : 'none'};
+        transition: var(--lg_transition_press);
+      }
+      #img-cell {
+        width: var(--lg_size_switch_icon) !important;
+        height: var(--lg_size_switch_icon) !important;
+        max-width: var(--lg_size_switch_icon) !important;
+        max-height: var(--lg_size_switch_icon) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        justify-self: center !important;
+        align-self: center !important;
+        place-self: center !important;
+        overflow: visible !important;
+      }
+      {{ lg_icon_vertical_center_extra_styles(include_name=true) }}
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: ${on ? 'var(--lg_color_switch_on_frost), var(--lg_color_liquid_base)' : 'var(--lg_color_liquid_frost), var(--lg_color_liquid_base)'};
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+        transition: var(--lg_transition_press);
+      }
+      #distort {
+        position: absolute;
+        inset: var(--lg_space_distort_inset);
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        background: var(--lg_color_distort);
+        backdrop-filter: blur(var(--lg_blur_distort));
+        -webkit-backdrop-filter: blur(var(--lg_blur_distort));
+        pointer-events: none;
+        z-index: 0;
+      }
+        `;
+      ]]]
+{%- endmacro %}
+{% macro lg_disable_press_feedback_extra_styles() -%}
+      #card:active {
+        box-shadow: var(--lg_glow_disable);
+      }
+      #icon {
+        color: var(--lg_color_text) !important;
+        filter: none;
+      }
+      #name {
+        color: var(--lg_color_text);
+      }
+      #card:active #icon {
+        color: var(--lg_color_disable_icon) !important;
+        filter: var(--lg_filter_disable_icon);
+      }
+      #card:active #name {
+        color: var(--lg_color_disable_icon);
+      }
+{%- endmacro %}
+{% macro lg_floor_disable_layout_extra_styles() -%}
+      #container {
+        display: grid !important;
+        grid-template-areas: "i n" !important;
+        grid-template-columns: auto auto !important;
+        grid-template-rows: var(--lg_size_floor_btn_h) !important;
+        justify-content: center !important;
+        align-items: center !important;
+        justify-items: center !important;
+        place-content: center !important;
+        column-gap: var(--lg_space_gap_sm);
+      }
+      #card {
+        position: relative;
+        overflow: visible;
+        box-sizing: border-box;
+        width: min(100%, var(--lg_size_floor_btn_w));
+        min-width: 0;
+        max-width: min(100%, var(--lg_size_floor_btn_w));
+        height: var(--lg_size_floor_btn_h);
+        max-height: var(--lg_size_floor_btn_h);
+        min-height: var(--lg_size_floor_btn_h);
+        aspect-ratio: unset;
+        justify-self: center;
+        place-self: center;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 var(--lg_space_pad_x);
+        border-radius: var(--lg_radius_liquid);
+        border: none;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        filter: none;
+        transition: var(--lg_transition_press);
+      }
+      {{ lg_disable_press_feedback_extra_styles() }}
+      #icon {
+        position: relative;
+        z-index: 1;
+        width: var(--lg_size_floor_disable_icon) !important;
+        height: var(--lg_size_floor_disable_icon) !important;
+        max-width: var(--lg_size_floor_disable_icon) !important;
+        max-height: var(--lg_size_floor_disable_icon) !important;
+        --mdc-icon-size: var(--lg_size_floor_disable_icon);
+      }
+      #img-cell {
+        width: var(--lg_size_floor_disable_icon) !important;
+        height: var(--lg_size_floor_disable_icon) !important;
+        max-width: var(--lg_size_floor_disable_icon) !important;
+        max-height: var(--lg_size_floor_disable_icon) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        justify-self: center !important;
+        align-self: center !important;
+        overflow: hidden !important;
+      }
+      {{ lg_icon_vertical_center_extra_styles(include_name=true) }}
+      #name {
+        position: relative;
+        z-index: 1;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_floor_btn_size);
+        font-weight: var(--lg_font_body_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        -webkit-font-smoothing: var(--lg_font_smoothing);
+        -moz-osx-font-smoothing: var(--lg_font_smoothing_moz);
+        justify-self: center !important;
+        align-self: center !important;
+        text-align: center !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+{%- endmacro %}
+{% macro lg_disable_room_layout_extra_styles() -%}
+      #container {
+        display: grid !important;
+        grid-template-areas: "i" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_disable_room_h) !important;
+        justify-content: center !important;
+        align-items: center !important;
+        place-content: center !important;
+      }
+      #card {
+        position: relative;
+        box-sizing: border-box;
+        width: min(100%, var(--lg_size_disable_room_w)) !important;
+        max-width: min(100%, var(--lg_size_disable_room_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_disable_room_h) !important;
+        max-height: var(--lg_size_disable_room_h) !important;
+        min-height: var(--lg_size_disable_room_h) !important;
+        aspect-ratio: unset;
+        border-radius: var(--lg_radius_liquid);
+        border: var(--lg_stroke_glass) solid transparent;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        filter: none;
+        overflow: visible;
+        transition: var(--lg_transition_press);
+        margin: 0;
+        padding: 0;
+        justify-self: center;
+        place-self: center;
+      }
+      {{ lg_disable_press_feedback_extra_styles() }}
+      #icon {
+        position: relative;
+        z-index: 1;
+        width: var(--lg_size_disable_icon) !important;
+        height: var(--lg_size_disable_icon) !important;
+        max-width: var(--lg_size_disable_icon) !important;
+        max-height: var(--lg_size_disable_icon) !important;
+        --mdc-icon-size: var(--lg_size_disable_icon);
+      }
+      #img-cell {
+        width: var(--lg_size_disable_icon) !important;
+        height: var(--lg_size_disable_icon) !important;
+        max-width: var(--lg_size_disable_icon) !important;
+        max-height: var(--lg_size_disable_icon) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        justify-self: center !important;
+        align-self: center !important;
+        place-self: center !important;
+        overflow: hidden !important;
+      }
+      {{ lg_icon_vertical_center_extra_styles(include_name=false) }}
+      #name, #label, #state {
+        display: none !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base), var(--lg_color_liquid_burn_soft);
+        background-blend-mode: normal, plus-lighter, color-burn;
+        backdrop-filter: blur(var(--lg_blur_room_btn));
+        -webkit-backdrop-filter: blur(var(--lg_blur_room_btn));
+        box-shadow: var(--lg_shadow_room_btn);
+      }
+      #distort {
+        display: none;
+      }
+{%- endmacro %}
+{% macro lg_tab_side_btn_layout_extra_styles(disabled=false) -%}
+      :host {
+        width: var(--lg_size_tab_side_btn) !important;
+        max-width: var(--lg_size_tab_side_btn) !important;
+        min-width: var(--lg_size_tab_side_btn) !important;
+        height: var(--lg_size_tab_side_btn) !important;
+        max-height: var(--lg_size_tab_side_btn) !important;
+        min-height: var(--lg_size_tab_side_btn) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_tab_side_btn) !important;
+{%- if disabled %}
+        opacity: var(--lg_opacity_tab_side_disabled);
+        pointer-events: none !important;
+        cursor: default !important;
+{%- endif %}
+      }
+      ha-card {
+        width: var(--lg_size_tab_side_btn) !important;
+        max-width: var(--lg_size_tab_side_btn) !important;
+        min-width: var(--lg_size_tab_side_btn) !important;
+        height: var(--lg_size_tab_side_btn) !important;
+        max-height: var(--lg_size_tab_side_btn) !important;
+        min-height: var(--lg_size_tab_side_btn) !important;
+        aspect-ratio: 1 !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_tab_side_btn) !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        --ha-card-border-radius: var(--lg_radius_tab_side_btn) !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "i" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_tab_side_btn) !important;
+        justify-content: center !important;
+        align-items: center !important;
+        place-content: center !important;
+      }
+      #card {
+        position: relative;
+        box-sizing: border-box;
+        width: var(--lg_size_tab_side_btn) !important;
+        max-width: var(--lg_size_tab_side_btn) !important;
+        min-width: var(--lg_size_tab_side_btn) !important;
+        height: var(--lg_size_tab_side_btn) !important;
+        max-height: var(--lg_size_tab_side_btn) !important;
+        min-height: var(--lg_size_tab_side_btn) !important;
+        aspect-ratio: 1;
+        border-radius: var(--lg_radius_tab_side_btn);
+        border: var(--lg_stroke_glass) solid transparent;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        filter: none;
+        overflow: visible;
+        transition: var(--lg_transition_press);
+        margin: 0;
+        padding: 0;
+        justify-self: center;
+        place-self: center;
+{%- if disabled %}
+        pointer-events: none !important;
+{%- endif %}
+      }
+{%- if not disabled %}
+      {{ lg_disable_press_feedback_extra_styles() }}
+{%- else %}
+      #icon {
+        color: var(--lg_color_text) !important;
+        filter: none;
+      }
+{%- endif %}
+      #icon {
+        position: relative;
+        z-index: 1;
+        width: var(--lg_size_tab_side_icon) !important;
+        height: var(--lg_size_tab_side_icon) !important;
+        max-width: var(--lg_size_tab_side_icon) !important;
+        max-height: var(--lg_size_tab_side_icon) !important;
+        --mdc-icon-size: var(--lg_size_tab_side_icon);
+      }
+      #img-cell {
+        width: var(--lg_size_tab_side_icon) !important;
+        height: var(--lg_size_tab_side_icon) !important;
+        max-width: var(--lg_size_tab_side_icon) !important;
+        max-height: var(--lg_size_tab_side_icon) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        justify-self: center !important;
+        align-self: center !important;
+        place-self: center !important;
+        overflow: hidden !important;
+      }
+      #name, #label, #state {
+        display: none !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_side_btn);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab_side_btn));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort {
+        display: none;
+      }
+{%- endmacro %}
+button_card_templates:
+  glass_container:
+    show_icon: false
+    show_name: true
+    show_state: false
+    extra_styles: |
+      :host {
+        width: min(100%, var(--lg_size_container_w)) !important;
+        max-width: min(100%, var(--lg_size_container_w));
+        min-width: 0;
+        display: block;
+        box-sizing: border-box;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_container) !important;
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_container_w)) !important;
+        max-width: min(100%, var(--lg_size_container_w)) !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_container) !important;
+        --ha-card-border-radius: var(--lg_radius_container) !important;
+      }
+      {{ lg_container_grid_extra_styles() }}
+      {{ lg_glass_card_shell_extra_styles('--lg_radius_container', '--lg_size_container_w', 'var(--lg_size_container_h)') }}
+      {{ lg_name_label_extra_styles('--lg_font_label_size', '--lg_font_title_weight', '--lg_font_label_tracking', '--lg_line_height_label') }}
+      #content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        margin-top: var(--lg_space_gap_md);
+        box-sizing: border-box;
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+    custom_fields:
+      glass_layers: >
+        {{ lg_glass_stack_html() }}
+
+  floor_container:
+    show_icon: false
+    show_name: true
+    show_state: false
+    # Shell only — no entity/action. Explicit none removes hand cursor + hover ripple
+    # (button-card defaults + #1038). Nested custom_fields cards keep their own actions.
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      /* Floor fills shell (uncapped). Do NOT use max-content on masonry —
+         layout-card col count = floor(hostWidth/width); shrink-wrap locks to 1 col.
+         Free width packs up to lg_masonry_floor_cols compact rooms; rooms stay capped.
+         iOS folder: floor title above panel; glass only on #content row (tab switch
+         stays a sibling above this host — title sits between tab and glass). */
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: 0 !important;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        --ha-card-border-radius: 0 !important;
+        display: block !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      {{ lg_floor_folder_shell_extra_styles() }}
+      {{ lg_name_label_extra_styles('--lg_font_label_size', '--lg_font_title_weight', '--lg_font_label_tracking', '--lg_line_height_label') }}
+      #name {
+        white-space: nowrap;
+        overflow: visible;
+      }
+      #content {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        justify-self: stretch !important;
+        place-self: stretch;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        display: block !important;
+      }
+      #content > layout-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+      }
+      #content masonry-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+    custom_fields:
+      glass_layers: >
+        {{ lg_glass_stack_html() }}
+
+  room_container:
+    show_icon: false
+    show_name: true
+    show_state: false
+    # Shell only — same as floor_container; nested switches keep tap_action toggle.
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      /* Cap room glass at switch-driven lg_size_container_w — never stretch to
+         masonry track (width:100% bloated cards). Floor/shell carry free space.
+         Plugin .column > * { margin: card_margin } keeps H/V mosaic gaps.
+         iOS folder: title above panel; glass only on #content row. */
+      :host {
+        width: min(100%, var(--lg_size_container_w)) !important;
+        max-width: min(100%, var(--lg_size_container_w)) !important;
+        min-width: 0 !important;
+        flex: 0 0 auto;
+        display: block;
+        box-sizing: border-box;
+        align-self: start;
+        height: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        justify-self: center;
+        overflow: visible !important;
+        --ha-card-border-radius: 0 !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          margin-bottom: var(--lg_space_room_stack_gap);
+        }
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_container_w)) !important;
+        max-width: min(100%, var(--lg_size_container_w)) !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        --ha-card-border-radius: 0 !important;
+        display: block !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      {{ lg_room_folder_shell_extra_styles('--lg_size_container_w') }}
+      {{ lg_name_label_extra_styles('--lg_font_room_label_size', '--lg_font_title_weight', '--lg_font_room_tracking', '--lg_line_height_room') }}
+      #name {
+        overflow: visible;
+      }
+      #content {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        justify-self: stretch !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      #content layout-card,
+      #content grid-layout,
+      #content HuiGridLayout,
+      #content .card {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: grid !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        align-items: start !important;
+        align-content: start !important;
+        place-content: start center !important;
+        gap: var(--lg_space_gap_sm) !important;
+        box-sizing: border-box;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      #content button-card,
+      #content hui-card {
+        justify-self: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      {{ lg_room_glass_stack_extra_styles('--lg_radius_room') }}
+    custom_fields:
+      glass_layers: >
+        {{ lg_glass_stack_html() }}
+
+  switch_button:
+    show_icon: true
+    show_name: true
+    show_state: false
+    show_label: false
+    show_ripple: false
+    extra_styles: |
+      {{ lg_switch_button_layout_extra_styles() }}
+    tap_action:
+      action: toggle
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: '{{ lg_distort_shell_html() }}'
+
+  switch_placeholder:
+    template: switch_button
+    show_name: false
+    tap_action:
+      action: none
+    # Must NOT use color_type: blank-card — that skips extra_styles (display:none).
+    extra_styles: |
+      :host {
+        width: 0;
+        max-width: 0;
+        min-width: 0;
+        height: 0;
+        min-height: 0;
+        display: none;
+        overflow: hidden;
+      }
+      #card {
+        width: var(--lg_size_placeholder_w);
+        max-width: 0;
+        min-width: 0;
+        height: var(--lg_size_placeholder_h);
+        min-height: 0;
+        aspect-ratio: auto;
+        opacity: 0;
+        pointer-events: none;
+        box-shadow: none;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        display: none;
+        margin: 0;
+        padding: 0;
+      }
+
+  floor_disable_button:
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:close
+    variables:
+      ha_floor_id: ""
+      ha_entity_ids: []
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_floor_btn_h);
+        max-height: var(--lg_size_floor_btn_h);
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        justify-self: stretch !important;
+        box-sizing: border-box;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_floor_btn_w)) !important;
+        max-width: min(100%, var(--lg_size_floor_btn_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_floor_btn_h) !important;
+        max-height: var(--lg_size_floor_btn_h) !important;
+        min-height: var(--lg_size_floor_btn_h) !important;
+        aspect-ratio: unset !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_distort_shell_extra_styles() }}
+      {{ lg_floor_disable_layout_extra_styles() }}
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: switch.turn_off
+      target: |
+        [[[
+          const ids = variables.ha_entity_ids;
+          if (Array.isArray(ids) && ids.length) return { entity_id: ids };
+          if (variables.ha_floor_id) return { floor_id: variables.ha_floor_id };
+          return {};
+        ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  disable_room_button:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:close
+    variables:
+      ha_area_id: ""
+      ha_entity_ids: []
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: switch.turn_off
+      target: |
+        [[[
+          const ids = variables.ha_entity_ids;
+          if (Array.isArray(ids) && ids.length) return { entity_id: ids };
+          if (variables.ha_area_id) return { area_id: variables.ha_area_id };
+          return {};
+        ]]]
+    extra_styles: |
+      :host {
+        width: min(100%, var(--lg_size_disable_room_w)) !important;
+        max-width: min(100%, var(--lg_size_disable_room_w));
+        min-width: 0;
+        height: var(--lg_size_disable_room_h);
+        max-height: var(--lg_size_disable_room_h);
+        display: block;
+        box-sizing: border-box;
+        justify-self: center;
+        align-self: start;
+        margin: 0 auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_disable_room_w)) !important;
+        max-width: min(100%, var(--lg_size_disable_room_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_disable_room_h) !important;
+        max-height: var(--lg_size_disable_room_h) !important;
+        min-height: var(--lg_size_disable_room_h) !important;
+        aspect-ratio: unset !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_disable_room_layout_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+    state: []
+
+  floor_voice_placeholder:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:microphone
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+    extra_styles: |
+      {{ lg_tab_side_btn_layout_extra_styles(disabled=true) }}
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_side_btn);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab_side_btn));
+        pointer-events: none;
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+    state: []
+
+  house_disable_button:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:close
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: switch.turn_off
+      data:
+        entity_id: all
+    extra_styles: |
+      {{ lg_tab_side_btn_layout_extra_styles(disabled=false) }}
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_side_btn);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab_side_btn));
+        pointer-events: none;
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+    state: []
+
+  floor_tab_switch:
+    show_icon: false
+    show_name: false
+    show_state: false
+    variables:
+      label_floor_1: "Перший поверх"
+      label_floor_2: "Другий поверх"
+      option_floor_1: "floor_1"
+      option_floor_2: "floor_2"
+    # State-invariant custom_fields HTML + JS extra_styles: Lit unsafeHTML replaces
+    # DOM when HTML strings change; keep markup identical so transform/opacity can transition.
+    extra_styles: |
+      [[[
+        const isFloor2 = entity && (
+          entity.state === variables.option_floor_2 || entity.state === 'on'
+        );
+        const pillTx = isFloor2
+          ? 'var(--lg_transform_tab_active_floor2)'
+          : 'var(--lg_transform_tab_active_floor1)';
+        const op1 = isFloor2 ? 'var(--lg_opacity_tab_label_inactive)' : '1';
+        const op2 = isFloor2 ? '1' : 'var(--lg_opacity_tab_label_inactive)';
+        return `
+      :host {
+        width: var(--lg_size_tab_w);
+        min-width: 0;
+        max-width: 100%;
+        min-height: var(--lg_size_tab_h);
+        display: block;
+        box-sizing: border-box;
+        margin: 0;
+        --ha-card-border-radius: var(--lg_radius_tab) !important;
+      }
+      ha-card {
+        border-radius: var(--lg_radius_tab) !important;
+        --ha-card-border-radius: var(--lg_radius_tab) !important;
+        overflow: hidden !important;
+        clip-path: inset(0 round var(--lg_radius_tab));
+      }
+      #container {
+        grid-template-areas: "tab_chrome" "tab_labels";
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 0;
+      }
+      #card {
+        position: relative;
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab));
+        width: 100%;
+        min-width: 0;
+        height: var(--lg_size_tab_h);
+        min-height: var(--lg_size_tab_h);
+        max-width: 100%;
+        justify-self: center;
+        place-self: center;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: var(--lg_radius_tab);
+        border: var(--lg_stroke_glass) solid var(--lg_color_tab_border);
+        background: var(--lg_color_tab_fill);
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+        transition: var(--lg_transition_smooth);
+        cursor: pointer;
+      }
+      #tab_chrome {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+      #tab_labels {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+      }
+      .lg-tab-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_tab_label_size);
+        font-weight: var(--lg_font_body_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        padding-top: var(--lg_space_tab_label_nudge);
+        -webkit-font-smoothing: var(--lg_font_smoothing);
+        transition: var(--lg_transition_tab_pill);
+      }
+      .lg-tab-label--floor1 {
+        opacity: ${op1};
+      }
+      .lg-tab-label--floor2 {
+        opacity: ${op2};
+      }
+      .lg-tab-label__line {
+        display: block;
+        text-align: center;
+      }
+      .lg-tab-chrome {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .lg-tab-track {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_inner);
+        background: var(--lg_color_tab_track);
+        backdrop-filter: blur(var(--lg_blur_tab_track));
+        -webkit-backdrop-filter: blur(var(--lg_blur_tab_track));
+      }
+      .lg-tab-edge-dark {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_inner);
+        border: var(--lg_stroke_tab_edge) solid var(--lg_color_tab_edge_dark_stroke);
+        mix-blend-mode: multiply;
+        filter: blur(var(--lg_blur_tab_edge));
+      }
+      .lg-tab-edge-light {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_inner);
+        border: var(--lg_stroke_tab_edge) solid var(--lg_color_tab_edge_light_stroke);
+        mix-blend-mode: plus-lighter;
+        filter: blur(var(--lg_blur_tab_highlight));
+      }
+      .lg-tab-edge-soft {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_inner);
+        border: var(--lg_stroke_tab_edge) solid var(--lg_color_tab_border_soft);
+        mix-blend-mode: plus-lighter;
+        filter: blur(var(--lg_blur_tab_highlight));
+      }
+      .lg-tab-active {
+        position: absolute;
+        top: var(--lg_space_tab_active_top);
+        left: var(--lg_space_tab_active_inset);
+        width: var(--lg_size_tab_active_w);
+        height: var(--lg_size_tab_active_h);
+        border-radius: var(--lg_radius_tab_active);
+        background: var(--lg_color_tab_active);
+        transform: ${pillTx};
+        transition: var(--lg_transition_tab_pill);
+      }
+      .lg-tab-distort {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab));
+        background: var(--lg_color_tab_fill);
+        backdrop-filter: blur(var(--lg_blur_tab_distort));
+        -webkit-backdrop-filter: blur(var(--lg_blur_tab_distort));
+        pointer-events: none;
+      }
+        `;
+      ]]]
+    tap_action:
+      action: call-service
+      service: |
+        [[[
+          const id = (entity && entity.entity_id) || '';
+          if (id.startsWith('input_select.')) return 'input_select.select_option';
+          if (id.startsWith('input_boolean.')) return 'input_boolean.toggle';
+          return 'homeassistant.toggle';
+        ]]]
+      service_data: |
+        [[[
+          const id = (entity && entity.entity_id) || '';
+          if (id.startsWith('input_select.')) {
+            const cur = entity.state;
+            const next = (cur === variables.option_floor_1)
+              ? variables.option_floor_2
+              : variables.option_floor_1;
+            return { entity_id: id, option: next };
+          }
+          return id ? { entity_id: id } : {};
+        ]]]
+    custom_fields:
+      tab_chrome: |
+        [[[
+          return `
+            <div class="lg-tab-chrome">
+              <div class="lg-tab-track"></div>
+              <div class="lg-tab-edge-dark"></div>
+              <div class="lg-tab-edge-light"></div>
+              <div class="lg-tab-edge-soft"></div>
+              <div class="lg-tab-active"></div>
+              <div class="lg-tab-distort"></div>
+            </div>
+          `;
+        ]]]
+      tab_labels: |
+        [[[
+          const splitTwoLine = (label) => {
+            const raw = String(label || '').trim();
+            const i = raw.indexOf(' ');
+            if (i < 0) {
+              return `<span class="lg-tab-label__line">${raw}</span>`;
+            }
+            const a = raw.slice(0, i);
+            const b = raw.slice(i + 1);
+            return `<span class="lg-tab-label__line">${a}</span><span class="lg-tab-label__line">${b}</span>`;
+          };
+          return `
+            <span class="lg-tab-label lg-tab-label--floor1">${splitTwoLine(variables.label_floor_1)}</span>
+            <span class="lg-tab-label lg-tab-label--floor2">${splitTwoLine(variables.label_floor_2)}</span>
+          `;
+        ]]]

@@ -1,0 +1,11 @@
+{# Figma 3:142 Component: floor_tab_switch — thin instance #}
+type: custom:button-card
+template: floor_tab_switch
+{%- if entity_id %}
+entity: {{ entity_id }}
+{%- endif %}
+variables:
+  label_floor_1: "{{ (custom_props | default({})).get('label_floor_1', 'Перший поверх') }}"
+  label_floor_2: "{{ (custom_props | default({})).get('label_floor_2', 'Другий поверх') }}"
+  option_floor_1: "{{ (custom_props | default({})).get('option_floor_1', 'floor_1') }}"
+  option_floor_2: "{{ (custom_props | default({})).get('option_floor_2', 'floor_2') }}"

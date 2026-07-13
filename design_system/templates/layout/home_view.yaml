@@ -1,0 +1,35 @@
+{#- SPA shell: panel + centered page; width from container geometry (Apple available-space) -#}
+title: "{{ title }}"
+path: {{ path }}
+type: panel
+theme: liquid_glass_v1.0
+background: "center / cover no-repeat url('{{ background_image | default('/local/liquid_glass/ios_dark_waves.jpg') }}') fixed"
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "1fr"
+      justify-content: center
+      justify-items: stretch
+      width: 100%
+      max-width: "var(--lg_size_shell_w)"
+      margin: 0 auto
+      padding: clamp(0.5rem, 1.25vw, 1rem) clamp(1rem, 2.5vw, 2.5rem)
+      box-sizing: border-box
+{%- if card_blocks %}
+    cards:
+      - type: vertical-stack
+        view_layout:
+          grid-column: 1
+        cards:
+{%- for block in card_blocks %}
+{%- set lines = block.strip().split('\n') %}
+          - {{ lines[0] }}
+{%- for line in lines[1:] %}
+            {{ line }}
+{%- endfor %}
+
+{%- endfor %}
+{%- else %}
+    cards: []
+{%- endif %}

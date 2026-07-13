@@ -1,0 +1,8 @@
+{#- Root dashboard assembler — SPA mode emits a single !include (views/home.yaml) -#}
+# Auto-generated Dashboard: {{ dashboard_id }}
+button_card_templates: !include button_card_templates.yaml
+theme: liquid_glass_v1.0
+views:
+{%- for view in views %}
+  - !include views/{{ view }}.yaml
+{%- endfor %}

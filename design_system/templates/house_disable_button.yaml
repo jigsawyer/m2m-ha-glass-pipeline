@@ -1,0 +1,3 @@
+{# Floor tab row — hold to turn off ALL switches (entity_id: all) #}
+type: custom:button-card
+template: house_disable_button

@@ -1,0 +1,89 @@
+---
+description: Global M2M System Architecture Rules, Domain Boundaries, and Agent Directives
+globs: "*"
+---
+
+#GROUND ON DOCS AND CURRENT IMPLEMENTATAION!
+-  NO HALUCINATION OR GUESS(WHEN NOT SURE FIXES) CONCEPT - ALL CHANGES(a specialy bug fixes or new evolutions) - MUST BE PROVEN! - IF YOU HAVE LACK OF INFORMATION(YOU CAN CREATE SCRIP\GENERATE CMD AND I USE IT AND PROVIDE YOU WITH RESULT (SCREEN OR COPY-PASTE)
+- HOME ASSISTANCE - DOCS GROUNDING!
+
+
+# Enterprise M2M Pipeline: Global Directives (v11.0 - Lean Architecture)
+
+**System Context:** Automated, deterministic M2M pipeline for Home Assistant UI generation. 
+All operations are strictly decoupled using the Separation of Concerns (SoC) pattern and executed via a Directed Acyclic Graph (DAG) flow.
+
+## 1. Core Principles & Constraints (CRITICAL)
+
+- **SOLID / DRY / KISS (code building):** Agents follow SRP, OCP (no silent UI regressions), DIP (token-driven layout), DRY (one canonical representation per fact), KISS/YAGNI, and LoD. Full gatekeeper mapping and the template `preserve_behavior` regression gate live in `pipeline/agents/analyzer.mdc` §0b. Reference: https://scalastic.io/en/solid-dry-kiss/
+- **Option 1 CSS (theme tokens + `extra_styles`):** Physical values live in theme CSS variables (`themes/liquid_glass_v1.0.yaml` from tokens). Structural rules live only in `button_card_templates.yaml` `extra_styles` (scoped `:host` / `#card` / classes). BAN button-card native `styles:` (inline emitter) and BAN `style="..."` in injected HTML. See `pipeline/agents/analyzer.mdc` §0.
+- **Zero Hallucination Policy:** You operate STRICTLY on provided JSON/YAML contracts. You DO NOT invent CSS classes, DOM elements, or spatial components. If a requested token or entity does not exist in the source of truth, you MUST HALT and throw a `FATAL_EXCEPTION`.
+- **Evidence gate (no imagination):** Layout/spacing bug fixes and evolutions MUST be proven before change. Require at least one of: (1) project SoT citation (tokens/templates/contracts), (2) HA or custom-card docs/source citation, (3) live DevTools/script measurement (or SSH diff of deployed YAML vs staging SoT). A live 1-column screenshot alone is not enough to pick a fix branch — classify with `build/reports/floor_spacing_measure.js` and/or remote↔local template diff before editing. Lack of evidence → HALT and request a measurement script/result from the operator. Never invent a new layout strategy or plugin without that proof.
+- **Docs map (this stack):** [lovelace-layout-card](https://github.com/thomasloven/lovelace-layout-card) masonry/grid (`base-column-layout.ts` / `grid.ts`); [button-card](https://github.com/custom-cards/button-card) `extra_styles` / `hold_action`; HA [panel](https://www.home-assistant.io/dashboards/panel/) / [vertical-stack](https://www.home-assistant.io/dashboards/vertical-stack/) only where used. Masonry `max_width` must equal `width` (plugin default `1.5× width` stretches columns and fakes H gaps). Do not zero room host `margin` — plugin applies `.column > * { margin: var(--card-margin) }`.
+- **Separation of Concerns (SoC):** - `environments/` dictates WHAT exists (Physical Reality & Logical Projections).
+  - `design_system/` dictates HOW it looks (Tokens & Templates).
+  - You NEVER mix these domains.
+- **Determinism:** We do NOT use AI for predictable tasks. YAML generation, file packing, and deployment are handled by deterministic scripts, not agents.
+- **Fluid Glassmorphism UI:** Hardcoded pixels (`px`) are PROHIBITED in theme/CSS tokens. Use ONLY `rem`, `%`, `vh`, `vw`, `aspect-ratio`. Exception: layout-card masonry `width` / `max_width` / `max_cols` are bare numbers required by the plugin (`Math.floor`). Layouts rely on CSS Grid and Flexbox.
+- **Floor mosaic SoT:** Rooms-only `custom:masonry-layout` (shortest-column dense packing; `width` / `max_width` / `max_cols` / `card_margin` from `lg_masonry_*` tokens — `max_width` MUST equal `width`). Disable-floor header is a sibling **above** the mosaic on an outer `custom:grid-layout` `1fr` stack with `grid-gap: var(--lg_space_gap_header_mosaic)` (not inside the mosaic — avoids header/`grid-column` conflict). Never put `flex-*` / `display` / arbitrary width keys in `grid-layout` `layout:` or `view_layout` (plugin ignores them; only `grid*` / `place-items` / `place-content` / card `grid*`+`place-self` apply). Do not set `#content > layout-card { display:flex; flex-wrap }` as the mosaic engine (shrink-wraps inner root). See `build/reports/floor_mosaic_handoff.md` (masonry dense packing vs Phase 5 grid auto-fit).
+- **Premium layout / safety (Apple-like rhythm):**
+  - **Room frame:** Inside `floor_container`, padding left = right = bottom via `lg_space_floor_inset` (**must not exceed** `3.125rem` / ~50px; default `calc(var(--lg_space_gap_mosaic) / 2)` so inset + masonry side `card_margin` ≤ mosaic cap). Floor host width is `min(100%, N×masonry_col + 2×inset)` centered with `N = lg_masonry_floor_cols` (4) — **never** `max-content`/`fit-content` on masonry (layout-card `colnum = floor(hostWidth/width)` shrink-wraps to 1 column). Top may differ for the floor title.
+  - **Mosaic rhythm:** Room↔room horizontal and room↔room vertical share `lg_space_gap_mosaic` (**must not exceed** `3.125rem` / ~50px). Header→mosaic uses `lg_space_gap_header_mosaic` (`calc(var(--lg_space_gap_mosaic) / 2)` — explicit split so disable→rooms is half the room rhythm). Masonry `card_margin = calc(var(--lg_space_gap_mosaic) / 2)` so adjacent margins sum to the full gap. Do not inflate room-internal `lg_space_gap_sm` for this rhythm. Do not override room `:host` margin to `0 !important` (kills plugin card_margin).
+  - **No accidental destructive taps:** `floor_disable_button` and `disable_room_button` use docs-native `hold_action` for `switch.turn_off`; `tap_action: none` (HA hold ≈ 0.5s — not a custom 2s timer).
+  - **Disable glow:** Floor and room disable show `lg_glow_disable` on `#card:active` only (same pattern as switch on-glow). Idle icon/label use `lg_color_text`; press uses `lg_color_disable_icon`. Set `show_ripple: false` on disable and `switch_button` templates — button-card auto-enables rectangular `ha-ripple` when any action is defined ([docs](https://custom-cards.github.io/button-card/stable/config/main/)).
+  - **Floor tab inactive label:** Inactive `floor_tab_switch` label text uses opacity **0.1** (`lg_opacity_tab_label_inactive`). Active label stays full opacity. Reject intents that restore full-opacity inactive tab labels without an explicit contract override → `FATAL_EXCEPTION`.
+
+---
+
+## 2. Enterprise Directory Domains
+
+You must respect Domain boundaries. Never write outside your permitted scope.
+
+1. **Domain 1: Pipeline (`pipeline/`)** - `agents/` -> System instructions (.mdc).
+   - `schemas/` -> Active user intents and validation contracts.
+   - `scripts/` -> Deterministic build engines (e.g., Python/Jinja2).
+2. **Domain 2: Design System (`design_system/`)**
+   - `tokens/` -> JSON configurations for UI variables.
+   - `templates/` -> Base YAML templates for HA components.
+3. **Domain 3: Multi-Tenant State (`environments/`)**
+   - `global_hardware_map.json` -> Hardware entity bindings.
+   - `global_spatial_topology.json` -> Physical building skeleton.
+   - `dashboards/{target}/local_content_map.json` -> View projections (Widgets per room).
+   - `dashboards/{target}/config.json` -> Theme and metadata.
+4. **Domain 4: Ephemeral Output (`build/` & `deploy/`)**
+   - `staging/` -> Generated YAMLs (overwritten every run).
+   - `deploy/atomic_push.sh` -> Deployment script.
+
+---
+
+## 3. The AI Trinity (Agent Roster)
+
+We use only THREE intelligent agents. Their roles are strictly scoped. Do NOT cross role boundaries.
+
+### A. @analyzer (The Load Balancer)
+**Role:** Single entry point. Parses natural language, validates intent, and determines the routing path (Hot vs. Cold).
+- **Read Access:** User prompt.
+- **Write Access:** `pipeline/schemas/active_intent.json`
+- **Action:** Generates a strict JSON contract detailing the `target_dashboard`, `intent_type` (STRUCTURAL or STYLISTIC), and the specific payload.
+
+### B. @architect (Structural Mutator - COLD PATH)
+**Role:** Manipulates spatial layouts, matrix symmetry, and device mapping. Knows NOTHING about visual styles.
+- **Read Access:** `active_intent.json`, `global_spatial_topology.json`.
+- **Write Access:** `environments/prd_main_house/dashboards/{target}/local_content_map.json`
+- **Action:** Injects or removes logical IDs into the specified rooms based on the user's intent. Maintains structural integrity. 
+
+### C. @stylist (Stylistic Mutator - HOT PATH)
+**Role:** Modifies the Design System and Theme mapping. Knows NOTHING about grids, rooms, or hardware devices.
+- **Read Access:** `active_intent.json`.
+- **Write Access:** `design_system/tokens/*.json`, `environments/prd_main_house/dashboards/{target}/config.json`
+- **Action:** Updates fluid CSS variables (colors, blurs, radii) or switches the active `theme_reference` for a specific dashboard.
+
+---
+
+## 4. Deterministic Execution Engine (No-AI Zone)
+
+Once the AI Trinity completes State Mutation, the AI stops. 
+The final build is handled by a local Deterministic Engine (`pipeline/scripts/build_engine.py`).
+
+- **Process:** The script reads `local_content_map.json`, maps it against `global_hardware_map.json`, injects values into `design_system/templates/`, and outputs a multi-file HA native YAML structure to `build/staging/`.
+- **Deploy:** Handled manually or via CI/CD using `deploy/atomic_push.sh`. Agents DO NOT execute SSH commands.

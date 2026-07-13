@@ -1,0 +1,28 @@
+{
+    "topology_version": "1.0",
+    "floors": [
+      {
+        "floor_id": "floor_1",
+        "name": "Перший поверх",
+        "rooms": [
+          { "room_id": "vitalnia", "name": "Вітальня" },
+          { "room_id": "dushova", "name": "Душова" },
+          { "room_id": "kukhnia", "name": "Кухня" },
+          { "room_id": "zal", "name": "Зал" },
+          { "room_id": "kabinet", "name": "Кабінет" },
+          { "room_id": "skhody_i_korydor", "name": "Сходи і коридор" }
+        ]
+      },
+      {
+        "floor_id": "floor_2",
+        "name": "Другий поверх",
+        "rooms": [
+          { "room_id": "spalnia", "name": "Спальня" },
+          { "room_id": "ditiacha", "name": "Дитяча" },
+          { "room_id": "vanna", "name": "Ванна" },
+          { "room_id": "tualet", "name": "Туалет" },
+          { "room_id": "pralnia", "name": "Пральня" }
+        ]
+      }
+    ]
+  }

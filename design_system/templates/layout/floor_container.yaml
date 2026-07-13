@@ -1,0 +1,41 @@
+{# Floor shell: title + header sibling + rooms-only masonry mosaic #}
+{# masonry-layout packs rooms into shortest columns (dense); grid-layout cannot #}
+{# width/max_width/max_cols are bare numbers — plugin Math.floor; max_width MUST = width #}
+type: custom:button-card
+template: floor_container
+name: {{ name }}
+custom_fields:
+  content:
+    card:
+      type: custom:layout-card
+      layout_type: custom:grid-layout
+      layout:
+        grid-template-columns: "1fr"
+        grid-gap: "var(--lg_space_gap_header_mosaic)"
+        place-content: start stretch
+        margin: "0"
+        padding: "0"
+      cards:
+{%- if header_cards %}
+        - type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: "1fr"
+            place-items: center
+            margin: "0"
+            padding: "0"
+          cards:
+{{ header_cards | yaml_cards(12) }}
+{%- endif %}
+        - type: custom:layout-card
+          layout_type: custom:masonry-layout
+          layout:
+            width: 282
+            max_width: 282
+            max_cols: 6
+            min_height: 1
+            card_margin: "var(--lg_masonry_card_margin)"
+            margin: "0"
+            padding: "0"
+          cards:
+{{ cards | yaml_cards(12) }}

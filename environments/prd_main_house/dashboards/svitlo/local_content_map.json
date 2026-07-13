@@ -1,0 +1,381 @@
+{
+  "dashboard_id": "svitlo",
+  "theme_reference": "liquid_glass_v1.0",
+  "routing": {
+    "mode": "spa",
+    "views": [
+      {
+        "path": "home",
+        "title": "Home",
+        "include_floors": {
+          "floor_1": [
+            "vitalnia",
+            "dushova",
+            "kukhnia",
+            "zal",
+            "kabinet",
+            "skhody_i_korydor"
+          ],
+          "floor_2": [
+            "spalnia",
+            "ditiacha",
+            "vanna",
+            "tualet",
+            "pralnia"
+          ]
+        }
+      }
+    ]
+  },
+  "layout_containers": {
+    "floor_wrapper": "floor_container",
+    "room_wrapper": "room_container",
+    "floor_switch": {
+      "logical_id": "svitlo_floor_tab",
+      "template_ref": "floor_tab_switch",
+      "custom_props": {
+        "label_floor_1": "Перший поверх",
+        "label_floor_2": "Другий поверх",
+        "option_floor_1": "floor_1",
+        "option_floor_2": "floor_2"
+      }
+    },
+    "floor_tab_flankers": {
+      "left": {
+        "template_ref": "floor_voice_placeholder",
+        "custom_props": {}
+      },
+      "right": {
+        "template_ref": "house_disable_button",
+        "custom_props": {}
+      }
+    }
+  },
+  "floor_actions": {
+    "floor_1": [
+      {
+        "logical_id": "floor_1_disable",
+        "template_ref": "floor_disable_button",
+        "label": "Вимкнути весь поверх",
+        "custom_props": {
+          "ha_entity_ids": [
+            "switch.prikhozha_svitlo",
+            "switch.vitalnia_svitlo_switch",
+            "switch.vitalnia_svitlo_switch_2",
+            "switch.vimikach_switch",
+            "switch.vimikach_switch_2",
+            "switch.pidsvitka_switch",
+            "switch.pidsvitka_switch_2",
+            "switch.pidsvitka_switch_3",
+            "switch.kukhnia_tsentralnii_tranzit_switch",
+            "switch.kukhnia_tsentralnii_tranzit_switch_2",
+            "switch.pravii_tranzit_switch",
+            "switch.pravii_tranzit_switch_2",
+            "switch.svitlo_switch_3",
+            "switch.svitlo_switch_4",
+            "switch.svitlo_3",
+            "switch.zal_switch",
+            "switch.zal_switch_2",
+            "switch.svitlo_4",
+            "switch.kabinet_vimikach_kabinet",
+            "switch.svitlo_switch",
+            "switch.svitlo_switch_2"
+          ]
+        }
+      }
+    ],
+    "floor_2": [
+      {
+        "logical_id": "floor_2_disable",
+        "template_ref": "floor_disable_button",
+        "label": "Вимкнути весь поверх"
+      }
+    ]
+  },
+  "room_content": {
+    "vitalnia": [
+      {
+        "logical_id": "vitalnia_svitlo_switch",
+        "template_ref": "switch_button",
+        "label": "Вітальня",
+        "custom_props": {
+          "icon": "mdi:sofa"
+        }
+      },
+      {
+        "logical_id": "vitalnia_svitlo_switch_2",
+        "template_ref": "switch_button",
+        "label": "Закуток біля роутеру",
+        "custom_props": {
+          "icon": "mdi:router-wireless"
+        }
+      },
+      {
+        "logical_id": "vitalnia_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "dushova": [
+      {
+        "logical_id": "dushova_svitlo_switch_2",
+        "template_ref": "switch_button",
+        "label": "Світло",
+        "custom_props": {
+          "icon": "mdi:lightbulb"
+        }
+      },
+      {
+        "logical_id": "dushova_vitiazhka_switch",
+        "template_ref": "switch_button",
+        "label": "Витяжка",
+        "custom_props": {
+          "icon": "mdi:fan"
+        }
+      },
+      {
+        "logical_id": "dushova_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "kukhnia": [
+      {
+        "logical_id": "kukhnia_pidsvitka_switch",
+        "template_ref": "switch_button",
+        "label": "Підсвітка",
+        "custom_props": {
+          "icon": "mdi:led-strip-variant"
+        }
+      },
+      {
+        "logical_id": "kukhnia_svitlo_switch_3",
+        "template_ref": "switch_button",
+        "label": "Праві точки",
+        "custom_props": {
+          "icon": "mdi:lightbulb-group"
+        }
+      },
+      {
+        "logical_id": "kukhnia_svitlo_switch_4",
+        "template_ref": "switch_button",
+        "label": "Ліві точки",
+        "custom_props": {
+          "icon": "mdi:lightbulb-group-outline"
+        }
+      },
+      {
+        "logical_id": "kukhnia_balkon_svitlo",
+        "template_ref": "switch_button",
+        "label": "Балкон",
+        "custom_props": {
+          "icon": "mdi:balcony"
+        }
+      },
+      {
+        "logical_id": "kukhnia_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату",
+        "custom_props": {
+          "ha_entity_ids": [
+            "switch.pidsvitka_switch",
+            "switch.pidsvitka_switch_2",
+            "switch.pidsvitka_switch_3",
+            "switch.kukhnia_tsentralnii_tranzit_switch",
+            "switch.kukhnia_tsentralnii_tranzit_switch_2",
+            "switch.pravii_tranzit_switch",
+            "switch.pravii_tranzit_switch_2",
+            "switch.svitlo_switch_3",
+            "switch.svitlo_switch_4",
+            "switch.svitlo_3"
+          ]
+        }
+      }
+    ],
+    "zal": [
+      {
+        "logical_id": "zal_pidsvitka_switch",
+        "template_ref": "switch_button",
+        "label": "Підсвітка",
+        "custom_props": {
+          "icon": "mdi:led-strip-variant"
+        }
+      },
+      {
+        "logical_id": "zal_tochki_switch",
+        "template_ref": "switch_button",
+        "label": "Точки",
+        "custom_props": {
+          "icon": "mdi:lightbulb-group"
+        }
+      },
+      {
+        "logical_id": "zal_balkon_svitlo",
+        "template_ref": "switch_button",
+        "label": "Балкон",
+        "custom_props": {
+          "icon": "mdi:balcony"
+        }
+      },
+      {
+        "logical_id": "zal_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "kabinet": [
+      {
+        "logical_id": "kabinet_svitlo_switch",
+        "template_ref": "switch_button",
+        "label": "Світло",
+        "custom_props": {
+          "icon": "mdi:lightbulb"
+        }
+      }
+    ],
+    "skhody_i_korydor": [
+      {
+        "logical_id": "skhody_svitlo_switch",
+        "template_ref": "switch_button",
+        "label": "Сходи",
+        "custom_props": {
+          "icon": "mdi:stairs"
+        }
+      },
+      {
+        "logical_id": "korydor_svitlo_switch_2",
+        "template_ref": "switch_button",
+        "label": "Коридор біля спальні",
+        "custom_props": {
+          "icon": "mdi:door"
+        }
+      },
+      {
+        "logical_id": "korydor_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "spalnia": [
+      {
+        "logical_id": "spalnia_pidsvitka_switch",
+        "template_ref": "switch_button",
+        "label": "Підсвітка",
+        "custom_props": {
+          "icon": "mdi:led-strip-variant"
+        }
+      },
+      {
+        "logical_id": "spalnia_tochki_switch",
+        "template_ref": "switch_button",
+        "label": "Точки",
+        "custom_props": {
+          "icon": "mdi:lightbulb-group"
+        }
+      },
+      {
+        "logical_id": "spalnia_balkon_svitlo",
+        "template_ref": "switch_button",
+        "label": "Балкон",
+        "custom_props": {
+          "icon": "mdi:balcony"
+        }
+      },
+      {
+        "logical_id": "spalnia_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "ditiacha": [
+      {
+        "logical_id": "ditiacha_pidsvitka_switch",
+        "template_ref": "switch_button",
+        "label": "Підсвітка",
+        "custom_props": {
+          "icon": "mdi:led-strip-variant"
+        }
+      },
+      {
+        "logical_id": "ditiacha_livi_tochki_switch",
+        "template_ref": "switch_button",
+        "label": "Ліві точки",
+        "custom_props": {
+          "icon": "mdi:lightbulb-group-outline"
+        }
+      },
+      {
+        "logical_id": "ditiacha_pravi_tochki_switch",
+        "template_ref": "switch_button",
+        "label": "Праві точки",
+        "custom_props": {
+          "icon": "mdi:lightbulb-group"
+        }
+      },
+      {
+        "logical_id": "ditiacha_terasa_switch",
+        "template_ref": "switch_button",
+        "label": "Тераса",
+        "custom_props": {
+          "icon": "mdi:patio-heater"
+        }
+      },
+      {
+        "logical_id": "ditiacha_balkon_svitlo",
+        "template_ref": "switch_button",
+        "label": "Балкон",
+        "custom_props": {
+          "icon": "mdi:balcony"
+        }
+      },
+      {
+        "logical_id": "ditiacha_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "vanna": [
+      {
+        "logical_id": "vanna_svitlo_switch",
+        "template_ref": "switch_button",
+        "label": "Світло",
+        "custom_props": {
+          "icon": "mdi:lightbulb"
+        }
+      },
+      {
+        "logical_id": "vanna_vitiazhka_switch",
+        "template_ref": "switch_button",
+        "label": "Витяжка",
+        "custom_props": {
+          "icon": "mdi:fan"
+        }
+      },
+      {
+        "logical_id": "vanna_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "tualet": [
+      {
+        "logical_id": "tualet_svitlo_switch",
+        "template_ref": "switch_button",
+        "label": "Світло",
+        "custom_props": {
+          "icon": "mdi:lightbulb"
+        }
+      }
+    ],
+    "pralnia": [
+      {
+        "logical_id": "pralnia_svitlo_switch",
+        "template_ref": "switch_button",
+        "label": "Світло",
+        "custom_props": {
+          "icon": "mdi:lightbulb"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,586 @@
+{
+  "theme_version": "1.0",
+  "source": {
+    "figma_file": "hR6BLSJJk2DmpyYe8eEV73",
+    "node_id": "1:1090",
+    "node_name": "Master_design_system",
+    "elements": [
+      "floor_container",
+      "room_container",
+      "floor_tab_switch",
+      "floor_voice_placeholder",
+      "house_disable_button",
+      "floor_disable_button",
+      "switch_button",
+      "disable_room_button",
+      "switch_placeholder"
+    ],
+    "sizing_derivation": {
+      "rule_id": "uniform_width_compact_row_height",
+      "dashboard": "svitlo",
+      "measured_labels": [
+        "Закуток біля роутеру",
+        "Коридор біля спальні",
+        "Вимкнути весь поверх"
+      ],
+      "longest_ch": 20,
+      "button_scale": 1.2,
+      "layout_strategy": "masonry_rooms_only",
+      "tokens": {
+        "lg_size_label_longest": "20ch",
+        "lg_size_switch_w": "calc(var(--lg_size_label_longest) * 1.2)",
+        "lg_size_switch_h": "clamp(2.75rem, 4vw, 3.25rem)",
+        "lg_aspect_switch": "unset",
+        "lg_size_floor_btn_h": "var(--lg_size_switch_h)",
+        "lg_size_floor_btn_w": "max(var(--lg_size_switch_w), calc(var(--lg_size_label_longest) * 1.45))",
+        "lg_stroke_glass": "0.0625rem",
+        "lg_size_container_w": "calc(var(--lg_size_switch_w) + (2 * var(--lg_space_gap_md)) + (2 * var(--lg_stroke_glass)))",
+        "lg_size_container_h": "auto",
+        "lg_size_room_min": "var(--lg_size_container_w)",
+        "lg_grid_room_mosaic": "repeat(auto-fit, minmax(min(var(--lg_size_room_min), 100%), auto))",
+        "lg_space_gap_mosaic": "3.125rem",
+        "lg_space_gap_header_mosaic": "calc(var(--lg_space_gap_mosaic) / 2)",
+        "lg_space_floor_inset": "calc(var(--lg_space_gap_mosaic) / 2)",
+        "lg_space_gap_xs": "clamp(0.25rem, 0.425vw, 0.375rem)",
+        "lg_size_disable_room_w": "calc(var(--lg_size_switch_w) * 0.75)",
+        "lg_size_disable_room_h": "calc(var(--lg_size_switch_h) * 0.75)",
+        "lg_flex_room_direction": "row",
+        "lg_flex_room_wrap": "wrap",
+        "lg_masonry_col_width": 282,
+        "lg_masonry_max_width": 282,
+        "lg_masonry_max_cols": 6,
+        "lg_masonry_floor_cols": 6,
+        "lg_masonry_min_height": 1,
+        "lg_masonry_card_margin": "calc(var(--lg_space_gap_mosaic) / 2)"
+      }
+    }
+  },
+  "primitive": {
+    "primary-background-color": "rgb(10, 10, 12)",
+    "secondary-background-color": "rgb(18, 18, 22)",
+    "primary-text-color": "rgb(255, 255, 255)",
+    "secondary-text-color": "rgba(255, 255, 255, 0.72)",
+    "text-primary-color": "rgb(255, 255, 255)",
+    "disabled-text-color": "rgba(255, 255, 255, 0.38)",
+    "accent-color": "rgb(242, 242, 242)",
+    "card-background-color": "rgba(255, 255, 255, 0.06)",
+    "ha-card-background": "transparent",
+    "ha-card-border-width": "0",
+    "ha-card-border-radius": "var(--lg_radius_liquid)",
+    "masonry-view-card-margin": "0",
+    "app-header-background-color": "rgb(10, 10, 12)",
+    "app-header-text-color": "rgb(255, 255, 255)",
+    "app-header-selection-bar-color": "rgba(255, 255, 255, 0.2)",
+    "divider-color": "rgba(255, 255, 255, 0.12)",
+    "markdown-code-background-color": "rgb(29, 29, 29)",
+    "switch-checked-color": "rgb(242, 242, 242)",
+    "switch-unchecked-button-color": "rgb(102, 102, 102)",
+    "switch-unchecked-track-color": "rgba(255, 255, 255, 0.2)",
+    "input-fill-color": "rgba(255, 255, 255, 0.08)",
+    "input-ink-color": "rgb(255, 255, 255)",
+    "input-label-ink-color": "rgba(255, 255, 255, 0.72)",
+    "input-disabled-fill-color": "rgba(255, 255, 255, 0.04)",
+    "input-disabled-ink-color": "rgba(255, 255, 255, 0.38)",
+    "input-dropdown-icon-color": "rgba(255, 255, 255, 0.72)",
+    "paper-listbox-background-color": "rgb(18, 18, 22)",
+    "paper-item-icon-color": "rgba(255, 255, 255, 0.72)",
+    "paper-item-icon-active-color": "rgb(255, 255, 255)",
+    "sidebar-background-color": "rgb(10, 10, 12)",
+    "sidebar-text-color": "rgb(255, 255, 255)",
+    "sidebar-icon-color": "rgba(255, 255, 255, 0.72)",
+    "sidebar-selected-icon-color": "rgb(255, 255, 255)",
+    "sidebar-selected-text-color": "rgb(255, 255, 255)",
+    "lovelace-background": "var(--primary-background-color)",
+    "lg_color_text": "rgb(255, 255, 255)",
+    "lg_color_glass_frost": "rgba(255, 255, 255, 0.1)",
+    "lg_color_glass_darken": "rgba(18, 18, 24, 0.08)",
+    "lg_color_glass_luminosity": "rgba(255, 255, 255, 0.05)",
+    "lg_color_glass_plus_lighter": "rgba(255, 255, 255, 0.04)",
+    "lg_color_glass_fill": "rgba(255, 255, 255, 0.06)",
+    "lg_color_glass_rim": "rgba(255, 255, 255, 0.28)",
+    "lg_color_room_glass_fill": "rgba(72, 72, 76, 0.48)",
+    "lg_color_room_glass_frost": "rgba(255, 255, 255, 0.07)",
+    "lg_color_room_glass_luminosity": "rgba(255, 255, 255, 0.03)",
+    "lg_color_room_glass_rim": "rgba(255, 255, 255, 0.2)",
+    "lg_blur_room_glass": "clamp(2rem, 3.5vw, 3.75rem)",
+    "lg_saturate_room_glass": "2.1",
+    "lg_shadow_room_container": "inset 0.0625rem 0.0625rem 0 0 rgba(255, 255, 255, 0.42), inset -0.0625rem -0.0625rem 0 0 rgba(255, 255, 255, 0.06), inset 0 0 1.375rem 0 rgba(255, 255, 255, 0.15), 0 0.375rem 1.5rem 0 rgba(0, 0, 0, 0.3)",
+    "lg_color_liquid_base": "rgba(255, 255, 255, 0.16)",
+    "lg_color_liquid_burn": "rgba(29, 29, 29, 0.12)",
+    "lg_color_liquid_burn_soft": "rgba(29, 29, 29, 0.08)",
+    "lg_color_liquid_frost": "rgba(255, 255, 255, 0.22)",
+    "lg_color_liquid_mid": "rgb(102, 102, 102)",
+    "lg_color_specular": "rgba(242, 242, 242, 0.5)",
+    "lg_color_specular_full": "rgb(242, 242, 242)",
+    "lg_color_edge_light": "rgb(255, 255, 255)",
+    "lg_color_edge_mid": "rgb(179, 179, 179)",
+    "lg_color_edge_dark": "rgb(51, 51, 51)",
+    "lg_color_edge_darker": "rgb(38, 38, 38)",
+    "lg_color_tab_fill": "rgba(255, 255, 255, 0.08)",
+    "lg_color_tab_track": "rgba(84, 84, 84, 0.28)",
+    "lg_color_tab_mask": "rgba(217, 217, 217, 0.5)",
+    "lg_color_tab_active": "rgba(0, 0, 0, 0.22)",
+    "lg_color_tab_border": "rgba(255, 255, 255, 0.55)",
+    "lg_color_tab_border_soft": "rgba(255, 255, 255, 0.28)",
+    "lg_opacity_tab_label_inactive": "0.1",
+    "lg_opacity_tab_side_disabled": "0.38",
+    "lg_color_distort": "rgba(255, 255, 255, 0.01)",
+    "lg_blur_container": "clamp(1.75rem, 3.2vw, 3.25rem)",
+    "lg_blur_liquid": "clamp(1rem, 1.8vw, 1.5rem)",
+    "lg_blur_room_btn": "1.25rem",
+    "lg_blur_tab_track": "2.8125rem",
+    "lg_blur_tab_distort": "0.125rem",
+    "lg_blur_tab_edge": "0.25rem",
+    "lg_blur_tab_highlight": "0.09375rem",
+    "lg_blur_distort": "0.125rem",
+    "lg_saturate_glass": "1.8",
+    "lg_radius_container": "clamp(4rem, 7.49vw, 6.7409rem)",
+    "lg_radius_room": "clamp(1.375rem, 2.2vw, 1.75rem)",
+    "lg_radius_liquid": "clamp(1.25rem, 2vw, 1.625rem)",
+    "lg_radius_room_btn": "var(--lg_radius_liquid)",
+    "lg_radius_tab": "clamp(5rem, 12.08vw, 10.875rem)",
+    "lg_radius_tab_inner": "clamp(2rem, 2.92vw, 2.625rem)",
+    "lg_radius_tab_active": "clamp(2rem, 3.19vw, 2.875rem)",
+    "lg_radius_placeholder": "var(--lg_radius_liquid)",
+    "lg_space_gap_xs": "clamp(0.25rem, 0.425vw, 0.375rem)",
+    "lg_space_gap_sm": "clamp(0.5rem, 0.85vw, 0.75rem)",
+    "lg_space_gap_md": "clamp(0.5rem, 0.9vw, 0.75rem)",
+    "lg_space_gap_lg": "clamp(0.75rem, 1.25vw, 1.25rem)",
+    "lg_space_gap_mosaic": "3.125rem",
+    "lg_space_gap_header_mosaic": "calc(var(--lg_space_gap_mosaic) / 2)",
+    "lg_space_floor_inset": "calc(var(--lg_space_gap_mosaic) / 2)",
+    "lg_masonry_col_width": "282",
+    "lg_masonry_max_width": "282",
+    "lg_masonry_max_cols": "6",
+    "lg_masonry_floor_cols": "6",
+    "lg_masonry_min_height": "1",
+    "lg_masonry_card_margin": "calc(var(--lg_space_gap_mosaic) / 2)",
+    "lg_space_pad_y": "clamp(0.5rem, 0.85vw, 0.75rem)",
+    "lg_space_pad_x": "clamp(1rem, 1.67vw, 1.5rem)",
+    "lg_space_label_top": "clamp(0.375rem, 0.65vw, 0.625rem)",
+    "lg_space_room_title_gap": "var(--lg_space_gap_sm)",
+    "lg_space_floor_title_gap": "var(--lg_space_gap_sm)",
+    "lg_space_room_stack_gap": "calc(var(--lg_space_gap_mosaic) / 2)",
+    "lg_space_distort_inset": "0",
+    "lg_space_tab_active_top": "0.375rem",
+    "lg_space_tab_active_inset": "0.5rem",
+    "lg_space_tab_label_nudge": "var(--lg_space_gap_xs)",
+    "lg_space_icon_optical_nudge": "calc(var(--lg_space_gap_xs) / 2)",
+    "lg_size_shell_w": "96vw",
+    "lg_size_label_longest": "20ch",
+    "lg_size_switch_w": "calc(var(--lg_size_label_longest) * 1.2)",
+    "lg_size_switch_h": "clamp(2.75rem, 4vw, 3.25rem)",
+    "lg_stroke_glass": "0.0625rem",
+    "lg_size_container_w": "calc(var(--lg_size_switch_w) + (2 * var(--lg_space_gap_md)) + (2 * var(--lg_stroke_glass)))",
+    "lg_size_container_h": "auto",
+    "lg_size_room_min": "var(--lg_size_container_w)",
+    "lg_grid_room_mosaic": "repeat(auto-fit, minmax(min(var(--lg_size_room_min), 100%), auto))",
+    "lg_flex_room_direction": "row",
+    "lg_flex_room_wrap": "wrap",
+    "lg_size_disable_room_w": "calc(var(--lg_size_switch_w) * 0.75)",
+    "lg_size_disable_room_h": "calc(var(--lg_size_switch_h) * 0.75)",
+    "lg_size_labeled_btn_min": "var(--lg_size_switch_w)",
+    "lg_aspect_switch": "unset",
+    "lg_size_switch_icon": "clamp(1.25rem, 1.8vw, 1.5rem)",
+    "lg_font_switch_label_size": "clamp(0.9375rem, 1.5vw, 1rem)",
+    "lg_size_floor_btn_w": "max(var(--lg_size_switch_w), calc(var(--lg_size_label_longest) * 1.45))",
+    "lg_layout_bp_tablet": "48rem",
+    "lg_layout_bp_desktop": "64rem",
+    "lg_size_floor_btn_h": "var(--lg_size_switch_h)",
+    "lg_size_room_btn": "var(--lg_size_switch_w)",
+    "lg_size_room_btn_h": "var(--lg_size_switch_h)",
+    "lg_font_floor_btn_size": "clamp(1.125rem, 1.8vw, 1.3125rem)",
+    "lg_font_room_label_size": "clamp(1.125rem, 1.9vw, 1.5rem)",
+    "lg_size_tab_w": "min(100%, clamp(10rem, 55vw, 36rem))",
+    "lg_size_tab_min_w": "0",
+    "lg_size_tab_h": "clamp(4.25rem, 6.5vw, 5.5rem)",
+    "lg_size_tab_side_btn": "var(--lg_size_tab_h)",
+    "lg_space_tab_side_gap": "var(--lg_space_gap_xs)",
+    "lg_radius_tab_side_btn": "50%",
+    "lg_size_tab_side_icon": "clamp(1.375rem, 2.2vw, 1.75rem)",
+    "lg_size_tab_active_w": "calc(50% - var(--lg_space_tab_active_inset))",
+    "lg_size_tab_active_h": "calc(100% - (2 * var(--lg_space_tab_active_top)))",
+    "lg_size_placeholder_w": "0",
+    "lg_size_placeholder_h": "0",
+    "lg_font_tab_label_size": "clamp(1.0625rem, 1.65vw, 1.25rem)",
+    "lg_font_label_size": "clamp(1.75rem, 3vw, 2.75rem)",
+    "lg_align_center_x": "center",
+    "lg_host_width": "100%",
+    "lg_font_label_tracking": "-0.045em",
+    "lg_font_room_tracking": "-0.02em",
+    "lg_font_body_tracking": "-0.015em",
+    "lg_font_label_family": "\"SF Pro Display\", \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Helvetica Neue\", system-ui, sans-serif",
+    "lg_font_title_weight": "600",
+    "lg_font_label_weight": "510",
+    "lg_font_body_weight": "500",
+    "lg_font_smoothing": "antialiased",
+    "lg_font_smoothing_moz": "grayscale",
+    "lg_line_height_label": "1.15",
+    "lg_line_height_room": "1.2",
+    "lg_color_tab_edge_dark_stroke": "rgba(0, 0, 0, 0.8)",
+    "lg_color_tab_edge_light_stroke": "rgba(255, 255, 255, 0.8)",
+    "lg_stroke_tab_edge": "var(--lg_stroke_glass)",
+    "lg_shadow_container": "inset 0.0625rem 0.0625rem 0 0 rgba(255, 255, 255, 0.55), inset -0.0625rem -0.0625rem 0 0 rgba(255, 255, 255, 0.1), inset 0 0 1.5rem 0 rgba(255, 255, 255, 0.12), 0 0.5rem 1.75rem 0 rgba(0, 0, 0, 0.22)",
+    "lg_shadow_liquid": "inset 0 0 1.125rem 0 rgba(255, 255, 255, 0.45), inset 0.0625rem 0.0625rem 0.0625rem -0.0625rem rgba(255, 255, 255, 0.55), inset -0.5rem -0.5rem 0.375rem -0.625rem rgba(255, 255, 255, 0.25)",
+    "lg_shadow_room_btn": "inset 0 0 1.25rem 0 rgba(255, 255, 255, 0.4), inset 0.0625rem 0.0625rem 0.0625rem -0.0625rem rgba(255, 255, 255, 0.5), inset -0.375rem -0.375rem 0.25rem -0.5rem rgba(255, 255, 255, 0.22)",
+    "lg_color_disable_icon": "rgba(255, 69, 58, 0.95)",
+    "lg_color_disable_room_icon": "rgb(255, 255, 255)",
+    "lg_color_disable_frost": "rgba(255, 59, 48, 0.18)",
+    "lg_glow_disable": "0 0 0.25rem 0.03125rem rgba(255, 59, 48, 0.65), 0 0 0.625rem 0.09375rem rgba(255, 59, 48, 0.35)",
+    "lg_shadow_disable_room": "var(--lg_shadow_room_btn), var(--lg_glow_disable)",
+    "lg_shadow_disable_floor": "var(--lg_shadow_liquid), var(--lg_glow_disable)",
+    "lg_filter_disable_glow": "none",
+    "lg_filter_disable_icon": "drop-shadow(0 0 0.175rem rgba(255, 59, 48, 0.55))",
+    "lg_size_disable_icon": "calc(var(--lg_size_switch_icon) * 0.9)",
+    "lg_size_floor_disable_icon": "clamp(1rem, 1.35vw, 1.125rem)",
+    "lg_color_switch_on_icon": "rgba(255, 214, 90, 0.95)",
+    "lg_color_switch_on_frost": "rgba(255, 204, 0, 0.2)",
+    "lg_glow_switch_on": "0 0 0.5rem rgba(255, 204, 0, 0.65), 0 0 1.25rem rgba(255, 190, 40, 0.35)",
+    "lg_shadow_switch_on": "var(--lg_shadow_liquid), var(--lg_glow_switch_on)",
+    "lg_filter_switch_on_glow": "none",
+    "lg_filter_switch_on_icon": "drop-shadow(0 0 0.4rem rgba(255, 204, 0, 0.7))",
+    "lg_gradient_liquid_bottom": "linear-gradient(to bottom, rgba(102, 102, 102, 0) 50%, rgba(102, 102, 102, 0.4) 100%)",
+    "lg_gradient_liquid_top": "linear-gradient(to bottom, rgba(102, 102, 102, 0.2) 0%, rgba(102, 102, 102, 0) 32.69%)",
+    "lg_gradient_room_stroke": "linear-gradient(135deg, rgb(255, 255, 255) 0%, rgba(255, 255, 255, 0) 30%)",
+    "lg_gradient_tab_border": "linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.32) 100%)",
+    "lg_gradient_tab_edge_dark": "linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.8) 100%)",
+    "lg_gradient_tab_edge_light": "linear-gradient(90deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.05) 34.97%, rgba(255, 255, 255, 0.05) 76.57%, rgba(255, 255, 255, 0.8) 100%)",
+    "lg_transition_smooth": "all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)",
+    "lg_transition_press": "color 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1)",
+    "lg_transition_tab_pill": "transform 0.18s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.18s cubic-bezier(0.32, 0.72, 0, 1)",
+    "lg_transform_tab_active_floor1": "translateX(0)",
+    "lg_transform_tab_active_floor2": "translateX(100%)"
+  },
+
+  "component": {
+    "floor_container": {
+      "node_id": "39:4",
+      "template": "floor_container",
+      "fills": [
+        {
+          "color": "var(--lg_color_glass_fill)",
+          "blend": "normal"
+        },
+        {
+          "color": "var(--lg_color_glass_frost)",
+          "blend": "plus-lighter"
+        },
+        {
+          "color": "var(--lg_color_glass_luminosity)",
+          "blend": "soft-light"
+        }
+      ],
+      "frost": {
+        "color": "var(--lg_color_glass_fill)",
+        "blur": "var(--lg_blur_container)",
+        "saturate": "var(--lg_saturate_glass)"
+      },
+      "rim": "var(--lg_color_glass_rim)",
+      "radius": "var(--lg_radius_container)",
+      "shadow": "var(--lg_shadow_container)",
+      "gap": "var(--lg_space_gap_mosaic)",
+      "width": "var(--lg_host_width)",
+      "max_width": "100%",
+      "height": "auto",
+      "align": "var(--lg_align_center_x)",
+      "mosaic": "masonry",
+      "mosaic_layout_type": "custom:masonry-layout",
+      "mosaic_col_width": "var(--lg_masonry_col_width)",
+      "mosaic_max_width": "var(--lg_masonry_max_width)",
+      "mosaic_max_cols": "var(--lg_masonry_max_cols)",
+      "mosaic_floor_cols": "var(--lg_masonry_floor_cols)",
+      "mosaic_min_height": "var(--lg_masonry_min_height)",
+      "mosaic_card_margin": "var(--lg_masonry_card_margin)",
+      "mosaic_gap": "var(--lg_space_gap_mosaic)",
+      "header_to_mosaic_gap": "var(--lg_space_gap_header_mosaic)",
+      "floor_inset": "var(--lg_space_floor_inset)",
+      "title_gap": "var(--lg_space_floor_title_gap)",
+      "title_outside_panel": true,
+      "mosaic_gap_max_rem": "3.125rem",
+      "floor_inset_max_rem": "3.125rem",
+      "header_outside_mosaic": true,
+      "tap_action": "none",
+      "show_ripple": false,
+      "cursor": "default"
+    },
+    "room_container": {
+      "node_id": "3:170",
+      "template": "room_container",
+      "fills": [
+        {
+          "color": "var(--lg_color_room_glass_fill)",
+          "blend": "normal"
+        },
+        {
+          "color": "var(--lg_color_room_glass_frost)",
+          "blend": "plus-lighter"
+        },
+        {
+          "color": "var(--lg_color_room_glass_luminosity)",
+          "blend": "soft-light"
+        }
+      ],
+      "frost": {
+        "color": "var(--lg_color_room_glass_fill)",
+        "blur": "var(--lg_blur_room_glass)",
+        "saturate": "var(--lg_saturate_room_glass)"
+      },
+      "rim": "var(--lg_color_room_glass_rim)",
+      "radius": "var(--lg_radius_room)",
+      "shadow": "var(--lg_shadow_room_container)",
+      "title_gap": "var(--lg_space_room_title_gap)",
+      "panel_pad": "var(--lg_space_gap_md)",
+      "stack_gap_phone": "var(--lg_space_room_stack_gap)",
+      "width": "var(--lg_size_container_w)",
+      "height": "auto",
+      "tap_action": "none",
+      "show_ripple": false,
+      "cursor": "default"
+    },
+    "switch_button": {
+      "node_id": "1:1091",
+      "template": "switch_button",
+      "fills": [
+        {
+          "color": "var(--lg_color_liquid_base)",
+          "blend": "plus-lighter"
+        },
+        {
+          "color": "var(--lg_color_liquid_burn)",
+          "blend": "color-burn"
+        },
+        {
+          "gradient": "var(--lg_gradient_liquid_bottom)",
+          "blend": "plus-lighter"
+        },
+        {
+          "gradient": "var(--lg_gradient_liquid_top)",
+          "blend": "plus-lighter"
+        }
+      ],
+      "radius": "var(--lg_radius_liquid)",
+      "shadow": "var(--lg_shadow_liquid)",
+      "shadow_on": "var(--lg_shadow_switch_on)",
+      "glow_on": "var(--lg_glow_switch_on)",
+      "filter_on_glow": "none",
+      "frost_on": "var(--lg_color_switch_on_frost)",
+      "icon_color_on": "var(--lg_color_switch_on_icon)",
+      "padding": "var(--lg_space_pad_y) var(--lg_space_pad_x)",
+      "gap": "var(--lg_space_gap_sm)",
+      "width": "var(--lg_size_switch_w)",
+      "height": "var(--lg_size_switch_h)",
+      "aspect_ratio": "unset",
+      "font_size": "var(--lg_font_switch_label_size)",
+      "distort_blur": "var(--lg_blur_distort)",
+      "show_ripple": false
+    },
+    "switch_placeholder": {
+      "node_id": "1:1119",
+      "template": "switch_placeholder",
+      "opacity": "0",
+      "fills": [
+        {
+          "color": "var(--lg_color_liquid_base)",
+          "blend": "plus-lighter"
+        },
+        {
+          "color": "var(--lg_color_liquid_burn)",
+          "blend": "color-burn"
+        },
+        {
+          "gradient": "var(--lg_gradient_liquid_bottom)",
+          "blend": "plus-lighter"
+        },
+        {
+          "gradient": "var(--lg_gradient_liquid_top)",
+          "blend": "plus-lighter"
+        }
+      ],
+      "radius": "var(--lg_radius_liquid)",
+      "shadow": "var(--lg_shadow_liquid)",
+      "gap": "var(--lg_space_gap_sm)",
+      "width": "var(--lg_size_placeholder_w)",
+      "height": "var(--lg_size_placeholder_h)",
+      "aspect_ratio": "auto",
+      "distort_blur": "var(--lg_blur_distort)"
+    },
+    "floor_disable_button": {
+      "node_id": "3:30",
+      "template": "floor_disable_button",
+      "icon": "mdi:close",
+      "fills": [
+        {
+          "color": "var(--lg_color_liquid_base)",
+          "blend": "plus-lighter"
+        },
+        {
+          "color": "var(--lg_color_liquid_burn)",
+          "blend": "color-burn"
+        },
+        {
+          "color": "var(--lg_color_disable_frost)",
+          "blend": "normal"
+        }
+      ],
+      "blur": "var(--lg_blur_liquid)",
+      "radius": "var(--lg_radius_liquid)",
+      "shadow": "var(--lg_shadow_disable_floor)",
+      "glow": "var(--lg_glow_disable)",
+      "glow_on_press_only": true,
+      "filter_glow": "none",
+      "icon_color_idle": "var(--lg_color_text)",
+      "icon_color_press": "var(--lg_color_disable_icon)",
+      "text_color_idle": "var(--lg_color_text)",
+      "text_color_press": "var(--lg_color_disable_icon)",
+      "icon_size": "var(--lg_size_floor_disable_icon)",
+      "padding": "var(--lg_space_pad_y) var(--lg_space_pad_x)",
+      "gap": "var(--lg_space_gap_sm)",
+      "width": "var(--lg_size_floor_btn_w)",
+      "height": "var(--lg_size_floor_btn_h)",
+      "font_size": "var(--lg_font_floor_btn_size)",
+      "align": "var(--lg_align_center_x)",
+      "host_width": "var(--lg_host_width)",
+      "tap_action": "none",
+      "hold_action": "switch.turn_off",
+      "show_ripple": false
+    },
+    "disable_room_button": {
+      "node_id": "3:39",
+      "template": "disable_room_button",
+      "icon": "mdi:close",
+      "fills": [
+        {
+          "color": "var(--lg_color_liquid_burn_soft)",
+          "blend": "color-burn"
+        },
+        {
+          "color": "var(--lg_color_liquid_base)",
+          "blend": "plus-lighter"
+        },
+        {
+          "color": "var(--lg_color_disable_frost)",
+          "blend": "normal"
+        }
+      ],
+      "stroke": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "weight": "0.0625rem",
+        "gradient": "var(--lg_gradient_room_stroke)",
+        "opacity": "0.4"
+      },
+      "blur": "var(--lg_blur_room_btn)",
+      "radius": "var(--lg_radius_liquid)",
+      "shadow": "var(--lg_shadow_room_btn)",
+      "glow": "var(--lg_glow_disable)",
+      "glow_on_press_only": true,
+      "filter_glow": "none",
+      "icon_color_idle": "var(--lg_color_text)",
+      "icon_color_press": "var(--lg_color_disable_icon)",
+      "icon_size": "var(--lg_size_disable_icon)",
+      "width": "var(--lg_size_disable_room_w)",
+      "height": "var(--lg_size_disable_room_h)",
+      "aspect_ratio": "unset",
+      "tap_action": "none",
+      "hold_action": "switch.turn_off",
+      "show_ripple": false
+    },
+    "floor_voice_placeholder": {
+      "template": "floor_voice_placeholder",
+      "icon": "mdi:microphone",
+      "opacity": "var(--lg_opacity_tab_side_disabled)",
+      "radius": "var(--lg_radius_tab_side_btn)",
+      "width": "var(--lg_size_tab_side_btn)",
+      "height": "var(--lg_size_tab_side_btn)",
+      "icon_size": "var(--lg_size_tab_side_icon)",
+      "tap_action": "none",
+      "hold_action": "none",
+      "show_ripple": false,
+      "pointer_events": "none"
+    },
+    "house_disable_button": {
+      "template": "house_disable_button",
+      "icon": "mdi:close",
+      "fills": [
+        {
+          "color": "var(--lg_color_liquid_base)",
+          "blend": "plus-lighter"
+        },
+        {
+          "color": "var(--lg_color_disable_frost)",
+          "blend": "normal"
+        }
+      ],
+      "glow": "var(--lg_glow_disable)",
+      "glow_on_press_only": true,
+      "icon_color_idle": "var(--lg_color_text)",
+      "icon_color_press": "var(--lg_color_disable_icon)",
+      "icon_size": "var(--lg_size_tab_side_icon)",
+      "radius": "var(--lg_radius_tab_side_btn)",
+      "width": "var(--lg_size_tab_side_btn)",
+      "height": "var(--lg_size_tab_side_btn)",
+      "tap_action": "none",
+      "hold_action": "switch.turn_off",
+      "hold_entity_id": "all",
+      "show_ripple": false
+    },
+    "floor_tab_switch": {
+      "node_id": "3:142",
+      "template": "floor_tab_switch",
+      "fill": "var(--lg_color_tab_fill)",
+      "border": "0.0625rem solid var(--lg_color_tab_border)",
+      "radius": "var(--lg_radius_tab)",
+      "width": "var(--lg_size_tab_w)",
+      "height": "var(--lg_size_tab_h)",
+      "align": "var(--lg_align_center_x)",
+      "host_width": "var(--lg_host_width)",
+      "track": {
+        "fill": "var(--lg_color_tab_track)",
+        "blur": "var(--lg_blur_tab_track)",
+        "radius": "var(--lg_radius_tab_inner)"
+      },
+      "active": {
+        "fill": "var(--lg_color_tab_active)",
+        "radius": "var(--lg_radius_tab_active)",
+        "width": "var(--lg_size_tab_active_w)",
+        "height": "var(--lg_size_tab_active_h)",
+        "top": "var(--lg_space_tab_active_top)",
+        "inset": "var(--lg_space_tab_active_inset)",
+        "transform_floor1": "var(--lg_transform_tab_active_floor1)",
+        "transform_floor2": "var(--lg_transform_tab_active_floor2)",
+        "transition": "var(--lg_transition_tab_pill)"
+      },
+
+      "labels": {
+        "floor_1": "Перший поверх",
+        "floor_2": "Другий поверх",
+        "layout": "two_line",
+        "font_size": "var(--lg_font_tab_label_size)",
+        "label_nudge": "var(--lg_space_tab_label_nudge)",
+        "inactive_opacity": "var(--lg_opacity_tab_label_inactive)",
+        "transition": "var(--lg_transition_tab_pill)"
+      },
+      "options": {
+        "floor_1": "floor_1",
+        "floor_2": "floor_2"
+      },
+      "edge_dark": {
+        "border": "var(--lg_gradient_tab_edge_dark)",
+        "blend": "multiply",
+        "blur": "var(--lg_blur_tab_edge)"
+      },
+      "edge_light": {
+        "border": "var(--lg_gradient_tab_edge_light)",
+        "blend": "plus-lighter",
+        "blur": "var(--lg_blur_tab_highlight)"
+      },
+      "edge_soft": {
+        "border": "0.0625rem solid var(--lg_color_tab_border_soft)",
+        "blend": "plus-lighter",
+        "blur": "var(--lg_blur_tab_highlight)"
+      }
+    }
+  }
+}

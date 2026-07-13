@@ -1,0 +1,9 @@
+{# Figma 1:1091 Component: switch_button — thin instance #}
+type: custom:button-card
+template: switch_button
+entity: {{ entity_id }}
+name: {{ name }}
+{%- set icon = (custom_props | default({})).get('icon') %}
+{%- if icon %}
+icon: {{ icon }}
+{%- endif %}

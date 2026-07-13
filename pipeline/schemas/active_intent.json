@@ -1,0 +1,9 @@
+{
+  "target_dashboard": "svitlo",
+  "intent_class": "STRUCTURAL",
+  "target_agent": "@architect",
+  "payload": {
+    "action_summary": "Rename switch_button label for spalnia_balkon_svitlo from 'Світло балкон' to 'Балкон'",
+    "requested_entities": ["spalnia_balkon_svitlo"]
+  }
+}

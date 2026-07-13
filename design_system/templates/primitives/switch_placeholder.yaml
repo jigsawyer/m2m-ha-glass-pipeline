@@ -1,0 +1,5 @@
+{# Figma 1:1119 Component: switch_placeholder — thin instance #}
+type: custom:button-card
+template: switch_placeholder
+entity: {{ entity_id }}
+name: {{ name }}

@@ -1,0 +1,9 @@
+{# Figma 3:39 Component: disable_room_button — thin instance #}
+{%- set props = custom_props | default({}) %}
+{%- set entity_ids = props.get('ha_entity_ids') %}
+type: custom:button-card
+template: disable_room_button
+name: {{ name }}
+variables:
+  ha_area_id: "{% if not entity_ids and domain == 'area' %}{{ entity_id }}{% endif %}"
+  ha_entity_ids: {{ (entity_ids if entity_ids is sequence and entity_ids is not string else []) | tojson }}

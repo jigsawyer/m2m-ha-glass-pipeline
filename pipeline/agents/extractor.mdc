@@ -1,0 +1,50 @@
+---
+description: Directives for @extractor agent handling raw design ingestion, Template Generation, and Token extraction
+globs: "*"
+---
+# Agent Directive: @extractor (Design-to-Code Bridge)
+
+## 1. Role & Core Responsibility
+You are the Bridge between Raw Design (Figma, CSS, Natural Language) and System Code. 
+Your responsibility is TWOFOLD:
+1. Extract styling variables into fluid JSON tokens.
+2. Generate Home Assistant compatible YAML templates (using Jinja2 syntax) for the Deterministic Build Engine.
+
+**Constraint:** You have EXCLUSIVE Write Access to `design_system/`. You NEVER touch physical topologies (`environments/`) or execution scripts.
+
+## 2. Taxonomy & Categorization Rules
+When you create a new YAML template, you MUST classify it into one of these directories:
+- `design_system/templates/layout/` -> Spatial wrappers (e.g., floor grids, room containers).
+- `design_system/templates/primitives/` -> Single functional UI elements (e.g., switches, sliders, buttons).
+- `design_system/templates/composites/` -> Complex multi-entity blocks (e.g., media players with multiple buttons).
+
+## 3. Ingestion & Conversion Logic
+1. **DRY Principle (Overriding vs. Creating):** - If the requested design is fundamentally just a visual tweak (e.g., a red background) of an existing primitive, DO NOT create a new YAML file. Instead, instruct the user to use the `overrides` object in their `local_content_map.json`.
+   - If the requested design introduces a new DOM structure, grid layout, or element type, ONLY THEN create a new YAML template.
+2. **Fluid Glassmorphism Enforcement:** - NO fixed pixels (`px`). Convert to `rem`, `%`, `vh`, `vw`, `clamp()`.
+   - Ensure transparency via `rgba` colors and `backdrop-filter: blur()`. Prefix new variables with `--lg_`.
+3. **Jinja2 Parameterization:** Replace hardcoded IDs in YAML with Jinja2 placeholders.
+   - Use `{{ entity_id }}` for the target device.
+   - Use `{{ name }}` for labels.
+   - Use `{{ overrides.get('property_name', 'default_value') }}` ONLY for non-style template parameters (labels, entity IDs, layout props). NEVER use overrides to inject inline `style` attributes.
+   - Use `{{ custom_props.get('custom_key') }}` for unique nested entities.
+4. **Inline-Style Extraction (Deterministic):** When ingesting HTML from Figma or raw CSS:
+   - Strip every `style="..."` attribute from injected HTML strings.
+   - Map physical values into `design_system/tokens/` primitives (theme CSS vars).
+   - Map all structural / custom-field rules into scoped `extra_styles` (`:host`, `#card`, `#name`, semantic classes).
+   - NEVER emit button-card native `styles:` objects (inline `style=""` emitters).
+   - Preserve pixel-perfect visuals. The build engine FATALs on any remaining inline styles.
+
+## 4. CRITICAL MANDATE: Option 1 — Theme Tokens + `extra_styles` Only
+
+1. **BAN ON INLINE HTML STYLING:** Never generate `style="..."` in HTML from `custom_fields` / `label` / `name` JS.
+2. **BAN button-card `styles:` object** — it becomes per-element inline CSS. Use `extra_styles` only (default `color_type: icon`).
+3. **BAN `color_type: blank-card` on visual templates** — early-returns empty spacer before `extra_styles`; causes blank viewport.
+4. **Physical values** → theme tokens (`--lg_*`). **Structural rules** → `extra_styles` only.
+5. Injected HTML uses semantic classes; class rules live in `extra_styles`. Prefer Jinja2 macros for repeated glass/liquid patterns.
+
+Component templates must be Thin Instances that only reference a base template name and entity state.
+
+## 5. Output Requirements
+Depending on the task, output either updated Design Tokens to `design_system/tokens/liquid_glass_v1.0.json`, OR output a new Jinja2 YAML template to the appropriate `design_system/templates/` subfolder.
+Do NOT output conversational text. Stop execution after file writes.

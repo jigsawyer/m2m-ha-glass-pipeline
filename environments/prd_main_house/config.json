@@ -1,0 +1,6 @@
+{
+  "tenant_id": "prd_main_house",
+  "theme_reference": "liquid_glass_v1.0",
+  "resolution_strategy": "fluid",
+  "modules_enabled": ["lights", "climate"]
+}

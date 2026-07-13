@@ -1,0 +1,3 @@
+{# Floor tab row — disabled mic placeholder (future voice) #}
+type: custom:button-card
+template: floor_voice_placeholder
