@@ -13,7 +13,10 @@
       "floor_disable_button",
       "switch_button",
       "disable_room_button",
-      "switch_placeholder"
+      "switch_placeholder",
+      "climate_thermostat",
+      "climate_floor_off_button",
+      "climate_house_off_button"
     ],
     "sizing_derivation": {
       "rule_id": "uniform_width_compact_row_height",
@@ -271,7 +274,25 @@
     "lg_transition_press": "color 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1)",
     "lg_transition_tab_pill": "transform 0.18s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.18s cubic-bezier(0.32, 0.72, 0, 1)",
     "lg_transform_tab_active_floor1": "translateX(0)",
-    "lg_transform_tab_active_floor2": "translateX(100%)"
+    "lg_transform_tab_active_floor2": "translateX(100%)",
+    "lg_color_climate_cool": "rgb(100, 210, 255)",
+    "lg_color_climate_heat": "rgb(255, 176, 90)",
+    "lg_color_climate_auto": "rgb(190, 200, 210)",
+    "lg_color_climate_dry": "rgb(140, 200, 180)",
+    "lg_color_climate_fan": "rgb(180, 190, 220)",
+    "lg_color_climate_off": "rgba(255, 255, 255, 0.38)",
+    "lg_color_climate_chip_idle": "rgba(255, 255, 255, 0.12)",
+    "lg_glow_climate_cool": "0 0 0.5rem rgba(100, 210, 255, 0.45), 0 0 1.25rem rgba(64, 180, 255, 0.25)",
+    "lg_glow_climate_heat": "0 0 0.5rem rgba(255, 176, 90, 0.5), 0 0 1.25rem rgba(255, 140, 50, 0.28)",
+    "lg_font_climate_temp_size": "clamp(2.75rem, 5vw, 3.5rem)",
+    "lg_font_climate_caption_size": "clamp(0.75rem, 1.1vw, 0.875rem)",
+    "lg_font_climate_chip_size": "clamp(0.6875rem, 1vw, 0.8125rem)",
+    "lg_size_climate_chip_h": "clamp(2rem, 2.8vw, 2.375rem)",
+    "lg_size_climate_step_btn": "clamp(2.5rem, 3.5vw, 2.875rem)",
+    "lg_size_climate_power": "clamp(2.25rem, 3vw, 2.625rem)",
+    "lg_space_climate_gap": "var(--lg_space_gap_sm)",
+    "lg_space_climate_pad": "var(--lg_space_gap_md)",
+    "lg_radius_climate_chip": "var(--lg_radius_liquid)"
   },
 
   "component": {

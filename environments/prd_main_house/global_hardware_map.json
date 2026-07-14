@@ -20,6 +20,7 @@
   "zal_disable": { "domain": "area", "entity_id": "living_room" },
 
   "kabinet_svitlo_switch": { "domain": "switch", "entity_id": "switch.kabinet_vimikach_kabinet" },
+  "kabinet_ac": { "domain": "climate", "entity_id": "climate.konditsioner_kabinet" },
 
   "skhody_svitlo_switch": { "domain": "switch", "entity_id": "switch.svitlo_switch" },
   "korydor_svitlo_switch_2": { "domain": "switch", "entity_id": "switch.svitlo_switch_2" },
@@ -29,6 +30,7 @@
   "spalnia_pidsvitka_switch": { "domain": "switch", "entity_id": "switch.vimikach_bilia_vkhodu_switch_2" },
   "spalnia_tochki_switch": { "domain": "switch", "entity_id": "switch.vimikach_bilia_vkhodu_switch" },
   "spalnia_balkon_svitlo": { "domain": "switch", "entity_id": "switch.balkon_spalnia_svitlo_switch" },
+  "spalnia_ac": { "domain": "climate", "entity_id": "climate.konditsioner_spalnya" },
   "spalnia_disable": { "domain": "area", "entity_id": "bedroom" },
 
   "ditiacha_pidsvitka_switch": { "domain": "switch", "entity_id": "switch.pidsvitka" },

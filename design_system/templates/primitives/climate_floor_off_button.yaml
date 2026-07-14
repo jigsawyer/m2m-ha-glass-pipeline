@@ -1,0 +1,8 @@
+{# Floor climate off — hold turns off listed climate entities #}
+{%- set props = custom_props | default({}) %}
+{%- set entity_ids = props.get('ha_entity_ids') %}
+type: custom:button-card
+template: climate_floor_off_button
+name: {{ name }}
+variables:
+  ha_entity_ids: {{ (entity_ids if entity_ids is sequence and entity_ids is not string else []) | tojson }}

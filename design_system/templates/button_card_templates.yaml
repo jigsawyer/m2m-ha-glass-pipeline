@@ -1438,3 +1438,647 @@ button_card_templates:
             <span class="lg-tab-label lg-tab-label--floor2">${splitTwoLine(variables.label_floor_2)}</span>
           `;
         ]]]
+
+  climate_temp_btn:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    variables:
+      delta: 1
+      min_temp: 16
+      max_temp: 32
+      temp_step: 1
+    tap_action:
+      action: call-service
+      service: climate.set_temperature
+      target:
+        entity_id: "[[[ return entity.entity_id ]]]"
+      data:
+        temperature: |
+          [[[
+            const step = Number(variables.temp_step) || 1;
+            const minT = Number(variables.min_temp) || 16;
+            const maxT = Number(variables.max_temp) || 32;
+            const cur = Number(entity.attributes.temperature);
+            const base = Number.isFinite(cur) ? cur : 24;
+            const next = base + (Number(variables.delta) || 0) * step;
+            return Math.min(maxT, Math.max(minT, next));
+          ]]]
+    extra_styles: |
+      :host {
+        width: var(--lg_size_climate_step_btn) !important;
+        max-width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        display: block;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_climate_chip) !important;
+      }
+      ha-card {
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        border-radius: var(--lg_radius_climate_chip) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      #card {
+        position: relative;
+        width: var(--lg_size_climate_step_btn);
+        height: var(--lg_size_climate_step_btn);
+        border-radius: var(--lg_radius_climate_chip);
+        background: var(--lg_color_climate_chip_idle);
+        box-shadow: none;
+        cursor: pointer;
+      }
+      #icon {
+        color: var(--lg_color_text) !important;
+        --mdc-icon-size: clamp(1.125rem, 1.6vw, 1.375rem);
+      }
+      #name, #label, #state { display: none !important; }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  climate_mode_chip:
+    show_name: true
+    show_icon: false
+    show_state: false
+    show_ripple: false
+    variables:
+      mode: cool
+    tap_action:
+      action: call-service
+      service: climate.set_hvac_mode
+      target:
+        entity_id: "[[[ return entity.entity_id ]]]"
+      data:
+        hvac_mode: "[[[ return variables.mode ]]]"
+    extra_styles: |
+      [[[
+        const active = entity && entity.state === variables.mode;
+        const accentMap = {
+          cool: 'var(--lg_color_climate_cool)',
+          heat: 'var(--lg_color_climate_heat)',
+          auto: 'var(--lg_color_climate_auto)',
+          dry: 'var(--lg_color_climate_dry)',
+          fan_only: 'var(--lg_color_climate_fan)',
+          off: 'var(--lg_color_climate_off)',
+        };
+        const accent = accentMap[variables.mode] || 'var(--lg_color_text)';
+        return `
+      :host {
+        width: auto !important;
+        min-width: 0;
+        height: var(--lg_size_climate_chip_h) !important;
+        display: block;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_climate_chip) !important;
+      }
+      ha-card {
+        height: var(--lg_size_climate_chip_h) !important;
+        border-radius: var(--lg_radius_climate_chip) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      #card {
+        position: relative;
+        height: var(--lg_size_climate_chip_h);
+        padding: 0 var(--lg_space_gap_sm);
+        border-radius: var(--lg_radius_climate_chip);
+        background: ${active ? accent : 'var(--lg_color_climate_chip_idle)'};
+        box-shadow: ${active && (variables.mode === 'cool' || variables.mode === 'heat')
+          ? (variables.mode === 'cool' ? 'var(--lg_glow_climate_cool)' : 'var(--lg_glow_climate_heat)')
+          : 'none'};
+        cursor: pointer;
+        transition: var(--lg_transition_press);
+      }
+      #name {
+        position: relative;
+        z-index: 1;
+        color: ${active && (variables.mode === 'cool' || variables.mode === 'heat')
+          ? 'rgb(10, 10, 12)' : 'var(--lg_color_text)'} !important;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_chip_size);
+        font-weight: var(--lg_font_title_weight);
+        white-space: nowrap;
+        opacity: ${active ? '1' : '0.72'};
+      }
+      #icon, #label, #state { display: none !important; }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_climate_chip);
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  climate_attrib_chip:
+    show_name: true
+    show_icon: false
+    show_state: false
+    show_ripple: false
+    variables:
+      attrib: fan_mode
+      value: auto
+      service: climate.set_fan_mode
+      data_key: fan_mode
+    tap_action:
+      action: call-service
+      service: "[[[ return variables.service ]]]"
+      target:
+        entity_id: "[[[ return entity.entity_id ]]]"
+      data: |
+        [[[
+          const key = variables.data_key || 'fan_mode';
+          return { [key]: variables.value };
+        ]]]
+    extra_styles: |
+      [[[
+        const cur = entity && entity.attributes
+          ? entity.attributes[variables.attrib]
+          : null;
+        const active = cur === variables.value;
+        return `
+      :host {
+        width: auto !important;
+        height: var(--lg_size_climate_chip_h) !important;
+        display: block;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_climate_chip) !important;
+      }
+      ha-card {
+        height: var(--lg_size_climate_chip_h) !important;
+        border-radius: var(--lg_radius_climate_chip) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      #card {
+        position: relative;
+        height: var(--lg_size_climate_chip_h);
+        padding: 0 var(--lg_space_gap_sm);
+        border-radius: var(--lg_radius_climate_chip);
+        background: ${active ? 'rgba(255, 255, 255, 0.28)' : 'var(--lg_color_climate_chip_idle)'};
+        cursor: pointer;
+      }
+      #name {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_chip_size);
+        font-weight: ${active ? 'var(--lg_font_title_weight)' : 'var(--lg_font_body_weight)'};
+        white-space: nowrap;
+        opacity: ${active ? '1' : '0.65'};
+      }
+      #icon, #label, #state { display: none !important; }
+        `;
+      ]]]
+
+  climate_power_btn:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:power
+    tap_action: |
+      [[[
+        const on = entity && entity.state && entity.state !== 'off';
+        return {
+          action: 'call-service',
+          service: on ? 'climate.turn_off' : 'climate.turn_on',
+          target: { entity_id: entity.entity_id },
+        };
+      ]]]
+    extra_styles: |
+      [[[
+        const on = entity && entity.state && entity.state !== 'off';
+        const mode = entity ? entity.state : 'off';
+        const glow = mode === 'heat'
+          ? 'var(--lg_glow_climate_heat)'
+          : mode === 'cool'
+            ? 'var(--lg_glow_climate_cool)'
+            : 'none';
+        const color = mode === 'heat'
+          ? 'var(--lg_color_climate_heat)'
+          : mode === 'cool'
+            ? 'var(--lg_color_climate_cool)'
+            : 'var(--lg_color_text)';
+        return `
+      :host {
+        width: var(--lg_size_climate_power) !important;
+        height: var(--lg_size_climate_power) !important;
+        display: block;
+        margin-left: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: 50% !important;
+      }
+      ha-card {
+        width: var(--lg_size_climate_power) !important;
+        height: var(--lg_size_climate_power) !important;
+        border-radius: 50% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      #card {
+        position: relative;
+        width: var(--lg_size_climate_power);
+        height: var(--lg_size_climate_power);
+        border-radius: 50%;
+        background: ${on ? 'rgba(255, 255, 255, 0.22)' : 'var(--lg_color_climate_chip_idle)'};
+        box-shadow: ${on ? glow : 'none'};
+        cursor: pointer;
+      }
+      #icon {
+        color: ${on ? color : 'var(--lg_color_climate_off)'} !important;
+        --mdc-icon-size: clamp(1.125rem, 1.6vw, 1.375rem);
+      }
+      #name, #label, #state { display: none !important; }
+        `;
+      ]]]
+
+  climate_thermostat:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: none
+    variables:
+      min_temp: 16
+      max_temp: 32
+      temp_step: 1
+    extra_styles: |
+      [[[
+        const mode = entity ? entity.state : 'off';
+        const accent =
+          mode === 'heat' ? 'var(--lg_color_climate_heat)' :
+          mode === 'cool' ? 'var(--lg_color_climate_cool)' :
+          mode === 'dry' ? 'var(--lg_color_climate_dry)' :
+          mode === 'fan_only' ? 'var(--lg_color_climate_fan)' :
+          mode === 'auto' ? 'var(--lg_color_climate_auto)' :
+          'var(--lg_color_climate_off)';
+        const glow =
+          mode === 'heat' ? 'var(--lg_glow_climate_heat)' :
+          mode === 'cool' ? 'var(--lg_glow_climate_cool)' :
+          'none';
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+        box-sizing: border-box;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas:
+          "caption caption caption caption caption"
+          "dec hero hero hero inc"
+          "mc mh ma mf md"
+          "fa fl fm fh fh"
+          "so sv power power power" !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        grid-template-rows: auto auto auto auto auto !important;
+        justify-items: center !important;
+        align-items: center !important;
+        row-gap: var(--lg_space_climate_gap) !important;
+        column-gap: var(--lg_space_gap_xs) !important;
+        padding: var(--lg_space_climate_pad) !important;
+        box-sizing: border-box !important;
+      }
+      #card {
+        position: relative;
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid);
+        background: transparent;
+        box-shadow: ${glow};
+        overflow: visible;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #caption { grid-area: caption; width: 100%; }
+      #dec { grid-area: dec; justify-self: end; }
+      #hero { grid-area: hero; }
+      #inc { grid-area: inc; justify-self: start; }
+      #mode_cool { grid-area: mc; }
+      #mode_heat { grid-area: mh; }
+      #mode_auto { grid-area: ma; }
+      #mode_fan { grid-area: mf; }
+      #mode_dry { grid-area: md; }
+      #fan_auto { grid-area: fa; }
+      #fan_low { grid-area: fl; }
+      #fan_medium { grid-area: fm; }
+      #fan_high { grid-area: fh; }
+      #swing_off { grid-area: so; }
+      #swing_vertical { grid-area: sv; }
+      #power { grid-area: power; justify-self: end; }
+      .lg-climate-caption {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: baseline;
+        gap: var(--lg_space_gap_xs);
+        width: 100%;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_caption_size);
+        opacity: 0.72;
+        text-align: center;
+      }
+      .lg-climate-caption__mode {
+        color: ${accent};
+        opacity: 1;
+        font-weight: var(--lg_font_title_weight);
+      }
+      .lg-climate-hero {
+        color: ${accent};
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_temp_size);
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        text-align: center;
+        -webkit-font-smoothing: var(--lg_font_smoothing);
+      }
+        `;
+      ]]]
+    custom_fields:
+      caption: |
+        [[[
+          const modeLabels = {
+            off: 'Вимк',
+            cool: 'Холод',
+            heat: 'Тепло',
+            dry: 'Сушка',
+            fan_only: 'Вентилятор',
+            auto: 'Авто',
+          };
+          const cur = entity && entity.attributes
+            ? entity.attributes.current_temperature
+            : null;
+          const mode = entity ? entity.state : 'off';
+          const ambient = (cur === 0 || cur) ? `${cur}° зараз` : '—';
+          const label = modeLabels[mode] || mode;
+          return `<div class="lg-climate-caption"><span>${ambient}</span><span class="lg-climate-caption__mode">· ${label}</span></div>`;
+        ]]]
+      hero: |
+        [[[
+          const t = entity && entity.attributes
+            ? entity.attributes.temperature
+            : null;
+          const display = (t === 0 || t) ? t : '–';
+          return `<div class="lg-climate-hero">${display}°</div>`;
+        ]]]
+      dec:
+        card:
+          type: custom:button-card
+          template: climate_temp_btn
+          entity: "[[[ return entity.entity_id ]]]"
+          icon: mdi:minus
+          variables:
+            delta: -1
+            min_temp: "[[[ return variables.min_temp ]]]"
+            max_temp: "[[[ return variables.max_temp ]]]"
+            temp_step: "[[[ return variables.temp_step ]]]"
+      inc:
+        card:
+          type: custom:button-card
+          template: climate_temp_btn
+          entity: "[[[ return entity.entity_id ]]]"
+          icon: mdi:plus
+          variables:
+            delta: 1
+            min_temp: "[[[ return variables.min_temp ]]]"
+            max_temp: "[[[ return variables.max_temp ]]]"
+            temp_step: "[[[ return variables.temp_step ]]]"
+      mode_cool:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Холод
+          variables:
+            mode: cool
+      mode_heat:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Тепло
+          variables:
+            mode: heat
+      mode_auto:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Авто
+          variables:
+            mode: auto
+      mode_fan:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Вент.
+          variables:
+            mode: fan_only
+      mode_dry:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Сушка
+          variables:
+            mode: dry
+      fan_auto:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Авто
+          variables:
+            attrib: fan_mode
+            value: auto
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_low:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Тихий
+          variables:
+            attrib: fan_mode
+            value: low
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_medium:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Сер.
+          variables:
+            attrib: fan_mode
+            value: medium
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_high:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Сильн.
+          variables:
+            attrib: fan_mode
+            value: high
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      swing_off:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Вимк
+          variables:
+            attrib: swing_mode
+            value: off
+            service: climate.set_swing_mode
+            data_key: swing_mode
+      swing_vertical:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return entity.entity_id ]]]"
+          name: Вертик.
+          variables:
+            attrib: swing_mode
+            value: vertical
+            service: climate.set_swing_mode
+            data_key: swing_mode
+      power:
+        card:
+          type: custom:button-card
+          template: climate_power_btn
+          entity: "[[[ return entity.entity_id ]]]"
+
+  climate_floor_off_button:
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:snowflake-off
+    variables:
+      ha_entity_ids: []
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_floor_btn_h);
+        max-height: var(--lg_size_floor_btn_h);
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        justify-self: stretch !important;
+        box-sizing: border-box;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_floor_btn_w)) !important;
+        max-width: min(100%, var(--lg_size_floor_btn_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_floor_btn_h) !important;
+        max-height: var(--lg_size_floor_btn_h) !important;
+        min-height: var(--lg_size_floor_btn_h) !important;
+        aspect-ratio: unset !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_distort_shell_extra_styles() }}
+      {{ lg_floor_disable_layout_extra_styles() }}
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: climate.turn_off
+      target: |
+        [[[
+          const ids = variables.ha_entity_ids;
+          if (Array.isArray(ids) && ids.length) return { entity_id: ids };
+          return {};
+        ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  climate_house_off_button:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:snowflake-off
+    variables:
+      ha_entity_ids: []
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: climate.turn_off
+      target: |
+        [[[
+          const ids = variables.ha_entity_ids;
+          if (Array.isArray(ids) && ids.length) return { entity_id: ids };
+          return {};
+        ]]]
+    extra_styles: |
+      {{ lg_tab_side_btn_layout_extra_styles(disabled=false) }}
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_side_btn);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab_side_btn));
+        pointer-events: none;
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+    state: []

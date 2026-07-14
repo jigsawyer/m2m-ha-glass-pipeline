@@ -1,0 +1,5 @@
+{# Climate thermostat — thin instance (Hisense / climate domain) #}
+type: custom:button-card
+template: climate_thermostat
+entity: {{ entity_id }}
+name: {{ name }}

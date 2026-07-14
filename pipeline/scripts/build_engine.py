@@ -220,12 +220,26 @@ def wrap_floor_tab_row(tab_yaml, left_yaml=None, right_yaml=None):
     )
 
 
-def compile_hierarchical_view(env, hardware_map, content_map, view_def, room_content, names):
-    """Compile floor_tab_switch + per-floor wrapped room trees."""
+def compile_hierarchical_view(
+    env,
+    hardware_map,
+    content_map,
+    view_def,
+    room_content,
+    names,
+    floor_actions_map=None,
+):
+    """Compile floor_tab_switch + per-floor wrapped room trees.
+
+    Per-view overrides on view_def:
+      - floor_tab_flankers: replace layout_containers.floor_tab_flankers
+    floor_actions_map defaults to content_map["floor_actions"].
+    """
     floor_names, room_names = names
     floors = view_def["include_floors"]
     layout = content_map.get("layout_containers", {})
-    floor_actions_map = content_map.get("floor_actions", {})
+    if floor_actions_map is None:
+        floor_actions_map = content_map.get("floor_actions", {})
 
     floor_wrapper = layout.get("floor_wrapper", "floor_container")
     room_wrapper = layout.get("room_wrapper", "room_container")
@@ -248,7 +262,11 @@ def compile_hierarchical_view(env, hardware_map, content_map, view_def, room_con
                 "both floors will render; tab state will not drive visibility"
             )
         tab_yaml = render_component(env, hardware_map, switch_def)
-        flankers = layout.get("floor_tab_flankers") or {}
+        flankers = (
+            view_def.get("floor_tab_flankers")
+            if "floor_tab_flankers" in view_def
+            else layout.get("floor_tab_flankers")
+        ) or {}
         left_def = flankers.get("left")
         right_def = flankers.get("right")
         left_yaml = (
@@ -517,7 +535,8 @@ def build_dashboard(dashboard_id):
     routing = content_map.get("routing", {})
     spa_mode = routing.get("mode") == "spa"
     spa_views = routing.get("views", [])
-    room_content = content_map.get("room_content", {})
+    default_room_content = content_map.get("room_content", {})
+    default_floor_actions = content_map.get("floor_actions", {})
 
     print("[2/4] Compiling Views...")
     generated_views = []
@@ -526,10 +545,30 @@ def build_dashboard(dashboard_id):
         for view_def in spa_views:
             view_path = view_def.get("path", "home")
             view_title = view_def.get("title", "Home")
+            content_key = view_def.get("content_key", "room_content")
+            room_content = content_map.get(content_key, {})
+            if content_key != "room_content" and not room_content:
+                print(
+                    f"FATAL_EXCEPTION: view '{view_path}' content_key "
+                    f"'{content_key}' missing or empty in content map"
+                )
+                exit(1)
+            if content_key == "room_content" and not room_content:
+                room_content = default_room_content
+            floor_actions_key = view_def.get("floor_actions_key", "floor_actions")
+            floor_actions_map = content_map.get(
+                floor_actions_key, default_floor_actions
+            )
 
             if "include_floors" in view_def:
                 card_blocks = compile_hierarchical_view(
-                    env, hardware_map, content_map, view_def, room_content, names
+                    env,
+                    hardware_map,
+                    content_map,
+                    view_def,
+                    room_content,
+                    names,
+                    floor_actions_map=floor_actions_map,
                 )
                 strategy = "floors"
                 floor_count = len(view_def["include_floors"])

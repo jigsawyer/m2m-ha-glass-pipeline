@@ -28,7 +28,27 @@
       {
         "path": "klimat",
         "title": "Клімат",
-        "include_rooms": []
+        "content_key": "climate_room_content",
+        "floor_actions_key": "climate_floor_actions",
+        "include_floors": {
+          "floor_1": ["kabinet"],
+          "floor_2": ["spalnia"]
+        },
+        "floor_tab_flankers": {
+          "left": {
+            "template_ref": "floor_voice_placeholder",
+            "custom_props": {}
+          },
+          "right": {
+            "template_ref": "climate_house_off_button",
+            "custom_props": {
+              "ha_entity_ids": [
+                "climate.konditsioner_kabinet",
+                "climate.konditsioner_spalnya"
+              ]
+            }
+          }
+        }
       }
     ]
   },
@@ -380,6 +400,44 @@
         "custom_props": {
           "icon": "mdi:lightbulb"
         }
+      }
+    ]
+  },
+  "climate_floor_actions": {
+    "floor_1": [
+      {
+        "logical_id": "kabinet_ac",
+        "template_ref": "climate_floor_off_button",
+        "label": "Вимкнути клімат поверху",
+        "custom_props": {
+          "ha_entity_ids": ["climate.konditsioner_kabinet"]
+        }
+      }
+    ],
+    "floor_2": [
+      {
+        "logical_id": "spalnia_ac",
+        "template_ref": "climate_floor_off_button",
+        "label": "Вимкнути клімат поверху",
+        "custom_props": {
+          "ha_entity_ids": ["climate.konditsioner_spalnya"]
+        }
+      }
+    ]
+  },
+  "climate_room_content": {
+    "kabinet": [
+      {
+        "logical_id": "kabinet_ac",
+        "template_ref": "climate_thermostat",
+        "label": "Кондиціонер"
+      }
+    ],
+    "spalnia": [
+      {
+        "logical_id": "spalnia_ac",
+        "template_ref": "climate_thermostat",
+        "label": "Кондиціонер"
       }
     ]
   }
