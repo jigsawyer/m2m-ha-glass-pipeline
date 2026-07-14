@@ -1,9 +1,28 @@
 {
   "target_dashboard": "svitlo",
-  "intent_class": "STRUCTURAL",
-  "target_agent": "@architect",
+  "intent_class": "STYLISTIC",
+  "target_agent": "@stylist",
   "payload": {
-    "action_summary": "Rename SPA view title Home → Світло; add empty Клімат view (path klimat, include_rooms: [])",
-    "requested_entities": []
+    "action_summary": "Emit liquid_glass theme under modes.dark so HA darkMode=true; set ha-color-form-background for ha-picker-field legibility",
+    "requested_entities": [],
+    "preserve_behavior": [
+      "floor room mosaic (custom:masonry-layout on rooms-only shell)",
+      "disable-floor header full width sibling above mosaic",
+      "room switch stack (1-column inside room)",
+      "dashboard card liquid glass unchanged (ha-card-background stays transparent)",
+      "dialog/menu opaque chrome tokens retained"
+    ]
+  },
+  "constraints": {
+    "tokens_and_button_card_templates_only": true,
+    "allow_template_layout_edit": false
+  },
+  "evidence": {
+    "probe": "profile/general",
+    "darkMode": false,
+    "selectedThemeDark": true,
+    "hasModesDark": false,
+    "formBg": "#f3f3f3",
+    "primaryText": "rgb(255, 255, 255)"
   }
 }
