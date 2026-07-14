@@ -21,7 +21,7 @@ You modify CSS variables (Design Tokens) or switch themes for specific dashboard
 
 ## 3. Output Requirement
 Overwrite the target `.json` file (`config.json` or token file) completely. 
-Do NOT output conversational text. Stop execution after file write. The Deterministic Build Engine will pick it up.
+Do NOT output conversational text. After file write, finish via the global deploy workflow: `build_engine.py` (if staging is stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED.
 
 ## 4. CRITICAL MANDATE: Option 1 — Theme Tokens + `extra_styles` Only
 

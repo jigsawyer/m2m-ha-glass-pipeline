@@ -24,6 +24,7 @@ All operations are strictly decoupled using the Separation of Concerns (SoC) pat
   - `design_system/` dictates HOW it looks (Tokens & Templates).
   - You NEVER mix these domains.
 - **Determinism:** We do NOT use AI for predictable tasks. YAML generation, file packing, and deployment are handled by deterministic scripts, not agents.
+- **Deploy workflow (ALL agents — MANDATORY):** After completing work, the only allowed deploy path is: (1) ensure staging is built via `python pipeline/scripts/build_engine.py` when staging is stale/missing, then (2) run `pipeline/scripts/publish_edge.sh`. This is the **only** deploy we have. **Manual deploy is NOT ALLOWED** (no `deploy/manual_deploy.sh`, no SSH copies, no ad-hoc pushes, no alternative deploy scripts).
 - **Fluid Glassmorphism UI:** Hardcoded pixels (`px`) are PROHIBITED in theme/CSS tokens. Use ONLY `rem`, `%`, `vh`, `vw`, `aspect-ratio`. Exception: layout-card masonry `width` / `max_width` / `max_cols` are bare numbers required by the plugin (`Math.floor`). Layouts rely on CSS Grid and Flexbox.
 - **Floor mosaic SoT:** Rooms-only `custom:masonry-layout` (shortest-column dense packing; `width` / `max_width` / `max_cols` / `card_margin` from `lg_masonry_*` tokens — `max_width` MUST equal `width`). Disable-floor header is a sibling **above** the mosaic on an outer `custom:grid-layout` `1fr` stack with `grid-gap: var(--lg_space_gap_header_mosaic)` (not inside the mosaic — avoids header/`grid-column` conflict). Never put `flex-*` / `display` / arbitrary width keys in `grid-layout` `layout:` or `view_layout` (plugin ignores them; only `grid*` / `place-items` / `place-content` / card `grid*`+`place-self` apply). Do not set `#content > layout-card { display:flex; flex-wrap }` as the mosaic engine (shrink-wraps inner root). See `build/reports/floor_mosaic_handoff.md` (masonry dense packing vs Phase 5 grid auto-fit).
 - **Premium layout / safety (Apple-like rhythm):**
@@ -50,9 +51,9 @@ You must respect Domain boundaries. Never write outside your permitted scope.
    - `global_spatial_topology.json` -> Physical building skeleton.
    - `dashboards/{target}/local_content_map.json` -> View projections (Widgets per room).
    - `dashboards/{target}/config.json` -> Theme and metadata.
-4. **Domain 4: Ephemeral Output (`build/` & `deploy/`)**
+4. **Domain 4: Ephemeral Output (`build/`)**
    - `staging/` -> Generated YAMLs (overwritten every run).
-   - `deploy/atomic_push.sh` -> Deployment script.
+   - `pipeline/scripts/publish_edge.sh` -> **Only** allowed deploy script (force-publishes staging to `edge-state`).
 
 ---
 
@@ -82,8 +83,7 @@ We use only THREE intelligent agents. Their roles are strictly scoped. Do NOT cr
 
 ## 4. Deterministic Execution Engine (No-AI Zone)
 
-Once the AI Trinity completes State Mutation, the AI stops. 
-The final build is handled by a local Deterministic Engine (`pipeline/scripts/build_engine.py`).
+Once the AI Trinity completes State Mutation, the agent finishes with the deterministic build + edge publish — not with a manual handoff.
 
-- **Process:** The script reads `local_content_map.json`, maps it against `global_hardware_map.json`, injects values into `design_system/templates/`, and outputs a multi-file HA native YAML structure to `build/staging/`.
-- **Deploy:** Handled manually or via CI/CD using `deploy/atomic_push.sh`. Agents DO NOT execute SSH commands.
+- **Process:** `pipeline/scripts/build_engine.py` reads `local_content_map.json`, maps it against `global_hardware_map.json`, injects values into `design_system/templates/`, and outputs a multi-file HA native YAML structure to `build/staging/`.
+- **Deploy (ALL agents):** After work is done, run `pipeline/scripts/publish_edge.sh` (after `build_engine.py` if staging needs refresh). This is the sole deploy path. **Manual deploy is NOT ALLOWED.** Do not use `deploy/manual_deploy.sh`, SSH-based copies, or any other deploy mechanism.

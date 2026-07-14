@@ -17,7 +17,7 @@ You manipulate `local_content_map.json` to define which devices appear in which 
 
 ## 3. Output Requirement
 You overwrite the target `local_content_map.json` completely with valid, formatted JSON. 
-Do NOT trigger deployment scripts. Stop execution after file write. The Deterministic Build Engine will pick it up.
+After file write, finish via the global deploy workflow: `build_engine.py` (if staging is stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED.
 
 
 **CRITICAL: Do NOT inject inline CSS/styles into component templates. You MUST extract all visual parameters into a global button_card_templates dictionary. Component templates (like button_primitive.jinja2) must be updated to be Thin Instances that only reference the base template name and entity state.
