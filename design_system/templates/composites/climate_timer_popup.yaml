@@ -1,0 +1,415 @@
+{#- Klimat AC timer Bubble pop-up (duration + clock).
+   View Independence: phone Force Native wheels; desktop dual HACS sliders.
+   Docs: Clooos/Bubble-Card#pop-up; HA conditional screen; mattieha/slider-button-card.
+   analyzer.mdc §2.8: centered + hug-content + symmetric inset + floor_container glass CSS.
+   Phone width: Bubble styles.css centered uses calc(100vw - 32px); token = calc(100vw - 2rem).
+   layout-card grid.ts ignores width/max-width/box-sizing — only grid*/margin/padding/height. -#}
+{%- set props = custom_props | default({}) -%}
+{%- set timer_id = props.timer_entity_id | default('') -%}
+{%- set clock_id = props.clock_entity_id | default('') -%}
+{%- set armed_id = props.armed_entity_id | default('') -%}
+type: custom:bubble-card
+card_type: pop-up
+hash: "{{ props.popup_hash }}"
+name: Встановити таймер
+icon: mdi:timer-outline
+show_header: true
+show_close_button: true
+popup_mode: centered
+width_desktop: var(--lg_size_climate_timer_popup_w)
+bg_color: rgb(255, 255, 255)
+bg_opacity: 28
+bg_blur: 48
+shadow_opacity: 30
+close_by_clicking_outside: true
+styles: |
+  :host {
+    --bubble-pop-up-background-color: var(--lg_color_glass_fill);
+    --bubble-pop-up-main-background-color: var(--lg_color_glass_fill);
+    --bubble-pop-up-border-radius: var(--lg_radius_room);
+    --paper-item-icon-color: var(--lg_color_text);
+    --paper-item-icon-active-color: var(--lg_color_text);
+    --icon-primary-color: var(--lg_color_text);
+    --state-icon-color: var(--lg_color_text);
+    --primary-color: var(--lg_color_text);
+  }
+  .bubble-pop-up.popup-mode-centered:not(.editor) {
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    transition: var(--lg_transition_climate_timer_popup_open) !important;
+  }
+  .bubble-pop-up.popup-mode-centered.is-closing:not(.editor) {
+    transition: var(--lg_transition_climate_timer_popup_close) !important;
+  }
+  .bubble-pop-up.popup-mode-centered:not(.editor) .bubble-pop-up-container,
+  .bubble-pop-up.popup-mode-centered:not(.editor) .bubble-pop-up-background,
+  .bubble-pop-up.popup-mode-centered:not(.editor) .bubble-header-container,
+  .bubble-pop-up.popup-mode-centered:not(.editor) .bubble-header {
+    overflow: visible !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  @media (max-width: 48rem) {
+    .bubble-pop-up.popup-mode-centered:not(.editor) {
+      width: var(--lg_size_climate_timer_popup_w_phone) !important;
+      min-width: 0 !important;
+      max-width: var(--lg_size_climate_timer_popup_w_phone) !important;
+    }
+  }
+  .bubble-header {
+    min-width: 0 !important;
+    gap: var(--lg_space_gap_sm) !important;
+    margin-right: var(--lg_space_gap_sm) !important;
+  }
+  .bubble-header-actions {
+    gap: var(--lg_space_gap_sm) !important;
+  }
+  .bubble-header .bubble-icon-container,
+  .bubble-header-actions .bubble-close-button,
+  .bubble-header-actions .bubble-header-action-button {
+    width: var(--lg_size_climate_timer_bar_h) !important;
+    height: var(--lg_size_climate_timer_bar_h) !important;
+    min-width: var(--lg_size_climate_timer_bar_h) !important;
+    min-height: var(--lg_size_climate_timer_bar_h) !important;
+    flex-shrink: 0 !important;
+  }
+  .bubble-name {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    line-height: 1.25 !important;
+  }
+  .bubble-header .bubble-background,
+  .bubble-header .bubble-button-card-container,
+  .bubble-header .bubble-icon-container,
+  .bubble-header-actions .bubble-close-button,
+  .bubble-header-actions .bubble-header-action-button {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    filter: none !important;
+  }
+  .bubble-header .bubble-icon-container,
+  .bubble-header-actions .bubble-close-button {
+    color: var(--lg_color_text) !important;
+  }
+  .bubble-name,
+  .bubble-icon,
+  .bubble-header-action-icon {
+    color: var(--lg_color_text) !important;
+  }
+  .bubble-header-action-icon svg {
+    fill: var(--lg_color_text) !important;
+  }
+  ${
+    (() => {
+      const idle = 'Встановити таймер';
+      const fmt = (hh, mm) => `Кондиціонер вимкнеться о: ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+      const timerId = '{{ timer_id }}';
+      const clockId = '{{ clock_id }}';
+      const armedId = '{{ armed_id }}';
+      let title = idle;
+      const timer = timerId ? hass.states[timerId] : null;
+      if (timer && (timer.state === 'active' || timer.state === 'paused')) {
+        const fin = timer.attributes && timer.attributes.finishes_at;
+        if (!fin) {
+          title = 'Кондиціонер вимкнеться о: …';
+        } else {
+          const d = new Date(fin);
+          title = Number.isNaN(d.getTime()) ? 'Кондиціонер вимкнеться о: …' : fmt(d.getHours(), d.getMinutes());
+        }
+      } else if (armedId && clockId && hass.states[armedId] && hass.states[armedId].state === 'on') {
+        const clock = hass.states[clockId];
+        if (clock && clock.state) {
+          const parts = String(clock.state).split(':');
+          title = parts.length >= 2 ? fmt(parts[0], parts[1]) : 'Кондиціонер вимкнеться о: …';
+        } else {
+          title = 'Кондиціонер вимкнеться о: …';
+        }
+      }
+      const el = card.querySelector('.bubble-name');
+      if (el) el.innerText = title;
+    })()
+  }
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "minmax(0, 1fr)"
+      grid-gap: "var(--lg_space_gap_sm)"
+      margin: "0"
+      padding: "var(--lg_space_popup_inset)"
+    cards:
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: "minmax(0, 1fr) minmax(0, 1fr)"
+          grid-gap: "var(--lg_space_gap_sm)"
+          margin: "0"
+          padding: "0"
+        cards:
+          - type: custom:button-card
+            template: climate_timer_mode_btn
+            entity: {{ props.mode_entity_id }}
+            name: Тривалість
+            variables:
+              option: duration
+          - type: custom:button-card
+            template: climate_timer_mode_btn
+            entity: {{ props.mode_entity_id }}
+            name: За часом
+            variables:
+              option: clock
+
+      - type: conditional
+        conditions:
+          - condition: and
+            conditions:
+              - condition: state
+                entity: {{ props.mode_entity_id }}
+                state: "duration"
+              - condition: screen
+                media_query: "(max-width: 48rem)"
+        card:
+          type: custom:button-card
+          template: climate_timer_duration_picker
+          entity: {{ props.hours_entity_id }}
+          triggers_update:
+            - {{ props.minutes_entity_id }}
+          variables:
+            minutes_entity_id: {{ props.minutes_entity_id }}
+
+      - type: conditional
+        conditions:
+          - condition: and
+            conditions:
+              - condition: state
+                entity: {{ props.mode_entity_id }}
+                state: "duration"
+              - condition: screen
+                media_query: "(min-width: 48.0625rem)"
+        card:
+          type: custom:button-card
+          template: climate_timer_dual_slider
+          entity: {{ props.hours_entity_id }}
+          triggers_update:
+            - {{ props.minutes_entity_id }}
+          variables:
+            minutes_entity_id: {{ props.minutes_entity_id }}
+            hours_label: "Години"
+            minutes_label: "Хвилини"
+
+      - type: conditional
+        conditions:
+          - condition: and
+            conditions:
+              - condition: state
+                entity: {{ props.mode_entity_id }}
+                state: "clock"
+              - condition: screen
+                media_query: "(max-width: 48rem)"
+        card:
+          type: custom:button-card
+          template: climate_timer_clock_picker
+          entity: {{ props.clock_entity_id }}
+          triggers_update:
+            - {{ props.clock_hour_entity_id }}
+            - {{ props.clock_minute_entity_id }}
+          variables:
+            clock_hour_entity_id: {{ props.clock_hour_entity_id }}
+            clock_minute_entity_id: {{ props.clock_minute_entity_id }}
+
+      - type: conditional
+        conditions:
+          - condition: and
+            conditions:
+              - condition: state
+                entity: {{ props.mode_entity_id }}
+                state: "clock"
+              - condition: screen
+                media_query: "(min-width: 48.0625rem)"
+        card:
+          type: custom:button-card
+          template: climate_timer_dual_slider
+          entity: {{ props.clock_hour_entity_id }}
+          triggers_update:
+            - {{ props.clock_minute_entity_id }}
+            - {{ props.clock_entity_id }}
+          variables:
+            minutes_entity_id: {{ props.clock_minute_entity_id }}
+            hours_label: "Години"
+            minutes_label: "Хвилини"
+            seed_clock_entity_id: {{ props.clock_entity_id }}
+
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: {{ props.mode_entity_id }}
+            state: "duration"
+        card:
+          type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: "minmax(0, 1fr) minmax(0, 1fr)"
+            grid-gap: "var(--lg_space_gap_sm)"
+            margin: "0"
+            padding: "0"
+          cards:
+            - type: custom:button-card
+              template: climate_timer_action_btn
+              name: Зберегти
+              # Fresh > previous: pass live picker HH:MM as duration; omit → helpers.
+              tap_action: |
+                [[[
+                  const scriptId = '{{ props.save_duration_script_id }}';
+                  const parseHHMM = (s) => {
+                    if (!s) return null;
+                    const m = String(s).trim().match(/^(\d{1,2}):(\d{2})/);
+                    if (!m) return null;
+                    const h = Math.min(23, Math.max(0, parseInt(m[1], 10) || 0));
+                    const min = Math.min(59, Math.max(0, parseInt(m[2], 10) || 0));
+                    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:00`;
+                  };
+                  const readFresh = (root) => {
+                    if (!root) return null;
+                    let found = null;
+                    const visit = (r) => {
+                      if (!r || found) return;
+                      const q = r.querySelectorAll ? r.querySelectorAll(
+                        '.lg-climate-timer-duration__display, .lg-climate-timer-duration__overlay, .lg-climate-timer-duration__input'
+                      ) : [];
+                      for (const el of q) {
+                        if (el.classList && el.classList.contains('lg-climate-timer-duration__display')) {
+                          found = parseHHMM(el.textContent);
+                        } else if (el.value) {
+                          found = parseHHMM(el.value);
+                        }
+                        if (found) return;
+                      }
+                      const all = r.querySelectorAll ? r.querySelectorAll('*') : [];
+                      for (const el of all) {
+                        if (el.shadowRoot) visit(el.shadowRoot);
+                        if (found) return;
+                      }
+                    };
+                    visit(root);
+                    return found;
+                  };
+                  const composedParent = (el) => {
+                    if (!el) return null;
+                    if (el.parentElement) return el.parentElement;
+                    const rn = el.getRootNode && el.getRootNode();
+                    return (rn && rn.host) || null;
+                  };
+                  let fresh = null;
+                  let scope = this;
+                  for (let i = 0; i < 48 && scope && !fresh; i++) {
+                    fresh = readFresh(scope.shadowRoot || scope);
+                    if (!fresh) fresh = readFresh(scope);
+                    scope = composedParent(scope);
+                  }
+                  const svc = (scriptId || '').replace(/^script\./, '');
+                  const out = {
+                    action: 'call-service',
+                    service: svc ? `script.${svc}` : 'script.turn_on',
+                  };
+                  if (fresh) out.data = { duration: fresh };
+                  return out;
+                ]]]
+            - type: custom:button-card
+              template: climate_timer_action_btn
+              name: Скасувати
+              tap_action:
+                action: navigate
+                navigation_path: klimat
+
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: {{ props.mode_entity_id }}
+            state: "clock"
+        card:
+          type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: "minmax(0, 1fr) minmax(0, 1fr)"
+            grid-gap: "var(--lg_space_gap_sm)"
+            margin: "0"
+            padding: "0"
+          cards:
+            - type: custom:button-card
+              template: climate_timer_action_btn
+              name: Зберегти
+              # Fresh > previous: pass live picker HH:MM as off_time; omit → helpers.
+              tap_action: |
+                [[[
+                  const scriptId = '{{ props.save_clock_script_id }}';
+                  const parseHHMM = (s) => {
+                    if (!s) return null;
+                    const m = String(s).trim().match(/^(\d{1,2}):(\d{2})/);
+                    if (!m) return null;
+                    const h = Math.min(23, Math.max(0, parseInt(m[1], 10) || 0));
+                    const min = Math.min(59, Math.max(0, parseInt(m[2], 10) || 0));
+                    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:00`;
+                  };
+                  const readFresh = (root) => {
+                    if (!root) return null;
+                    let found = null;
+                    const visit = (r) => {
+                      if (!r || found) return;
+                      const q = r.querySelectorAll ? r.querySelectorAll(
+                        '.lg-climate-timer-clock__display, .lg-climate-timer-clock__overlay, .lg-climate-timer-clock__input'
+                      ) : [];
+                      for (const el of q) {
+                        if (el.classList && el.classList.contains('lg-climate-timer-clock__display')) {
+                          found = parseHHMM(el.textContent);
+                        } else if (el.value) {
+                          found = parseHHMM(el.value);
+                        }
+                        if (found) return;
+                      }
+                      const all = r.querySelectorAll ? r.querySelectorAll('*') : [];
+                      for (const el of all) {
+                        if (el.shadowRoot) visit(el.shadowRoot);
+                        if (found) return;
+                      }
+                    };
+                    visit(root);
+                    return found;
+                  };
+                  const composedParent = (el) => {
+                    if (!el) return null;
+                    if (el.parentElement) return el.parentElement;
+                    const rn = el.getRootNode && el.getRootNode();
+                    return (rn && rn.host) || null;
+                  };
+                  let fresh = null;
+                  let scope = this;
+                  for (let i = 0; i < 48 && scope && !fresh; i++) {
+                    fresh = readFresh(scope.shadowRoot || scope);
+                    if (!fresh) fresh = readFresh(scope);
+                    scope = composedParent(scope);
+                  }
+                  const svc = (scriptId || '').replace(/^script\./, '');
+                  const out = {
+                    action: 'call-service',
+                    service: svc ? `script.${svc}` : 'script.turn_on',
+                  };
+                  if (fresh) out.data = { off_time: fresh };
+                  return out;
+                ]]]
+            - type: custom:button-card
+              template: climate_timer_action_btn
+              name: Скасувати
+              tap_action:
+                action: navigate
+                navigation_path: klimat
+
+      - type: custom:button-card
+        template: climate_timer_remove_btn
+        name: Видалити таймер
+        variables:
+          remove_script_id: "{{ props.remove_script_id }}"

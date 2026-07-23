@@ -1,9 +1,33 @@
 {# Floor shell: title + header sibling + rooms-only masonry mosaic #}
 {# masonry-layout packs rooms into shortest columns (dense); grid-layout cannot #}
 {# width/max_width/max_cols are bare numbers — plugin Math.floor; max_width MUST = width #}
+{# Empty name → untitled mosaic (floor_presentation: flat) #}
+{# View Independence (pipeline/agents/analyzer.mdc §0d / global.mdc — GLOBAL rule,
+   every dashboard): this is the generic floor shell used by svitlo/home and every
+   other non-climate dashboard, present and future. masonry-layout self-declares
+   --column-width on its OWN shadow host (base-column-layout.ts firstUpdated()),
+   below button-card's #content — CSS from button_card_templates.yaml can never
+   reach in and override it per-breakpoint. Because the plugin only accepts ONE
+   bare width/max_width/max_cols number, iPhone and Desktop CANNOT safely share
+   that single literal — a Desktop-motivated width bump would silently change the
+   iPhone track too (this is exactly what broke Klimat iPhone centering).
+   Fix: render TWO fully independent masonry-layout instances — one sized for
+   phone, one for desktop — and let HA's native `screen` condition (conditional
+   card, docs: https://www.home-assistant.io/dashboards/conditional/) pick exactly
+   one at render time. SoT: lg_masonry_col_width_phone / _max_width_phone /
+   _max_cols_phone and the _desktop siblings (design_system/tokens/
+   liquid_glass_v1.0.json) — keep these bare numbers in sync with the token
+   comments there; the plugin config below cannot read the JSON token directly
+   (bare-number Math.floor requirement, no {{ token }} interpolation possible for
+   var()-typed CSS values). #}
 type: custom:button-card
 template: floor_container
+{% if name -%}
 name: {{ name }}
+show_name: true
+{% else -%}
+show_name: false
+{% endif -%}
 custom_fields:
   content:
     card:
@@ -27,15 +51,39 @@ custom_fields:
           cards:
 {{ header_cards | yaml_cards(12) }}
 {%- endif %}
-        - type: custom:layout-card
-          layout_type: custom:masonry-layout
-          layout:
-            width: 282
-            max_width: 282
-            max_cols: 6
-            min_height: 1
-            card_margin: "var(--lg_masonry_card_margin)"
-            margin: "0"
-            padding: "0"
-          cards:
-{{ cards | yaml_cards(12) }}
+        - type: conditional
+          conditions:
+            - condition: screen
+              media_query: "(max-width: 48rem)"
+          card:
+            type: custom:layout-card
+            layout_type: custom:masonry-layout
+            layout:
+              # lg_masonry_col_width_phone / _max_width_phone / _max_cols_phone
+              width: 282
+              max_width: 282
+              max_cols: 1
+              min_height: 1
+              card_margin: "var(--lg_masonry_card_margin)"
+              margin: "0"
+              padding: "0"
+            cards:
+{{ cards | yaml_cards(14) }}
+        - type: conditional
+          conditions:
+            - condition: screen
+              media_query: "(min-width: 48.0625rem)"
+          card:
+            type: custom:layout-card
+            layout_type: custom:masonry-layout
+            layout:
+              # lg_masonry_col_width_desktop / _max_width_desktop / _max_cols_desktop
+              width: 282
+              max_width: 282
+              max_cols: 6
+              min_height: 1
+              card_margin: "var(--lg_masonry_card_margin)"
+              margin: "0"
+              padding: "0"
+            cards:
+{{ cards | yaml_cards(14) }}

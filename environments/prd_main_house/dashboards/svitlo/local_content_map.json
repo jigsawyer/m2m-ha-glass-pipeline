@@ -30,6 +30,10 @@
         "title": "Клімат",
         "content_key": "climate_room_content",
         "floor_actions_key": "climate_floor_actions",
+        "floor_switch": false,
+        "floor_presentation": "flat",
+        "floor_wrapper": "climate_floor_container",
+        "room_wrapper": "climate_room_container",
         "include_floors": {
           "floor_1": ["kabinet"],
           "floor_2": ["spalnia"]
@@ -43,12 +47,50 @@
             "template_ref": "climate_house_off_button",
             "custom_props": {
               "ha_entity_ids": [
-                "climate.konditsioner_kabinet",
-                "climate.konditsioner_spalnya"
+                "climate.kabinet_konditsioner_kabinet",
+                "climate.spalnia_konditsioner_spalnia"
               ]
             }
           }
-        }
+        },
+        "extra_cards": [
+          {
+            "template_ref": "climate_timer_popup",
+            "label": "Таймер кабінет",
+            "custom_props": {
+              "popup_hash": "#klimat-timer-kabinet",
+              "timer_entity_id": "timer.kabinet_ac_sleep",
+              "armed_entity_id": "input_boolean.kabinet_ac_off_armed",
+              "mode_entity_id": "input_select.kabinet_ac_timer_mode",
+              "hours_entity_id": "input_number.kabinet_ac_timer_hours",
+              "minutes_entity_id": "input_number.kabinet_ac_timer_minutes",
+              "clock_entity_id": "input_datetime.kabinet_ac_off_at",
+              "clock_hour_entity_id": "input_number.kabinet_ac_off_hour",
+              "clock_minute_entity_id": "input_number.kabinet_ac_off_minute",
+              "save_duration_script_id": "script.kabinet_ac_timer_save_duration",
+              "save_clock_script_id": "script.kabinet_ac_timer_save_clock",
+              "remove_script_id": "script.kabinet_ac_timer_remove"
+            }
+          },
+          {
+            "template_ref": "climate_timer_popup",
+            "label": "Таймер спальня",
+            "custom_props": {
+              "popup_hash": "#klimat-timer-spalnia",
+              "timer_entity_id": "timer.spalnia_ac_sleep",
+              "armed_entity_id": "input_boolean.spalnia_ac_off_armed",
+              "mode_entity_id": "input_select.spalnia_ac_timer_mode",
+              "hours_entity_id": "input_number.spalnia_ac_timer_hours",
+              "minutes_entity_id": "input_number.spalnia_ac_timer_minutes",
+              "clock_entity_id": "input_datetime.spalnia_ac_off_at",
+              "clock_hour_entity_id": "input_number.spalnia_ac_off_hour",
+              "clock_minute_entity_id": "input_number.spalnia_ac_off_minute",
+              "save_duration_script_id": "script.spalnia_ac_timer_save_duration",
+              "save_clock_script_id": "script.spalnia_ac_timer_save_clock",
+              "remove_script_id": "script.spalnia_ac_timer_remove"
+            }
+          }
+        ]
       }
     ]
   },
@@ -410,7 +452,7 @@
         "template_ref": "climate_floor_off_button",
         "label": "Вимкнути клімат поверху",
         "custom_props": {
-          "ha_entity_ids": ["climate.konditsioner_kabinet"]
+          "ha_entity_ids": ["climate.kabinet_konditsioner_kabinet"]
         }
       }
     ],
@@ -420,7 +462,7 @@
         "template_ref": "climate_floor_off_button",
         "label": "Вимкнути клімат поверху",
         "custom_props": {
-          "ha_entity_ids": ["climate.konditsioner_spalnya"]
+          "ha_entity_ids": ["climate.spalnia_konditsioner_spalnia"]
         }
       }
     ]
@@ -430,14 +472,26 @@
       {
         "logical_id": "kabinet_ac",
         "template_ref": "climate_thermostat",
-        "label": "Кондиціонер"
+        "label": "Кондиціонер",
+        "custom_props": {
+          "timer_entity_id": "timer.kabinet_ac_sleep",
+          "clock_entity_id": "input_datetime.kabinet_ac_off_at",
+          "armed_entity_id": "input_boolean.kabinet_ac_off_armed",
+          "popup_hash": "#klimat-timer-kabinet"
+        }
       }
     ],
     "spalnia": [
       {
         "logical_id": "spalnia_ac",
         "template_ref": "climate_thermostat",
-        "label": "Кондиціонер"
+        "label": "Кондиціонер",
+        "custom_props": {
+          "timer_entity_id": "timer.spalnia_ac_sleep",
+          "clock_entity_id": "input_datetime.spalnia_ac_off_at",
+          "armed_entity_id": "input_boolean.spalnia_ac_off_armed",
+          "popup_hash": "#klimat-timer-spalnia"
+        }
       }
     ]
   }

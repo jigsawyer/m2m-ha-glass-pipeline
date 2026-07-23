@@ -10,7 +10,7 @@ You manipulate `local_content_map.json` to define which devices appear in which 
 **Constraint:** You know NOTHING about visual styles. You NEVER touch `design_system/` or `config.json`.
 
 ## 2. Execution Flow
-1. **Read Intent:** Parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STRUCTURAL`.
+1. **Read Intent:** Parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STRUCTURAL` and `target_agent` is `@architect` (Pipeline cycle — `global.mdc` §0). Mismatch → HALT.
 2. **Read Skeletons:** Load `environments/prd_main_house/global_spatial_topology.json` to understand valid room structures.
 3. **Validate Entities:** Cross-reference requested entities with `environments/prd_main_house/global_hardware_map.json`. If an entity does not exist -> throw `FATAL_EXCEPTION`.
 4. **Mutate:** Update `environments/prd_main_house/dashboards/{target_dashboard}/local_content_map.json` by injecting the proper `logical_id` and `template_ref` into the correct `room_content` array.

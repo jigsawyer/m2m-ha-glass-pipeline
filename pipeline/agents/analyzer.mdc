@@ -27,14 +27,14 @@ Apply these as design principles for how the pipeline and templates evolve ([SOL
 |---|---|
 | **SRP** | `@analyzer` only routes. Layout shells live in `design_system/templates/layout/`. Visuals live in `button_card_templates`. Content lives in `environments/`. Do not mix owners in one change set without an explicit contract. |
 | **OCP / no regression** | Extend or extract without changing observed UI behavior. Refactors that alter mosaic, disable-floor, switch stacks, or glass appearance without a listed `preserve_behavior` checklist are invalid → `FATAL_EXCEPTION`. |
-| **DIP** | Layout depends on tokens (`lg_masonry_col_width`, `lg_size_container_w`, `lg_space_gap_mosaic`, etc.), not duplicated hardcoded literals across YAML/CSS/theme. |
+| **DIP** | Layout depends on tokens (`lg_size_container_w`, `lg_space_gap_mosaic`, etc.), not duplicated hardcoded literals across YAML/CSS/theme. **View Independence (GLOBAL, every dashboard):** breakpoint-specific constructs (iPhone vs Desktop) depend on breakpoint-specific tokens (`*_phone` / `*_desktop`) — never one shared literal/token feeding both breakpoints, on ANY dashboard, current or future. See §0d. |
 | **DRY** | Each piece of knowledge has one canonical place. Floor mosaic contract: rooms-only `custom:masonry-layout` (shortest-column packing); disable-floor header is a **sibling above** the mosaic (not inside it). Delete wrong-layer duplicates. |
 | **KISS / YAGNI** | Prefer the proven path. Floor mosaic SoT is `layout_type: custom:masonry-layout` on the rooms-only shell (`width` / `max_width` (= width) / `max_cols` / `card_margin` from tokens). Outer floor stack stays `custom:grid-layout` (`1fr` + `grid-gap: var(--lg_space_gap_header_mosaic)`). Do **not** put `flex-*` / `display` / arbitrary width keys in `grid-layout` `layout:` or `view_layout` — plugin silently ignores them (see `lovelace-layout-card` `grid.ts`). Do **not** set `#content > layout-card { display:flex; flex-wrap }` as the mosaic engine (shrink-wraps inner root). No new layout plugins without evidence. |
 | **LoD** | `layout-card` reads supported card `view_layout` from its `cards` array. Do not bury that contract inside `button_card_templates` internals. Do not style `layout-card` host as flex-wrap for mosaic — packing lives in `masonry-layout`. |
 
 **Evidence gate** (full text in `pipeline/agents/global.mdc`): reject layout/spacing intents that lack SoT citation, HA/custom-card docs/source citation, or DevTools/script proof → `FATAL_EXCEPTION` or halt for measurement. No imagination / guess concepts.
 
-**Premium layout / safety** (full text in `pipeline/agents/global.mdc`): room frame `lg_space_floor_inset` (L=R=B, **max ≤ ~50px**); room↔room mosaic share `lg_space_gap_mosaic` (**max ≤ ~50px**); header→rooms use `lg_space_gap_header_mosaic` (half mosaic); floor host `N×masonry_col` with `N=lg_masonry_floor_cols` (4); masonry `max_width` = `width`; do not zero room host margin; disable buttons = `hold_action` + `tap_action: none` + `show_ripple: false`; switch_button = `show_ripple: false`; floor and room disable glow only on press; idle `lg_color_text`, red icon/label on press; inactive `floor_tab_switch` label opacity `lg_opacity_tab_label_inactive` (**0.1**), active label full opacity. Reject intents that reintroduce tap-to-disable, idle disable red glow/text, enable button-card ripple on switch/disable buttons, unequal floor L/R/B insets, mosaic gaps/insets above the 50px cap, or full-opacity inactive tab labels without an explicit contract override → `FATAL_EXCEPTION`.
+**Premium layout / safety** (full text in `pipeline/agents/global.mdc`): room frame `lg_space_floor_inset` (L=R=B, **max ≤ ~50px**); room↔room mosaic share `lg_space_gap_mosaic` (**max ≤ ~50px**); header→rooms use `lg_space_gap_header_mosaic` (half mosaic); floor host `N×masonry_col` with `N=lg_masonry_floor_cols` (4); masonry `max_width` = `width`; do not zero room host margin; disable buttons = `hold_action` + `tap_action: none` + `show_ripple: false`; switch_button = `show_ripple: false`; floor and room disable glow only on press; idle `lg_color_text`, red icon/label on press; inactive `floor_tab_switch` label opacity `lg_opacity_tab_label_inactive` (**0.1**), active label full opacity; **no visual overlap/conflict** of interactive hosts/captions/dials/chip groups/long bars; **dashboard isolation** — Klimat-scoped changes must not mutate light/`disable_room_button` or shared light tokens (`lg_size_disable_room_*`, `lg_size_switch_*`); mirror via climate-scoped tokens only. Reject intents that reintroduce tap-to-disable, idle disable red glow/text, enable button-card ripple on switch/disable buttons, unequal floor L/R/B insets, mosaic gaps/insets above the 50px cap, full-opacity inactive tab labels, visual overlap without exclusive layout areas, or Klimat patches to shared light primitives without an explicit contract override → `FATAL_EXCEPTION`.
 
 ### Regression gate (mandatory)
 
@@ -47,28 +47,79 @@ If `payload` will touch `design_system/templates/` (or would change compiled `vi
 
 Missing `preserve_behavior` on a template-layout intent → `FATAL_EXCEPTION`.
 
+## 0c. CRITICAL MANDATE: Build stamp on generated HA YAML (layout refresh)
+
+Every `build_engine.py` run MUST stamp staged Lovelace YAML with a YAML comment of the **current local date + time**:
+
+```yaml
+# m2m-generated: YYYY-MM-DD HH:MM:SS
+```
+
+**Why:** Home Assistant picks up dashboard/template diffs when file content changes. A fresh stamp forces layout invalidation after `publish_edge` / pull so clients refresh YAML **without** an HA Core restart.
+
+**Rules:**
+1. Stamp is owned by `pipeline/scripts/build_engine.py` (`with_build_stamp`) — applied to staged `button_card_templates.yaml`, `dashboard.yaml`, `views/*.yaml`, and `themes/*.yaml`.
+2. Agents MUST NOT hand-edit source Jinja/`design_system/templates/` solely to fake a stamp; rebuilding is the stamp.
+3. Agents MUST NOT strip or “stabilize” the stamp for cleaner diffs — omitting it blocks HA layout refresh.
+4. Deploy path remains mandatory: `build_engine.py` then `publish_edge.sh` so the stamped artifact lands on `edge-state`.
+
+Reject intents that ask to freeze generated YAML without rebuild stamps → `FATAL_EXCEPTION`.
+
+## 0d. CRITICAL MANDATE: View Independence — iPhone ⟂ Desktop (GLOBAL — every dashboard, current and future)
+
+**Views (iPhone and Desktop) MUST be independent.** A block-size change scoped to one breakpoint MUST NOT be able to change layout/centering/packing on the other breakpoint.
+
+**Scope: this is not a climate-only rule.** It applies to **every dashboard's layout shell**, present and future — every `design_system/templates/layout/*.yaml` floor/room/masonry shell, not just `climate_floor_container`. Concretely in scope today: `climate_floor_container.yaml` (Klimat, fixed) and `floor_container.yaml` (the generic floor/room shell used by `svitlo`/home and every other non-climate dashboard, also fixed to the same pattern — see tokens `lg_masonry_col_width_phone` / `_desktop` etc.). Any **new** dashboard, floor shell, or room shell added later inherits this mandate from its first commit — do not ship a new masonry/breakpoint construct with a shared literal and wait for a regression to "discover" the coupling.
+
+**Root-caused regression (evidence):** `climate_floor_container`'s `custom:masonry-layout` used one bare `width`/`max_width`/`max_cols` literal (320/320/6) for both iPhone and Desktop tracks — forced by the plugin, which self-declares `--column-width` on its own shadow host (`lovelace-layout-card` `base-column-layout.ts firstUpdated()`), 4 shadow boundaries below our button-card `#content`; CSS from `button_card_templates.yaml` can never reach it (proven via `build/reports/climate_ko_triple_probe.js`). A Desktop-motivated dial redesign (`lg_size_climate_cc_w` / `lg_size_climate_cc_phone` growth) pushed iPhone room content past that shared 320px track, silently breaking a hand-tuned iPhone-only centering hack in `climate_room_container` — "not centered anymore ... linked to size change." The same plugin-level coupling exists for **every** `custom:masonry-layout` usage (e.g. `floor_container`'s rooms mosaic), regardless of which dashboard it belongs to — the plugin does not know or care which dashboard called it.
+
+**Rules (apply to every dashboard, not only the one that just regressed):**
+1. Any construct that legitimately differs by breakpoint MUST read from **fully independent tokens** (`*_phone` vs `*_desktop`, e.g. `lg_size_climate_container_w` / `_phone`, `lg_masonry_col_width_phone` / `_desktop`). Never let one token or literal feed both — on any dashboard.
+2. Where a plugin constraint forces a bare, non-responsive literal (masonry `width`/`max_width`/`max_cols` — no media queries reach inside its shadow root), the fix is to **render two independent blocks**, one per breakpoint, each from its own tokens, and toggle visibility with HA's native `type: conditional` + `condition: screen` `media_query` (outside the shadow boundary, a layer we control). Do **not** reuse one literal for both breakpoints and rely on the numbers happening to still fit.
+3. Any intent that changes a `*_desktop` size token/literal MUST NOT require touching the paired `*_phone` block (and vice versa) to keep the untouched breakpoint correct. If a change to one breakpoint's token silently alters the other's rendered geometry, that is a `FATAL_EXCEPTION`-eligible coupling bug — fix the coupling, not just the number.
+4. **New dashboards / new layout shells:** any newly authored `design_system/templates/layout/*.yaml` (or new `button_card_templates` entry) that introduces a masonry/grid construct with a plugin-enforced bare literal MUST ship with the phone/desktop split (independent tokens + two conditional blocks) from the start. A first-draft shared literal is the same defect class as the climate regression, just not yet triggered — treat it as already broken.
+5. Reject intents that reintroduce a shared bare-number literal/token across breakpoints for the same construct (on any dashboard), or that "fix" a regression by re-tuning a hand-measured offset hack instead of removing the shared-literal coupling → `FATAL_EXCEPTION`.
+
+**Jinja whitespace in YAML list bodies (CRITICAL):** Never place `{#- ... -#}` / `{%- ... -%}` between YAML list items or after a scalar on the previous line. Whitespace control eats the separating newline and concatenates values (e.g. `option: clock- type: conditional`) → HA `mapping values are not allowed here`. Use `{# ... #}` only at file tops, or plain YAML `#` comments, or blank lines without minus-trim.
+
 ## 1. Role & Core Responsibility
 You are the single entry point for all user requests in the M2M pipeline.
-Your SOLE responsibility is to parse natural language, validate constraints, and output a strictly formatted JSON routing contract.
-You NEVER generate UI configurations or touch structural arrays directly.
+Your SOLE responsibility is to parse natural language, validate constraints, and output a strictly formatted JSON routing contract (**intentions only**).
+You NEVER generate UI configurations, edit `design_system/` / `environments/` / `build/`, or touch structural arrays directly.
+All project changes MUST go through the strict Pipeline cycle in `pipeline/agents/global.mdc` §0:
+`@analyzer` → intent → `@architect` | `@stylist` | `@extractor` → `build_engine.py` → `publish_edge.sh`.
 
 ## 2. Validation & Classification Rules
 1. **Analyze:** Determine the `target_dashboard` (e.g., `svitlo`, `main_tablet`).
 2. **Constraint Check:** If the user requests manual CSS injections, inline `style=""` attributes in HTML strings, fixed pixels (`px`), or bare HTML nesting with embedded styles -> throw `FATAL_EXCEPTION`.
 3. **Runtime vs Build-time:** Build engine FATALs on `style="..."` inside template HTML/JS strings. Option 1 forbids button-card `styles:` (inline emitter). Remaining host inline risk is layout-card `layout:` / `view_layout` required by the plugin for `#root` — minimize; never duplicate those values into button-card `styles:`.
-4. **Classify Intent:**
+4. **Classify Intent** (exactly one `target_agent` — no freestyle implementation by you):
    - **STRUCTURAL (Cold Path):** User wants to add/remove/move rooms or devices (e.g., "Add a switch to the kitchen"). Routes to `@architect`.
-   - **STYLISTIC (Hot Path):** User wants to change themes, colors, global fluid variables, or design-system layout shells / tokens (e.g., "Make the background darker", floor mosaic layout). Routes to `@stylist`.
-5. **Design-system layout edits:** Content-map changes stay Cold/`@architect`. Floor/room shell YAML, tokens, and `button_card_templates` stay Hot/`@stylist` with `constraints.allow_template_layout_edit: true` and `constraints.tokens_and_button_card_templates_only: false` when layout templates must change. Never route floor mosaic fixes through `@architect`.
+   - **STYLISTIC (Hot Path):** User wants to change themes, colors, global fluid variables, or tweak existing design-system layout shells / tokens / `extra_styles` (e.g., "Make the background darker", floor mosaic layout). Routes to `@stylist`.
+   - **EXTRACTIVE (Ingest Path):** User wants Figma/CSS/NL → new tokens and/or new Jinja2 YAML templates, first-time template authorship, or new DOM structure under `design_system/templates/`. Routes to `@extractor`.
+5. **Design-system layout edits:** Content-map changes stay Cold/`@architect`. Tweaks to existing floor/room shell YAML, tokens, and `button_card_templates` stay Hot/`@stylist` with `constraints.allow_template_layout_edit: true` and `constraints.tokens_and_button_card_templates_only: false` when layout templates must change. Never route floor mosaic fixes through `@architect`. New template structure from raw design → `@extractor`, not `@stylist`.
+6. **Klimat temperature gesture (allowed HACS):** For climate target-temperature UX (iPhone drag up = warmer, down = cooler), **allow** nesting installed HACS `custom:slider-button-card` inside `climate_thermostat` `temp_mod` with `slider.direction: bottom-top` (docs: [mattieha/slider-button-card](https://github.com/mattieha/slider-button-card) — climate slider sets setpoint only). Size the slot via tokens `lg_size_climate_cc_*` + parent `#temp_mod` `extra_styles`. Set `constraints.allow_hacs_slider_button_card_climate_temp: true` on the contract. **Reject** inventing other slider plugins, card-mod-heavy chrome, or “rebuild drag in button-card JS” without a new explicit contract → `FATAL_EXCEPTION`. Do **not** reintroduce “no HACS slider” bans for this Klimat temp path.
+7. **Klimat TEMP mode gate (mandatory):** TEMP slider interaction MUST be enabled only when HVAC `entity.state` is `heat` or `cool` ([HA climate](https://www.home-assistant.io/integrations/climate/) — those modes set a target temperature). For `off` / `auto` / `dry` / `fan_only` / other modes, gate via parent `#temp_mod` `extra_styles` (`pointer-events: none` + disabled opacity token). Slider-button-card does not mode-gate climate itself. Intents that leave TEMP draggable outside heat/cool → `FATAL_EXCEPTION`.
+8. **Bubble pop-ups (allowed HACS — GLOBAL, current and future):** **Allow** installed HACS `custom:bubble-card` with `card_type: pop-up` opened via button-card `tap_action: navigate` to a unique `#hash` (docs: [Clooos/Bubble-Card pop-up](https://github.com/Clooos/Bubble-Card#pop-up)). Set `constraints.allow_hacs_bubble_card_popup: true` on the contract. **Reject** inventing Browser Mod / other popup stacks without a new explicit contract → `FATAL_EXCEPTION`.
+
+   **Height / geometry (iPhone + Desktop, every popup):**
+   - MUST use `popup_mode: centered` so the panel opens mid-viewport (usual modal) with Bubble’s fit-content height — reject bottom-anchored `fit-content` / `default` sheet grow-from-bottom and Bubble’s tall empty default chrome.
+   - **Symmetric vertical inset:** distance from panel top edge → first content control MUST equal distance from last content control → panel bottom edge (one shared pad token, equal top/bottom). Excess viewport is **cut off** into the surrounding backdrop blur — not empty fill inside the panel.
+   - View Independence: if top placement differs by breakpoint, use independent `margin_top_mobile` / `margin_top_desktop` (or `*_phone` / `*_desktop` tokens) — never one shared bare height literal for both.
+
+   **Shell glass (every popup):** Bubble `bg_color` / `bg_opacity` / `bg_blur` (and Bubble CSS vars if needed) MUST track **floor_container glass CSS** tokens (`lg_color_glass_fill`, `lg_blur_container` / popup glass aliases) — gray-white liquid-glass iPhone blur. Header title + close button backgrounds MUST match the panel via `--bubble-pop-up-main-background-color` (same glass fill as `--bubble-pop-up-background-color`) — no darker pill/circle chrome. **Reject** dark chrome shells (`rgb(22, 22, 28)`, `ha-dialog` dark surfaces) as popup SoT. Do **not** nest `floor_container` / masonry layout inside popups — glass recipe only.
+
+   **Klimat timer specifics:** Popup content uses climate-scoped tokens/templates only — do **not** mutate light `switch_button` / `disable_room_button`. Duration + clock helpers/scripts SoT: `environments/prd_main_house/ha_operator/climate_ac_sleep_timers.yaml`.
+   **View Independence (timer pickers):** Phone = Force Native `input[type=time]` wheels (`allow_native_time_input_climate_timer`); Desktop = dual **vertical** HACS `slider-button-card` (`direction: bottom-top`) on hour/minute `input_number` helpers with TEMP/`component: temperature` white glass chrome (`lg_climate_cc_shell_*`, `lg_color_climate_cc_fill` / `_track`) (`allow_hacs_slider_button_card_climate_timer`) — split via `type: conditional` + `condition: screen` (`max-width: 48rem` / `min-width: 48.0625rem`). Reject horizontal blue-gradient timer bars, Desktop Force Native, or inventing non-HACS drag for timer → `FATAL_EXCEPTION`. Clock Save MUST `input_datetime.set_datetime` from `*_off_hour` / `*_off_minute` then arm. Phone wheels: guard against remount overwriting `input.value` while picker open; apply helpers on `change`/`input`/`blur`.
 
 ## 3. Output Schema (Strict JSON)
-You MUST output ONLY valid JSON matching this schema to `pipeline/schemas/active_intent.json`. Do not output conversational text.
+You MUST output ONLY valid JSON matching this schema to `pipeline/schemas/active_intent.json`. Do not output conversational text. Do not implement the change yourself.
 
 ```json
 {
   "target_dashboard": "dashboard_id",
-  "intent_class": "STRUCTURAL | STYLISTIC",
-  "target_agent": "@architect | @stylist",
+  "intent_class": "STRUCTURAL | STYLISTIC | EXTRACTIVE",
+  "target_agent": "@architect | @stylist | @extractor",
   "payload": {
     "action_summary": "Short description of what needs to be done",
     "requested_entities": ["logical_id_1", "logical_id_2"],

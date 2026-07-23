@@ -8,10 +8,30 @@ globs: "*"
 - HOME ASSISTANCE - DOCS GROUNDING!
 
 
-# Enterprise M2M Pipeline: Global Directives (v11.0 - Lean Architecture)
+# Enterprise M2M Pipeline: Global Directives (v12.0 - Lean Architecture)
 
 **System Context:** Automated, deterministic M2M pipeline for Home Assistant UI generation. 
 All operations are strictly decoupled using the Separation of Concerns (SoC) pattern and executed via a Directed Acyclic Graph (DAG) flow.
+
+## 0. CRITICAL MANDATE: Intent-Only Pipeline Cycle (ALL project changes)
+
+**No ad-hoc edits.** Every change to `design_system/`, `environments/`, or staged HA YAML MUST follow this cycle. Bypass → `FATAL_EXCEPTION`.
+
+```
+User NL
+  → @analyzer  (ONLY writes pipeline/schemas/active_intent.json)
+  → @architect | @stylist | @extractor  (ONLY mutates its domain from that intent)
+  → build_engine.py  (deterministic staging + build stamp)
+  → publish_edge.sh  (sole deploy)
+```
+
+| Rule | Enforcement |
+|---|---|
+| **Intent gate** | Mutators (`@architect`, `@stylist`, `@extractor`) MUST read `pipeline/schemas/active_intent.json` first and verify `intent_class` / `target_agent` match their role. No matching intent → HALT. |
+| **Analyzer is router-only** | `@analyzer` works **only with intentions**. It NEVER edits `design_system/`, `environments/`, `build/`, or scripts. Sole write: `active_intent.json`. |
+| **One mutator per intent** | `target_agent` is exactly one of `@architect`, `@stylist`, `@extractor`. Do not cross domains in one cycle without a new intent. |
+| **No freestyle coding** | Agents must not “just fix” YAML/tokens/maps outside this cycle. If work is needed, route a new intent through `@analyzer` first. |
+| **Cycle close** | After mutation: `python pipeline/scripts/build_engine.py` (if staging stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED. |
 
 ## 1. Core Principles & Constraints (CRITICAL)
 
@@ -19,11 +39,12 @@ All operations are strictly decoupled using the Separation of Concerns (SoC) pat
 - **Option 1 CSS (theme tokens + `extra_styles`):** Physical values live in theme CSS variables (`themes/liquid_glass_v1.0.yaml` from tokens). Structural rules live only in `button_card_templates.yaml` `extra_styles` (scoped `:host` / `#card` / classes). BAN button-card native `styles:` (inline emitter) and BAN `style="..."` in injected HTML. See `pipeline/agents/analyzer.mdc` §0.
 - **Zero Hallucination Policy:** You operate STRICTLY on provided JSON/YAML contracts. You DO NOT invent CSS classes, DOM elements, or spatial components. If a requested token or entity does not exist in the source of truth, you MUST HALT and throw a `FATAL_EXCEPTION`.
 - **Evidence gate (no imagination):** Layout/spacing bug fixes and evolutions MUST be proven before change. Require at least one of: (1) project SoT citation (tokens/templates/contracts), (2) HA or custom-card docs/source citation, (3) live DevTools/script measurement (or SSH diff of deployed YAML vs staging SoT). A live 1-column screenshot alone is not enough to pick a fix branch — classify with `build/reports/floor_spacing_measure.js` and/or remote↔local template diff before editing. Lack of evidence → HALT and request a measurement script/result from the operator. Never invent a new layout strategy or plugin without that proof.
-- **Docs map (this stack):** [lovelace-layout-card](https://github.com/thomasloven/lovelace-layout-card) masonry/grid (`base-column-layout.ts` / `grid.ts`); [button-card](https://github.com/custom-cards/button-card) `extra_styles` / `hold_action`; HA [panel](https://www.home-assistant.io/dashboards/panel/) / [vertical-stack](https://www.home-assistant.io/dashboards/vertical-stack/) only where used. Masonry `max_width` must equal `width` (plugin default `1.5× width` stretches columns and fakes H gaps). Do not zero room host `margin` — plugin applies `.column > * { margin: var(--card-margin) }`.
+- **Docs map (this stack):** [lovelace-layout-card](https://github.com/thomasloven/lovelace-layout-card) masonry/grid (`base-column-layout.ts` / `grid.ts`); [button-card](https://github.com/custom-cards/button-card) `extra_styles` / `hold_action`; [slider-button-card](https://github.com/mattieha/slider-button-card) for Klimat target temp (`climate` domain; `slider.direction: bottom-top` = drag up warmer / down cooler; hide name/state/icon/action_button); HA [panel](https://www.home-assistant.io/dashboards/panel/) / [vertical-stack](https://www.home-assistant.io/dashboards/vertical-stack/) only where used. Masonry `max_width` must equal `width` (plugin default `1.5× width` stretches columns and fakes H gaps). Do not zero room host `margin` — plugin applies `.column > * { margin: var(--card-margin) }`.
 - **Separation of Concerns (SoC):** - `environments/` dictates WHAT exists (Physical Reality & Logical Projections).
   - `design_system/` dictates HOW it looks (Tokens & Templates).
   - You NEVER mix these domains.
 - **Determinism:** We do NOT use AI for predictable tasks. YAML generation, file packing, and deployment are handled by deterministic scripts, not agents.
+- **Build stamp (HA layout refresh):** Every `build_engine.py` run prefixes staged Lovelace YAML (`button_card_templates.yaml`, `dashboard.yaml`, `views/*.yaml`, `themes/*.yaml`) with `# m2m-generated: YYYY-MM-DD HH:MM:SS` (local time). This content bump triggers HA layout/template reload after edge publish **without** requiring an HA Core restart. Owned by build_engine only — see `pipeline/agents/analyzer.mdc` §0c. Never strip the stamp.
 - **Deploy workflow (ALL agents — MANDATORY):** After completing work, the only allowed deploy path is: (1) ensure staging is built via `python pipeline/scripts/build_engine.py` when staging is stale/missing, then (2) run `pipeline/scripts/publish_edge.sh`. This is the **only** deploy we have. **Manual deploy is NOT ALLOWED** (no `deploy/manual_deploy.sh`, no SSH copies, no ad-hoc pushes, no alternative deploy scripts).
 - **Fluid Glassmorphism UI:** Hardcoded pixels (`px`) are PROHIBITED in theme/CSS tokens. Use ONLY `rem`, `%`, `vh`, `vw`, `aspect-ratio`. Exception: layout-card masonry `width` / `max_width` / `max_cols` are bare numbers required by the plugin (`Math.floor`). Layouts rely on CSS Grid and Flexbox.
 - **Floor mosaic SoT:** Rooms-only `custom:masonry-layout` (shortest-column dense packing; `width` / `max_width` / `max_cols` / `card_margin` from `lg_masonry_*` tokens — `max_width` MUST equal `width`). Disable-floor header is a sibling **above** the mosaic on an outer `custom:grid-layout` `1fr` stack with `grid-gap: var(--lg_space_gap_header_mosaic)` (not inside the mosaic — avoids header/`grid-column` conflict). Never put `flex-*` / `display` / arbitrary width keys in `grid-layout` `layout:` or `view_layout` (plugin ignores them; only `grid*` / `place-items` / `place-content` / card `grid*`+`place-self` apply). Do not set `#content > layout-card { display:flex; flex-wrap }` as the mosaic engine (shrink-wraps inner root). See `build/reports/floor_mosaic_handoff.md` (masonry dense packing vs Phase 5 grid auto-fit).
@@ -33,6 +54,9 @@ All operations are strictly decoupled using the Separation of Concerns (SoC) pat
   - **No accidental destructive taps:** `floor_disable_button` and `disable_room_button` use docs-native `hold_action` for `switch.turn_off`; `tap_action: none` (HA hold ≈ 0.5s — not a custom 2s timer).
   - **Disable glow:** Floor and room disable show `lg_glow_disable` on `#card:active` only (same pattern as switch on-glow). Idle icon/label use `lg_color_text`; press uses `lg_color_disable_icon`. Set `show_ripple: false` on disable and `switch_button` templates — button-card auto-enables rectangular `ha-ripple` when any action is defined ([docs](https://custom-cards.github.io/button-card/stable/config/main/)).
   - **Floor tab inactive label:** Inactive `floor_tab_switch` label text uses opacity **0.1** (`lg_opacity_tab_label_inactive`). Active label stays full opacity. Reject intents that restore full-opacity inactive tab labels without an explicit contract override → `FATAL_EXCEPTION`.
+  - **No visual overlap / conflict (GLOBAL):** Interactive hosts, captions, dials, chip groups, long bars, and labels MUST NOT overlap, clip each other, or share conflicting hit-targets. Gaps to room_container / floor edges use tokens (`lg_space_climate_pad`, insets, group gaps). Absolute stacking without exclusive layout areas (CSS Grid/Flex areas) → `FATAL_EXCEPTION`.
+  - **Dashboard isolation (GLOBAL):** A change scoped to Klimat / climate templates MUST NOT alter appearance or behavior of other dashboards (e.g. light/svitlo room switch stack). Do **not** edit `disable_room_button` / floor light shells to borrow look for Klimat. Do **not** retune shared tokens light dashboards consume (`lg_size_disable_room_*`, `lg_size_switch_*`, etc.) unless the intent explicitly covers those dashboards and lists `preserve_behavior` for them. Klimat may **mirror** values via **new climate-scoped tokens** owned only by climate templates. Klimat intents that patch shared light primitives → `FATAL_EXCEPTION`.
+- **View Independence (iPhone ⟂ Desktop — MANDATORY, GLOBAL, every dashboard current and future):** Any block-size construct that legitimately differs by breakpoint (phone vs desktop) MUST be driven by **fully independent tokens/literals per breakpoint** — never one shared literal or token feeding both. This is not scoped to one dashboard: it applies to every floor/room/masonry shell in `design_system/templates/layout/` — `climate_floor_container.yaml` and the generic `floor_container.yaml` (used by `svitlo`/home and every other non-climate dashboard) are both compliant today; any new dashboard or layout shell added later MUST ship compliant from its first commit, not after its first regression. Root-caused regression: `climate_floor_container`'s `masonry-layout` `width`/`max_width`/`max_cols` was one bare number shared by iPhone and Desktop tracks (plugin self-declares `--column-width` inside its own shadow root — unreachable by our CSS, see `pipeline/agents/analyzer.mdc` §0b LoD row and `build/reports/climate_ko_triple_probe.js`); a Desktop-motivated dial size increase (`lg_size_climate_cc_w`/`_phone`) silently pushed phone room content past that shared 320px track and broke a hand-tuned phone-only centering hack. The identical plugin-level coupling exists for every `custom:masonry-layout` usage regardless of dashboard (e.g. `floor_container`'s rooms mosaic, now split into `lg_masonry_col_width_phone`/`_desktop` etc.). Where a plugin constraint forces a bare, non-responsive literal, the fix is to **render two independent blocks** (one per breakpoint) and toggle visibility with HA's native `type: conditional` + `condition: screen` `media_query` at a layer we control (outside the shadow boundary) — never reuse the same literal for both breakpoints and hope the numbers still fit. Reject intents that resize a Desktop-only token/literal without confirming (or updating) the paired iPhone-only token/literal, that reintroduce a shared bare-number literal across breakpoints for the same construct, or that ship a new dashboard/layout shell with an un-split breakpoint-sensitive literal → `FATAL_EXCEPTION`.
 
 ---
 
@@ -57,33 +81,40 @@ You must respect Domain boundaries. Never write outside your permitted scope.
 
 ---
 
-## 3. The AI Trinity (Agent Roster)
+## 3. Agent Roster (Intent Targets Only)
 
-We use only THREE intelligent agents. Their roles are strictly scoped. Do NOT cross role boundaries.
+Intelligent agents are strictly scoped. Project mutations happen **only** via intents routed by `@analyzer` to `@architect`, `@stylist`, or `@extractor`. Do NOT cross role boundaries. Do NOT mutate project state without a matching `active_intent.json`.
 
-### A. @analyzer (The Load Balancer)
-**Role:** Single entry point. Parses natural language, validates intent, and determines the routing path (Hot vs. Cold).
-- **Read Access:** User prompt.
-- **Write Access:** `pipeline/schemas/active_intent.json`
-- **Action:** Generates a strict JSON contract detailing the `target_dashboard`, `intent_type` (STRUCTURAL or STYLISTIC), and the specific payload.
+### A. @analyzer (The Load Balancer / Intent Router)
+**Role:** Single entry point. Parses natural language, validates constraints, and emits a routing contract. Works **only with intentions** — never implements UI or domain edits itself.
+- **Read Access:** User prompt; SoT for validation (docs, tokens, templates) as needed to classify — not to mutate.
+- **Write Access:** `pipeline/schemas/active_intent.json` **only**.
+- **Action:** Generates a strict JSON contract: `target_dashboard`, `intent_class` (`STRUCTURAL` \| `STYLISTIC` \| `EXTRACTIVE`), `target_agent` (`@architect` \| `@stylist` \| `@extractor`), and `payload` (+ `constraints` when required).
 
 ### B. @architect (Structural Mutator - COLD PATH)
 **Role:** Manipulates spatial layouts, matrix symmetry, and device mapping. Knows NOTHING about visual styles.
-- **Read Access:** `active_intent.json`, `global_spatial_topology.json`.
+- **Read Access:** `active_intent.json` (must be `STRUCTURAL` / `@architect`), `global_spatial_topology.json`, `global_hardware_map.json`.
 - **Write Access:** `environments/prd_main_house/dashboards/{target}/local_content_map.json`
-- **Action:** Injects or removes logical IDs into the specified rooms based on the user's intent. Maintains structural integrity. 
+- **Action:** Injects or removes logical IDs into the specified rooms based on the user's intent. Maintains structural integrity.
 
 ### C. @stylist (Stylistic Mutator - HOT PATH)
-**Role:** Modifies the Design System and Theme mapping. Knows NOTHING about grids, rooms, or hardware devices.
-- **Read Access:** `active_intent.json`.
-- **Write Access:** `design_system/tokens/*.json`, `environments/prd_main_house/dashboards/{target}/config.json`
-- **Action:** Updates fluid CSS variables (colors, blurs, radii) or switches the active `theme_reference` for a specific dashboard.
+**Role:** Modifies existing Design System tokens, theme mapping, and (when contracted) layout/`extra_styles` shells. Knows NOTHING about hardware topology or content maps.
+- **Read Access:** `active_intent.json` (must be `STYLISTIC` / `@stylist`).
+- **Write Access:** `design_system/tokens/*.json`, `environments/prd_main_house/dashboards/{target}/config.json`; layout / `button_card_templates` only when `constraints.allow_template_layout_edit: true`.
+- **Action:** Updates fluid CSS variables (colors, blurs, radii), theme_reference, or contracted shell/`extra_styles` tweaks — not new template authorship from raw design.
+
+### D. @extractor (Design-to-Code Bridge - INGEST PATH)
+**Role:** Ingests raw design (Figma, CSS, NL) into **new or structurally new** tokens and Jinja2 YAML templates under `design_system/`. Exclusive owner of first-time template generation / design extraction.
+- **Read Access:** `active_intent.json` (must be `EXTRACTIVE` / `@extractor`), design refs in payload.
+- **Write Access:** `design_system/tokens/*.json`, `design_system/templates/**` (layout / primitives / composites), shared macros as needed.
+- **Action:** Strip inline styles → tokens + `extra_styles`; create/update templates. NEVER touch `environments/` topologies or pipeline scripts.
+- **Vs @stylist:** Prefer `@stylist` for value tweaks on existing tokens/shells. Route `@extractor` when the intent requires new DOM/template structure, Figma→code ingestion, or first-class template authorship.
 
 ---
 
 ## 4. Deterministic Execution Engine (No-AI Zone)
 
-Once the AI Trinity completes State Mutation, the agent finishes with the deterministic build + edge publish — not with a manual handoff.
+Once the routed mutator completes State Mutation under a valid intent, the cycle finishes with deterministic build + edge publish — not with a manual handoff.
 
-- **Process:** `pipeline/scripts/build_engine.py` reads `local_content_map.json`, maps it against `global_hardware_map.json`, injects values into `design_system/templates/`, and outputs a multi-file HA native YAML structure to `build/staging/`.
+- **Process:** `pipeline/scripts/build_engine.py` reads `local_content_map.json`, maps it against `global_hardware_map.json`, injects values into `design_system/templates/`, stamps staged YAML with `# m2m-generated: <local date time>`, and outputs a multi-file HA native YAML structure to `build/staging/`.
 - **Deploy (ALL agents):** After work is done, run `pipeline/scripts/publish_edge.sh` (after `build_engine.py` if staging needs refresh). This is the sole deploy path. **Manual deploy is NOT ALLOWED.** Do not use `deploy/manual_deploy.sh`, SSH-based copies, or any other deploy mechanism.

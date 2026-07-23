@@ -1,0 +1,97 @@
+{# Klimat floor shell: title + header + climate-width masonry (max_width MUST = width) #}
+{# Empty name → untitled mosaic (floor_presentation: flat) #}
+type: custom:button-card
+template: climate_floor_container
+{% if name -%}
+name: {{ name }}
+show_name: true
+{% else -%}
+show_name: false
+{% endif -%}
+custom_fields:
+  content:
+    card:
+      type: custom:layout-card
+      layout_type: custom:grid-layout
+      layout:
+        grid-template-columns: "1fr"
+        grid-gap: "var(--lg_space_gap_header_mosaic)"
+        place-content: start stretch
+        margin: "0"
+        padding: "0"
+      cards:
+{%- if header_cards %}
+        - type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: "1fr"
+            place-items: center
+            margin: "0"
+            padding: "0"
+          cards:
+{{ header_cards | yaml_cards(12) }}
+{%- endif %}
+        {# View Independence (pipeline/agents/analyzer.mdc §0d / global.mdc):
+           masonry-layout self-declares --column-width on its OWN shadow host
+           (base-column-layout.ts firstUpdated()) — a direct :host declaration
+           that always wins the cascade, so CSS from button_card_templates.yaml
+           can never reach in and override it per-breakpoint (proven via
+           climate_ko_triple_probe.js: LayoutCard's render() places the layout
+           element in its own shadow root, 4 boundaries below button-card's
+           #content). Because the plugin only accepts ONE bare width/max_width/
+           max_cols number, iPhone and Desktop CANNOT safely share that single
+           literal — a Desktop-only size bump (e.g. widening lg_size_climate_cc_w
+           for the AC dial) silently changes the iPhone track too, which is
+           exactly what broke iPhone centering last time.
+           Fix: render TWO fully independent masonry-layout instances — one
+           sized for phone, one for desktop — and let HA's native `screen`
+           condition (conditional card, docs:
+           https://www.home-assistant.io/dashboards/conditional/) pick exactly
+           one at render time. This is a real structural fork, not a CSS toggle,
+           so a change to the desktop block's literal is physically incapable of
+           touching the phone block. SoT: lg_masonry_climate_*_phone /
+           lg_masonry_climate_*_desktop tokens (design_system/tokens/
+           liquid_glass_v1.0.json) — keep these bare numbers in sync with the
+           token comments there; the plugin config below cannot read the JSON
+           token directly (bare-number Math.floor requirement, no {{ token }}
+           interpolation possible for var()-typed CSS values).
+           NOTE: design_system/templates/climate_floor_container.yaml is a
+           symlink to this file — there is only one copy on disk. #}
+        - type: conditional
+          conditions:
+            - condition: screen
+              media_query: "(max-width: 48rem)"
+          card:
+            type: custom:layout-card
+            layout_type: custom:masonry-layout
+            layout:
+              # lg_masonry_climate_col_width_phone / _max_width_phone / _max_cols_phone
+              # Probe: 400 overflowed 393vw / ~365 floor content (midX+18).
+              # 360 fits content with headroom over room+card_margin (~355).
+              width: 360
+              max_width: 360
+              max_cols: 1
+              min_height: 1
+              card_margin: "var(--lg_masonry_card_margin)"
+              margin: "0"
+              padding: "0"
+            cards:
+{{ cards | yaml_cards(14) }}
+        - type: conditional
+          conditions:
+            - condition: screen
+              media_query: "(min-width: 48.0625rem)"
+          card:
+            type: custom:layout-card
+            layout_type: custom:masonry-layout
+            layout:
+              # lg_masonry_climate_col_width_desktop / _max_width_desktop / _max_cols_desktop
+              width: 460
+              max_width: 460
+              max_cols: 6
+              min_height: 1
+              card_margin: "var(--lg_masonry_card_margin)"
+              margin: "0"
+              padding: "0"
+            cards:
+{{ cards | yaml_cards(14) }}

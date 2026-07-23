@@ -3,3 +3,8 @@ type: custom:button-card
 template: climate_thermostat
 entity: {{ entity_id }}
 name: {{ name }}
+variables:
+  timer_entity_id: "{{ custom_props.timer_entity_id | default('') }}"
+  clock_entity_id: "{{ custom_props.clock_entity_id | default('') }}"
+  armed_entity_id: "{{ custom_props.armed_entity_id | default('') }}"
+  popup_hash: "{{ custom_props.popup_hash | default('') }}"

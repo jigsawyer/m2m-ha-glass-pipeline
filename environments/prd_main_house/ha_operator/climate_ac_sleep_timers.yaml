@@ -1,0 +1,423 @@
+# Paste into Home Assistant (Settings → Helpers / Automations / Scripts,
+# or configuration.yaml + automations.yaml / scripts.yaml).
+# Required for Klimat AC sleep timer UI (Bubble pop-up: duration + clock).
+#
+# Docs:
+#   https://www.home-assistant.io/integrations/timer/
+#   https://www.home-assistant.io/integrations/input_datetime/
+#   https://www.home-assistant.io/integrations/input_boolean/
+#   https://www.home-assistant.io/integrations/input_number/
+#   https://www.home-assistant.io/integrations/input_select/
+#   https://www.home-assistant.io/docs/scripts/
+#
+# Applied on HA host as /config/packages/klimat_ac_timers.yaml (+ packages
+# include in configuration.yaml). Duration timer.finished automations already
+# live in /config/automations.yaml (aliases Kabinet / Spalnia).
+#
+# IMPORTANT — timers already exist as UI helpers (unique_id taimer_kabinet /
+# taimer_spalnia) with entity_id timer.kabinet_ac_sleep / timer.spalnia_ac_sleep.
+# Do NOT redefine `timer:` in the package (creates timer.*_2 duplicates).
+# Keep UI timer duration 1:00:00 + restore: true in .storage/timer.
+
+# =============================================================================
+# HELPERS
+# =============================================================================
+
+# --- Timers (UI SoT — do not also declare in packages) ---
+# timer.kabinet_ac_sleep  (unique_id: taimer_kabinet)
+# timer.spalnia_ac_sleep  (unique_id: taimer_spalnia)
+#
+# Reference shape if recreating from scratch (YAML):
+# timer:
+#   kabinet_ac_sleep:
+#     name: Kabinet AC sleep
+#     duration: "01:00:00"
+#     restore: true
+#   spalnia_ac_sleep:
+#     name: Spalnia AC sleep
+#     duration: "01:00:00"
+#     restore: true
+
+input_datetime:
+  kabinet_ac_off_at:
+    name: Kabinet AC off at
+    has_date: false
+    has_time: true
+  spalnia_ac_off_at:
+    name: Spalnia AC off at
+    has_date: false
+    has_time: true
+
+input_boolean:
+  kabinet_ac_off_armed:
+    name: Kabinet AC off armed
+  spalnia_ac_off_armed:
+    name: Spalnia AC off armed
+
+input_select:
+  kabinet_ac_timer_mode:
+    name: Kabinet AC timer mode
+    options:
+      - duration
+      - clock
+    initial: duration
+  spalnia_ac_timer_mode:
+    name: Spalnia AC timer mode
+    options:
+      - duration
+      - clock
+    initial: duration
+
+# Duration helpers: input_number hours/minutes (0-23 / 0-59).
+# Must match phone Force Native type=time + Save JS (hours clamped to 23).
+# max 12 caused: Invalid value for *_ac_timer_hours: 14.0 (range 0.0 - 12.0).
+# Clock helpers: input_number off_hour/off_minute (0-23 / 0-59) — Save flushes
+# into input_datetime via set_datetime. Phone UI: Force Native type=time →
+# set_value on helpers. Desktop UI: slider-button-card → helpers directly.
+# Apply this package on HA Core; pipeline does not auto-deploy helpers.
+input_number:
+  kabinet_ac_timer_hours:
+    name: Kabinet AC timer hours
+    min: 0
+    max: 23
+    step: 1
+    mode: slider
+    initial: 1
+  kabinet_ac_timer_minutes:
+    name: Kabinet AC timer minutes
+    min: 0
+    max: 59
+    step: 1
+    mode: slider
+    initial: 0
+  kabinet_ac_off_hour:
+    name: Kabinet AC off hour
+    min: 0
+    max: 23
+    step: 1
+    mode: slider
+    initial: 0
+  kabinet_ac_off_minute:
+    name: Kabinet AC off minute
+    min: 0
+    max: 59
+    step: 1
+    mode: slider
+    initial: 0
+  spalnia_ac_timer_hours:
+    name: Spalnia AC timer hours
+    min: 0
+    max: 23
+    step: 1
+    mode: slider
+    initial: 1
+  spalnia_ac_timer_minutes:
+    name: Spalnia AC timer minutes
+    min: 0
+    max: 59
+    step: 1
+    mode: slider
+    initial: 0
+  spalnia_ac_off_hour:
+    name: Spalnia AC off hour
+    min: 0
+    max: 23
+    step: 1
+    mode: slider
+    initial: 0
+  spalnia_ac_off_minute:
+    name: Spalnia AC off minute
+    min: 0
+    max: 59
+    step: 1
+    mode: slider
+    initial: 0
+
+# Expected entity_ids (must match global_hardware_map.json):
+#   timer.kabinet_ac_sleep / timer.spalnia_ac_sleep
+#   input_datetime.kabinet_ac_off_at / input_datetime.spalnia_ac_off_at
+#   input_boolean.kabinet_ac_off_armed / input_boolean.spalnia_ac_off_armed
+#   input_select.kabinet_ac_timer_mode / input_select.spalnia_ac_timer_mode
+#   input_number.kabinet_ac_timer_hours / input_number.kabinet_ac_timer_minutes
+#   input_number.kabinet_ac_off_hour / input_number.kabinet_ac_off_minute
+#   input_number.spalnia_ac_timer_hours / input_number.spalnia_ac_timer_minutes
+#   input_number.spalnia_ac_off_hour / input_number.spalnia_ac_off_minute
+
+# =============================================================================
+# SCRIPTS (Save / Remove — mutual exclusion)
+# =============================================================================
+#
+# UI:
+#   Duration Save → script.*_ac_timer_save_duration
+#     optional field `duration` (HH:MM or HH:MM:SS) = fresh picker (fresh > previous)
+#   Clock Save    → script.*_ac_timer_save_clock
+#     optional field `off_time` (HH:MM or HH:MM:SS) = fresh picker (fresh > previous)
+#   Remove        → script.*_ac_timer_remove
+# When field omitted (Desktop), scripts fall back to input_number helpers.
+
+script:
+  kabinet_ac_timer_save_duration:
+    alias: Kabinet AC timer save duration
+    mode: single
+    fields:
+      duration:
+        name: Duration
+        description: Optional HH:MM from live picker (fresh > previous)
+        selector:
+          text:
+    sequence:
+      - variables:
+          resolved_duration: >
+            {% if duration is defined and duration not in [none, ''] %}
+              {% set parts = (duration ~ '').split(':') %}
+              {{ '%02d:%02d:00' | format(parts[0]|int(0), parts[1]|int(0) if parts|length > 1 else 0) }}
+            {% else %}
+              {% set h = states('input_number.kabinet_ac_timer_hours') | int(0) %}
+              {% set m = states('input_number.kabinet_ac_timer_minutes') | int(0) %}
+              {{ '%02d:%02d:00' | format(h, m) }}
+            {% endif %}
+          resolved_h: "{{ resolved_duration.split(':')[0] | int(0) }}"
+          resolved_m: "{{ resolved_duration.split(':')[1] | int(0) }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.kabinet_ac_timer_hours
+        data:
+          value: "{{ resolved_h }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.kabinet_ac_timer_minutes
+        data:
+          value: "{{ resolved_m }}"
+      - action: timer.start
+        target:
+          entity_id: timer.kabinet_ac_sleep
+        data:
+          duration: "{{ resolved_duration }}"
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.kabinet_ac_off_armed
+
+  kabinet_ac_timer_save_clock:
+    alias: Kabinet AC timer save clock
+    mode: single
+    fields:
+      off_time:
+        name: Off time
+        description: Optional HH:MM from live picker (fresh > previous)
+        selector:
+          text:
+    sequence:
+      - variables:
+          resolved_time: >
+            {% if off_time is defined and off_time not in [none, ''] %}
+              {% set parts = (off_time ~ '').split(':') %}
+              {{ '%02d:%02d:00' | format(parts[0]|int(0), parts[1]|int(0) if parts|length > 1 else 0) }}
+            {% else %}
+              {% set h = states('input_number.kabinet_ac_off_hour') | int(0) %}
+              {% set m = states('input_number.kabinet_ac_off_minute') | int(0) %}
+              {{ '%02d:%02d:00' | format(h, m) }}
+            {% endif %}
+          resolved_h: "{{ resolved_time.split(':')[0] | int(0) }}"
+          resolved_m: "{{ resolved_time.split(':')[1] | int(0) }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.kabinet_ac_off_hour
+        data:
+          value: "{{ resolved_h }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.kabinet_ac_off_minute
+        data:
+          value: "{{ resolved_m }}"
+      - action: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.kabinet_ac_off_at
+        data:
+          time: "{{ resolved_time }}"
+      - action: timer.cancel
+        target:
+          entity_id: timer.kabinet_ac_sleep
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.kabinet_ac_off_armed
+
+  kabinet_ac_timer_remove:
+    alias: Kabinet AC timer remove
+    mode: single
+    sequence:
+      - action: timer.cancel
+        target:
+          entity_id: timer.kabinet_ac_sleep
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.kabinet_ac_off_armed
+
+  spalnia_ac_timer_save_duration:
+    alias: Spalnia AC timer save duration
+    mode: single
+    fields:
+      duration:
+        name: Duration
+        description: Optional HH:MM from live picker (fresh > previous)
+        selector:
+          text:
+    sequence:
+      - variables:
+          resolved_duration: >
+            {% if duration is defined and duration not in [none, ''] %}
+              {% set parts = (duration ~ '').split(':') %}
+              {{ '%02d:%02d:00' | format(parts[0]|int(0), parts[1]|int(0) if parts|length > 1 else 0) }}
+            {% else %}
+              {% set h = states('input_number.spalnia_ac_timer_hours') | int(0) %}
+              {% set m = states('input_number.spalnia_ac_timer_minutes') | int(0) %}
+              {{ '%02d:%02d:00' | format(h, m) }}
+            {% endif %}
+          resolved_h: "{{ resolved_duration.split(':')[0] | int(0) }}"
+          resolved_m: "{{ resolved_duration.split(':')[1] | int(0) }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.spalnia_ac_timer_hours
+        data:
+          value: "{{ resolved_h }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.spalnia_ac_timer_minutes
+        data:
+          value: "{{ resolved_m }}"
+      - action: timer.start
+        target:
+          entity_id: timer.spalnia_ac_sleep
+        data:
+          duration: "{{ resolved_duration }}"
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.spalnia_ac_off_armed
+
+  spalnia_ac_timer_save_clock:
+    alias: Spalnia AC timer save clock
+    mode: single
+    fields:
+      off_time:
+        name: Off time
+        description: Optional HH:MM from live picker (fresh > previous)
+        selector:
+          text:
+    sequence:
+      - variables:
+          resolved_time: >
+            {% if off_time is defined and off_time not in [none, ''] %}
+              {% set parts = (off_time ~ '').split(':') %}
+              {{ '%02d:%02d:00' | format(parts[0]|int(0), parts[1]|int(0) if parts|length > 1 else 0) }}
+            {% else %}
+              {% set h = states('input_number.spalnia_ac_off_hour') | int(0) %}
+              {% set m = states('input_number.spalnia_ac_off_minute') | int(0) %}
+              {{ '%02d:%02d:00' | format(h, m) }}
+            {% endif %}
+          resolved_h: "{{ resolved_time.split(':')[0] | int(0) }}"
+          resolved_m: "{{ resolved_time.split(':')[1] | int(0) }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.spalnia_ac_off_hour
+        data:
+          value: "{{ resolved_h }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.spalnia_ac_off_minute
+        data:
+          value: "{{ resolved_m }}"
+      - action: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.spalnia_ac_off_at
+        data:
+          time: "{{ resolved_time }}"
+      - action: timer.cancel
+        target:
+          entity_id: timer.spalnia_ac_sleep
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.spalnia_ac_off_armed
+
+  spalnia_ac_timer_remove:
+    alias: Spalnia AC timer remove
+    mode: single
+    sequence:
+      - action: timer.cancel
+        target:
+          entity_id: timer.spalnia_ac_sleep
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.spalnia_ac_off_armed
+
+# =============================================================================
+# AUTOMATIONS
+# =============================================================================
+
+# --- Duration: timer.finished → climate.turn_off ---
+#
+# alias: Turn off Kabinet AC when sleep timer finishes
+# triggers:
+#   - trigger: timer.finished
+#     target:
+#       entity_id: timer.kabinet_ac_sleep
+# actions:
+#   - action: climate.turn_off
+#     target:
+#       entity_id: climate.kabinet_konditsioner_kabinet
+#
+# alias: Turn off Spalnia AC when sleep timer finishes
+# triggers:
+#   - trigger: timer.finished
+#     target:
+#       entity_id: timer.spalnia_ac_sleep
+# actions:
+#   - action: climate.turn_off
+#     target:
+#       entity_id: climate.spalnia_konditsioner_spalnia
+
+# --- Clock: time at input_datetime + armed → climate.turn_off + disarm ---
+# Bare time+input_datetime fires every day; arm boolean makes it one-shot.
+# Docs: https://www.home-assistant.io/integrations/input_datetime/
+#       https://www.home-assistant.io/docs/automation/trigger/#time-trigger
+# Duration timer.finished automations stay in /config/automations.yaml (do not
+# duplicate here). Clock automations below are package-owned.
+
+automation:
+  - id: klimat_kabinet_ac_off_at_armed_clock
+    alias: Turn off Kabinet AC at armed clock time
+    mode: single
+    triggers:
+      - trigger: time
+        at: input_datetime.kabinet_ac_off_at
+    conditions:
+      - condition: state
+        entity_id: input_boolean.kabinet_ac_off_armed
+        state: "on"
+    actions:
+      - action: climate.turn_off
+        target:
+          entity_id: climate.kabinet_konditsioner_kabinet
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.kabinet_ac_off_armed
+
+  - id: klimat_spalnia_ac_off_at_armed_clock
+    alias: Turn off Spalnia AC at armed clock time
+    mode: single
+    triggers:
+      - trigger: time
+        at: input_datetime.spalnia_ac_off_at
+    conditions:
+      - condition: state
+        entity_id: input_boolean.spalnia_ac_off_armed
+        state: "on"
+    actions:
+      - action: climate.turn_off
+        target:
+          entity_id: climate.spalnia_konditsioner_spalnia
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.spalnia_ac_off_armed
+
+# Known limitation (timer docs): if the timer finishes while HA is not running,
+# timer.finished automations do not run after startup.
+# Operator: copy/reload this package on HA host — publish_edge does not deploy it.

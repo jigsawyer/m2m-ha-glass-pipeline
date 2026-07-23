@@ -1,0 +1,18 @@
+{# Climate room glass — same 1-col stack as room_container; wider host for AC grid.
+   Desktop + iPhone: center AIC cluster in room (place-items center). #}
+type: custom:button-card
+template: climate_room_container
+name: {{ name }}
+custom_fields:
+  content:
+    card:
+      type: custom:layout-card
+      layout_type: custom:grid-layout
+      layout:
+        grid-template-columns: "1fr"
+        place-items: center
+        grid-gap: "var(--lg_space_gap_sm)"
+        margin: "0"
+        padding: "0"
+      cards:
+{{ cards | yaml_cards(8) }}

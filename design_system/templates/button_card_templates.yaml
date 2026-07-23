@@ -296,6 +296,282 @@
       }
 {%- endif %}
 {%- endmacro %}
+{# Klimat chips: icon above UA name INSIDE circle; chrome = climate_house_off tab-side.
+   Proven icon bug: #img-cell clip-path creates stacking context so sibling #liquid_clip
+   (z-index:0) painted over #icon. Fix: no clip on #img-cell; #img-cell/#name z-index:1
+   over tab-side #liquid_clip (same pattern as lg_tab_side_btn_layout_extra_styles).
+   Apple CC Klimat: liquid disk is icon-only perfect circle; UA label sits BELOW outside glass. #}
+{% macro lg_climate_chip_icon_extra_styles() -%}
+      {# Host = dock column (label band); liquid disk stays AIC circle diameter. #}
+      #container {
+        display: grid !important;
+        grid-template-areas: "i" "n" !important;
+        grid-template-columns: var(--lg_size_climate_dock_col) !important;
+        grid-template-rows: var(--lg_size_aic_btn) var(--lg_size_climate_chip_label_h) !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        align-content: start !important;
+        row-gap: var(--lg_space_climate_chip_label_gap) !important;
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_dock_col) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        aspect-ratio: unset !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        clip-path: none !important;
+        position: relative !important;
+        padding: 0 !important;
+      }
+      #img-cell {
+        grid-area: i !important;
+        position: relative !important;
+        z-index: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        justify-self: center !important;
+        align-self: start !important;
+        place-self: start center !important;
+        width: var(--lg_size_aic_btn) !important;
+        height: var(--lg_size_aic_btn) !important;
+        min-width: var(--lg_size_aic_btn) !important;
+        max-width: var(--lg_size_aic_btn) !important;
+        min-height: var(--lg_size_aic_btn) !important;
+        max-height: var(--lg_size_aic_btn) !important;
+        aspect-ratio: 1 / 1 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        border-radius: var(--lg_radius_aic_btn) !important;
+        overflow: hidden !important;
+        clip-path: none !important;
+        box-sizing: border-box !important;
+        background: transparent !important;
+      }
+      {# Idle glass defaults; active chip overrides swap frost tint (keep blur — switch_button ON).
+         Circle = icon row only. dock_col > aic_btn — H-center disk with left:50% + translateX. #}
+      #liquid_clip {
+        grid-area: i !important;
+        position: absolute !important;
+        inset: auto !important;
+        top: 0 !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: var(--lg_size_aic_btn) !important;
+        height: var(--lg_size_aic_btn) !important;
+        min-width: var(--lg_size_aic_btn) !important;
+        min-height: var(--lg_size_aic_btn) !important;
+        max-width: var(--lg_size_aic_btn) !important;
+        max-height: var(--lg_size_aic_btn) !important;
+        aspect-ratio: 1 / 1 !important;
+        border-radius: var(--lg_radius_aic_btn) !important;
+        overflow: hidden !important;
+        clip-path: none !important;
+        isolation: isolate !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+        justify-self: center !important;
+        align-self: start !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #liquid_clip .lg-liquid-clip-shell {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: var(--lg_radius_aic_btn) !important;
+        overflow: hidden !important;
+        clip-path: none !important;
+        pointer-events: none !important;
+      }
+      #icon,
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        place-content: center !important;
+        place-items: center !important;
+        line-height: 0 !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        width: var(--lg_size_climate_chip_icon) !important;
+        height: var(--lg_size_climate_chip_icon) !important;
+        max-width: var(--lg_size_climate_chip_icon) !important;
+        max-height: var(--lg_size_climate_chip_icon) !important;
+        overflow: visible !important;
+      }
+      #icon {
+        --mdc-icon-size: var(--lg_size_climate_chip_icon);
+        position: relative !important;
+        z-index: 1 !important;
+        left: auto !important;
+        right: auto !important;
+        justify-self: center !important;
+        transform: translateY(var(--lg_space_icon_optical_nudge));
+      }
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        --mdc-icon-size: var(--lg_size_climate_chip_icon);
+      }
+      #icon ha-svg-icon svg {
+        display: block !important;
+        margin: 0 auto !important;
+      }
+      #name {
+        grid-area: n !important;
+        position: relative !important;
+        z-index: 1 !important;
+        display: block !important;
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_chip_label_min_w) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_label_h) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        justify-self: center !important;
+        align-self: center !important;
+        font-family: var(--lg_font_label_family) !important;
+        font-size: var(--lg_font_climate_chip_size) !important;
+        font-weight: var(--lg_font_label_weight) !important;
+        line-height: var(--lg_line_height_label) !important;
+        color: var(--lg_color_text) !important;
+        opacity: 0.78;
+      }
+      #label, #state { display: none !important; }
+{%- endmacro %}
+{# Keep AIC macros for TEMP chrome; chips use liquid_clip (tab-side round language). #}
+{% macro lg_aic_button_shell_extra_styles() -%}
+      .lg-aic-btn {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        clip-path: circle(50% at 50% 50%);
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .lg-aic-btn__darken,
+      .lg-aic-btn__luminosity,
+      .lg-aic-btn__frost {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+      }
+      .lg-aic-btn__darken {
+        background: var(--lg_color_climate_cc_layer_darken);
+        mix-blend-mode: darken;
+      }
+      .lg-aic-btn__luminosity {
+        background: var(--lg_color_climate_cc_layer_luminosity);
+        mix-blend-mode: luminosity;
+      }
+      .lg-aic-btn__frost {
+        background: var(--lg_color_climate_cc_frost);
+        backdrop-filter: blur(var(--lg_blur_climate_cc));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_cc));
+        mix-blend-mode: plus-lighter;
+      }
+      .lg-aic-btn__rim {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        box-shadow: var(--lg_shadow_climate_cc_inset);
+        pointer-events: none;
+      }
+{%- endmacro %}
+{% macro lg_aic_button_shell_html() -%}
+<div class="lg-aic-btn" aria-hidden="true"><div class="lg-aic-btn__darken"></div><div class="lg-aic-btn__luminosity"></div><div class="lg-aic-btn__frost"></div><div class="lg-aic-btn__rim"></div></div>
+{%- endmacro %}
+{# Tall column temperature glass chrome (Apple-style pill).
+   Fill is painted on #temp_mod::before (setpoint %) — shell is rim/frost only so
+   slider inherit fill can show through during drag (use_state_color:false → inherit). #}
+{% macro lg_climate_cc_shell_extra_styles() -%}
+      .lg-climate-cc {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_climate_cc);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_climate_cc));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: transparent;
+      }
+      .lg-climate-cc__frost {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_climate_cc);
+        z-index: 1;
+        background: var(--lg_color_climate_cc_frost);
+        /* No backdrop-filter — iOS washes nested slider fill under heavy frost. */
+        pointer-events: none;
+      }
+      .lg-climate-cc__rim {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_climate_cc);
+        box-shadow: var(--lg_shadow_climate_cc_inset);
+        pointer-events: none;
+        z-index: 2;
+      }
+{%- endmacro %}
+{% macro lg_climate_cc_shell_html() -%}
+<div class="lg-climate-cc" aria-hidden="true"><div class="lg-climate-cc__frost"></div><div class="lg-climate-cc__rim"></div></div>
+{%- endmacro %}
+{# Klimat chip host: dock-col wide (label band) × (circle + label) tall; disk = AIC. #}
+{% macro lg_aic_button_host_extra_styles() -%}
+      :host {
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_dock_col) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        aspect-ratio: unset !important;
+        flex: 0 0 auto !important;
+        display: block;
+        justify-self: center;
+        align-self: center;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: 0 !important;
+      }
+      ha-card {
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_dock_col) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        aspect-ratio: unset !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+{%- endmacro %}
 {% macro lg_switch_button_layout_extra_styles() -%}
       [[[
         const on = entity && entity.state === 'on';
@@ -735,6 +1011,7 @@
         max-width: var(--lg_size_tab_side_icon) !important;
         max-height: var(--lg_size_tab_side_icon) !important;
         --mdc-icon-size: var(--lg_size_tab_side_icon);
+        transform: translateY(var(--lg_space_icon_optical_nudge));
       }
       #img-cell {
         width: var(--lg_size_tab_side_icon) !important;
@@ -991,6 +1268,253 @@ button_card_templates:
     custom_fields:
       glass_layers: >
         {{ lg_glass_stack_html() }}
+
+  # Klimat floor: full floor shell + phone shared centered track (header + AICs).
+  # Own extra_styles replaces template merge for this field — restate floor SoT.
+  climate_floor_container:
+    template: floor_container
+    extra_styles: |
+      /* Floor fills shell (uncapped). Do NOT use max-content on masonry —
+         layout-card col count = floor(hostWidth/width); shrink-wrap locks to 1 col.
+         --masonry-view-card-margin:0 — grid-layout #root > * defaults to 4px 4px 8px
+         (layout-card grid.ts); zero so header+mosaic share the phone centered track. */
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: 0 !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        --ha-card-border-radius: 0 !important;
+        display: block !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      {{ lg_floor_folder_shell_extra_styles() }}
+      {{ lg_name_label_extra_styles('--lg_font_label_size', '--lg_font_title_weight', '--lg_font_label_tracking', '--lg_line_height_label') }}
+      #name {
+        white-space: nowrap;
+        overflow: visible;
+      }
+      #content {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        justify-self: stretch !important;
+        place-self: stretch;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        display: block !important;
+      }
+      #content > layout-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+      }
+      #content masonry-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+      @media (max-width: 48rem) {
+        /* Probe (climate_iphone_center_probe.js): masonry phone track must fit
+           inset-free content box. Phone-only: drop L/R floor pad so content box
+           ≥ masonry phone width, then margin:auto the masonry track.
+           Desktop keeps full inset padding (View Independence). */
+        #content {
+          align-items: center !important;
+          justify-content: center !important;
+          padding-top: var(--lg_space_floor_inset) !important;
+          padding-bottom: var(--lg_space_floor_inset) !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        /* Outer grid: full floor width — nested header + mosaic shells share one
+           phone track. */
+        #content > layout-card,
+        #content > * {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          box-sizing: border-box !important;
+          justify-self: stretch !important;
+        }
+        /* Header row (mic+disable flankers) nested layout-card lives in outer
+           layout-card light DOM — styleable from here (not shadow-piercing).
+           H-center it to phone room width so the AIC pair matches room midX.
+           View Independence (analyzer.mdc §0d): climate_floor_container.yaml
+           now renders [optional header, phone-track conditional, desktop-track
+           conditional] — the header (when present) is always exactly the 3rd
+           child from the end; when absent there are only 2 children and
+           :nth-last-child(3) matches nothing. This scopes the rule to the
+           header ONLY and never touches the masonry track entries — each
+           masonry variant (phone/desktop) is self-sized via its own dedicated
+           lg_masonry_climate_*_phone / _desktop literal; forcing this
+           unrelated external width onto that box would re-create the very
+           shared-constraint coupling bug this rule exists to prevent.
+           Two selector forms hedge whether the plugin wraps each `cards:`
+           entry in an extra light-DOM element or not (case-agnostic). */
+        #content > layout-card > layout-card:nth-last-child(3),
+        #content > layout-card > *:nth-last-child(3) layout-card {
+          width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          box-sizing: border-box !important;
+          justify-self: center !important;
+        }
+        /* Masonry tracks = last two children (phone + desktop conditionals).
+           Only one is visible; margin:auto centers the phone track in
+           the unpadded floor content box. Do not rewrite masonry width literal. */
+        #content > layout-card > *:nth-last-child(1),
+        #content > layout-card > *:nth-last-child(2) {
+          margin-left: auto !important;
+          margin-right: auto !important;
+          justify-self: center !important;
+          box-sizing: border-box !important;
+        }
+      }
+
+  # Klimat rooms: desktop gap — layout-card zeros .column > * side margins when
+  # the card hits column_max_width. Reserve lg_space_floor_inset (= floor L/R/B
+  # pad = room bottom→parent distance) via half-inset L/R margins + max-width
+  # cap so width+margins fit the column (seam gap = floor_inset).
+  # View Independence (analyzer.mdc §0d): phone track is climate_floor_container's
+  # dedicated lg_masonry_climate_*_phone track (headroom over
+  # lg_size_climate_container_w_phone), sized independently of the desktop
+  # track — so true centering (not a left-align offset hack tied to a shared
+  # literal) is correct here. A prior left-align hack existed only because
+  # phone/desktop shared one masonry literal; that coupling is now removed.
+  climate_room_container:
+    template: room_container
+    extra_styles: |
+      :host {
+        display: block !important;
+        width: min(100%, var(--lg_size_climate_container_w)) !important;
+        max-width: min(
+          100%,
+          var(--lg_size_climate_container_w),
+          calc(100% - var(--lg_space_floor_inset))
+        ) !important;
+        margin-left: calc(var(--lg_space_floor_inset) / 2) !important;
+        margin-right: calc(var(--lg_space_floor_inset) / 2) !important;
+        justify-self: center !important;
+        box-sizing: border-box !important;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        box-sizing: border-box !important;
+      }
+      #card {
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      {{ lg_room_folder_shell_extra_styles('--lg_size_climate_container_w') }}
+      #content {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        box-sizing: border-box !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      #content layout-card,
+      #content grid-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: grid !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        place-content: start center !important;
+        box-sizing: border-box;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      #content button-card,
+      #content hui-card {
+        justify-self: center !important;
+        align-self: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          /* True symmetric centering — phone masonry track has headroom over
+             this width (see climate_floor_container.yaml phone conditional
+             block), so the room no longer needs a left-align offset hack to
+             compensate for a too-narrow/shared track. */
+          width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          justify-self: center !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          box-sizing: border-box !important;
+        }
+        ha-card {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          box-sizing: border-box !important;
+        }
+        #card {
+          width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          box-sizing: border-box !important;
+        }
+        #name {
+          text-align: center !important;
+          justify-self: center !important;
+          width: 100% !important;
+        }
+        #content {
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          min-height: 100%;
+          box-sizing: border-box !important;
+        }
+      }
 
   switch_button:
     show_icon: true
@@ -1439,71 +1963,9 @@ button_card_templates:
           `;
         ]]]
 
-  climate_temp_btn:
-    show_name: false
-    show_icon: true
-    show_state: false
-    show_ripple: false
-    variables:
-      delta: 1
-      min_temp: 16
-      max_temp: 32
-      temp_step: 1
-    tap_action:
-      action: call-service
-      service: climate.set_temperature
-      target:
-        entity_id: "[[[ return entity.entity_id ]]]"
-      data:
-        temperature: |
-          [[[
-            const step = Number(variables.temp_step) || 1;
-            const minT = Number(variables.min_temp) || 16;
-            const maxT = Number(variables.max_temp) || 32;
-            const cur = Number(entity.attributes.temperature);
-            const base = Number.isFinite(cur) ? cur : 24;
-            const next = base + (Number(variables.delta) || 0) * step;
-            return Math.min(maxT, Math.max(minT, next));
-          ]]]
-    extra_styles: |
-      :host {
-        width: var(--lg_size_climate_step_btn) !important;
-        max-width: var(--lg_size_climate_step_btn) !important;
-        height: var(--lg_size_climate_step_btn) !important;
-        display: block;
-        background: transparent !important;
-        box-shadow: none !important;
-        --ha-card-border-radius: var(--lg_radius_climate_chip) !important;
-      }
-      ha-card {
-        width: var(--lg_size_climate_step_btn) !important;
-        height: var(--lg_size_climate_step_btn) !important;
-        border-radius: var(--lg_radius_climate_chip) !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
-      #card {
-        position: relative;
-        width: var(--lg_size_climate_step_btn);
-        height: var(--lg_size_climate_step_btn);
-        border-radius: var(--lg_radius_climate_chip);
-        background: var(--lg_color_climate_chip_idle);
-        box-shadow: none;
-        cursor: pointer;
-      }
-      #icon {
-        color: var(--lg_color_text) !important;
-        --mdc-icon-size: clamp(1.125rem, 1.6vw, 1.375rem);
-      }
-      #name, #label, #state { display: none !important; }
-      {{ lg_liquid_clip_shell_extra_styles() }}
-    custom_fields:
-      liquid_clip: >
-        {{ lg_liquid_clip_shell_html() }}
-
   climate_mode_chip:
     show_name: true
-    show_icon: false
+    show_icon: true
     show_state: false
     show_ripple: false
     variables:
@@ -1512,68 +1974,78 @@ button_card_templates:
       action: call-service
       service: climate.set_hvac_mode
       target:
-        entity_id: "[[[ return entity.entity_id ]]]"
+        entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
       data:
         hvac_mode: "[[[ return variables.mode ]]]"
     extra_styles: |
       [[[
         const active = entity && entity.state === variables.mode;
-        const accentMap = {
-          cool: 'var(--lg_color_climate_cool)',
-          heat: 'var(--lg_color_climate_heat)',
-          auto: 'var(--lg_color_climate_auto)',
-          dry: 'var(--lg_color_climate_dry)',
-          fan_only: 'var(--lg_color_climate_fan)',
-          off: 'var(--lg_color_climate_off)',
-        };
-        const accent = accentMap[variables.mode] || 'var(--lg_color_text)';
+        const mode = variables.mode;
+        const color = mode === 'cool'
+          ? 'var(--lg_color_climate_cool)'
+          : mode === 'heat'
+            ? 'var(--lg_color_climate_heat)'
+            : 'var(--lg_color_text)';
+        const glow = !active
+          ? 'none'
+          : mode === 'cool'
+            ? 'var(--lg_glow_climate_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_glow_climate_heat)'
+              : 'var(--lg_glow_climate_other)';
+        const iconFilter = !active
+          ? 'none'
+          : mode === 'cool'
+            ? 'var(--lg_filter_climate_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_filter_climate_heat)'
+              : 'var(--lg_filter_climate_other)';
+        /* Match switch_button ON frost+blur; round glow on #liquid_clip (not #card column). */
+        const frost = !active
+          ? 'var(--lg_color_liquid_frost)'
+          : mode === 'cool'
+            ? 'var(--lg_color_climate_frost_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_color_climate_frost_heat)'
+              : 'var(--lg_color_climate_frost_other)';
+        const clipBg = `${frost}, var(--lg_color_liquid_base)`;
+        const clipShadow = active
+          ? `var(--lg_shadow_liquid), ${glow}`
+          : 'var(--lg_shadow_liquid)';
         return `
-      :host {
-        width: auto !important;
-        min-width: 0;
-        height: var(--lg_size_climate_chip_h) !important;
-        display: block;
-        background: transparent !important;
-        box-shadow: none !important;
-        --ha-card-border-radius: var(--lg_radius_climate_chip) !important;
-      }
-      ha-card {
-        height: var(--lg_size_climate_chip_h) !important;
-        border-radius: var(--lg_radius_climate_chip) !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
+      {{ lg_aic_button_host_extra_styles() }}
       #card {
         position: relative;
-        height: var(--lg_size_climate_chip_h);
-        padding: 0 var(--lg_space_gap_sm);
-        border-radius: var(--lg_radius_climate_chip);
-        background: ${active ? accent : 'var(--lg_color_climate_chip_idle)'};
-        box-shadow: ${active && (variables.mode === 'cool' || variables.mode === 'heat')
-          ? (variables.mode === 'cool' ? 'var(--lg_glow_climate_cool)' : 'var(--lg_glow_climate_heat)')
-          : 'none'};
+        width: var(--lg_size_climate_dock_col);
+        height: var(--lg_size_climate_chip_host_h);
+        max-width: var(--lg_size_climate_dock_col);
+        max-height: var(--lg_size_climate_chip_host_h);
+        aspect-ratio: unset;
+        box-sizing: border-box;
+        display: block;
+        margin: 0 auto;
+        background: transparent;
+        box-shadow: none !important;
         cursor: pointer;
+        overflow: visible;
         transition: var(--lg_transition_press);
       }
-      #name {
-        position: relative;
-        z-index: 1;
-        color: ${active && (variables.mode === 'cool' || variables.mode === 'heat')
-          ? 'rgb(10, 10, 12)' : 'var(--lg_color_text)'} !important;
-        font-family: var(--lg_font_label_family);
-        font-size: var(--lg_font_climate_chip_size);
-        font-weight: var(--lg_font_title_weight);
-        white-space: nowrap;
-        opacity: ${active ? '1' : '0.72'};
-      }
-      #icon, #label, #state { display: none !important; }
+      {{ lg_climate_chip_icon_extra_styles() }}
       #liquid_clip {
-        position: absolute;
-        inset: 0;
-        border-radius: var(--lg_radius_climate_chip);
-        overflow: hidden;
-        pointer-events: none;
-        z-index: 0;
+        background: ${clipBg};
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: ${clipShadow};
+      }
+      #icon {
+        color: ${active ? color : 'var(--lg_color_text)'} !important;
+        filter: ${iconFilter};
+        opacity: ${active ? '1' : '0.78'};
+      }
+      #name {
+        opacity: ${active ? '1' : '0.72'};
+        color: ${active ? color : 'var(--lg_color_text)'} !important;
       }
         `;
       ]]]
@@ -1583,7 +2055,7 @@ button_card_templates:
 
   climate_attrib_chip:
     show_name: true
-    show_icon: false
+    show_icon: true
     show_state: false
     show_ripple: false
     variables:
@@ -1595,7 +2067,7 @@ button_card_templates:
       action: call-service
       service: "[[[ return variables.service ]]]"
       target:
-        entity_id: "[[[ return entity.entity_id ]]]"
+        entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
       data: |
         [[[
           const key = variables.data_key || 'fan_mode';
@@ -1607,56 +2079,233 @@ button_card_templates:
           ? entity.attributes[variables.attrib]
           : null;
         const active = cur === variables.value;
+        /* Match switch_button ON frost+blur; round glow on #liquid_clip (not #card column). */
+        const frost = active
+          ? 'var(--lg_color_climate_frost_other)'
+          : 'var(--lg_color_liquid_frost)';
+        const clipBg = `${frost}, var(--lg_color_liquid_base)`;
+        const glow = active ? 'var(--lg_glow_climate_other)' : 'none';
+        const clipShadow = active
+          ? `var(--lg_shadow_liquid), ${glow}`
+          : 'var(--lg_shadow_liquid)';
         return `
-      :host {
-        width: auto !important;
-        height: var(--lg_size_climate_chip_h) !important;
-        display: block;
-        background: transparent !important;
-        box-shadow: none !important;
-        --ha-card-border-radius: var(--lg_radius_climate_chip) !important;
-      }
-      ha-card {
-        height: var(--lg_size_climate_chip_h) !important;
-        border-radius: var(--lg_radius_climate_chip) !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
+      {{ lg_aic_button_host_extra_styles() }}
       #card {
         position: relative;
-        height: var(--lg_size_climate_chip_h);
-        padding: 0 var(--lg_space_gap_sm);
-        border-radius: var(--lg_radius_climate_chip);
-        background: ${active ? 'rgba(255, 255, 255, 0.28)' : 'var(--lg_color_climate_chip_idle)'};
+        width: var(--lg_size_climate_dock_col);
+        height: var(--lg_size_climate_chip_host_h);
+        max-width: var(--lg_size_climate_dock_col);
+        max-height: var(--lg_size_climate_chip_host_h);
+        aspect-ratio: unset;
+        box-sizing: border-box;
+        display: block;
+        margin: 0 auto;
+        background: transparent;
+        box-shadow: none !important;
         cursor: pointer;
+        overflow: visible;
+        transition: var(--lg_transition_press);
+      }
+      {{ lg_climate_chip_icon_extra_styles() }}
+      #liquid_clip {
+        background: ${clipBg};
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: ${clipShadow};
+      }
+      #icon {
+        color: var(--lg_color_text) !important;
+        filter: ${active ? 'var(--lg_filter_climate_other)' : 'none'};
+        opacity: ${active ? '1' : '0.72'};
       }
       #name {
-        position: relative;
-        z-index: 1;
+        opacity: ${active ? '1' : '0.72'};
         color: var(--lg_color_text) !important;
-        font-family: var(--lg_font_label_family);
-        font-size: var(--lg_font_climate_chip_size);
-        font-weight: ${active ? 'var(--lg_font_title_weight)' : 'var(--lg_font_body_weight)'};
-        white-space: nowrap;
-        opacity: ${active ? '1' : '0.65'};
       }
-      #icon, #label, #state { display: none !important; }
         `;
       ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
 
-  climate_power_btn:
-    show_name: false
+  # Swing axis toggle (vertical | horizontal). HA climate.set_swing_mode is set-not-toggle;
+  # UI computes next mode. Independent swing_horizontal_modes → set_swing_horizontal_mode.
+  # Fan/HVAC chips must NOT use this template.
+  climate_swing_axis_chip:
+    show_name: true
     show_icon: true
     show_state: false
     show_ripple: false
+    variables:
+      axis: vertical
+    tap_action:
+      action: call-service
+      service: |
+        [[[
+          const axis = variables.axis || 'vertical';
+          const a = (entity && entity.attributes) || {};
+          const hModes = a.swing_horizontal_modes;
+          if (axis === 'horizontal' && Array.isArray(hModes) && hModes.length) {
+            return 'climate.set_swing_horizontal_mode';
+          }
+          return 'climate.set_swing_mode';
+        ]]]
+      target:
+        entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      data: |
+        [[[
+          const axis = variables.axis || 'vertical';
+          const a = (entity && entity.attributes) || {};
+          const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
+          const hModes = Array.isArray(a.swing_horizontal_modes)
+            ? a.swing_horizontal_modes
+            : null;
+          const pick = (list, cands) => {
+            const lower = (list || []).map((m) => String(m).toLowerCase());
+            for (const c of cands) {
+              const i = lower.indexOf(String(c).toLowerCase());
+              if (i >= 0) return list[i];
+            }
+            return null;
+          };
+          const axisOn = (mode, ax) => {
+            const m = String(mode || '').toLowerCase();
+            if (ax === 'vertical') {
+              return m === 'vertical' || m === 'both' || m === 'on';
+            }
+            return m === 'horizontal' || m === 'both';
+          };
+          /* Independent horizontal feature (HA ClimateEntityFeature.SWING_HORIZONTAL_MODE). */
+          if (axis === 'horizontal' && hModes && hModes.length) {
+            const curH = a.swing_horizontal_mode;
+            const on = String(curH || '').toLowerCase() !== 'off' && !!curH;
+            const next = on
+              ? pick(hModes, ['off'])
+              : pick(hModes, ['on', 'horizontal']);
+            if (!next) return { swing_horizontal_mode: curH };
+            return { swing_horizontal_mode: next };
+          }
+          if (axis === 'vertical' && hModes && hModes.length) {
+            const cur = a.swing_mode;
+            const on = axisOn(cur, 'vertical');
+            const next = on
+              ? pick(modes, ['off'])
+              : pick(modes, ['vertical', 'on']);
+            if (!next) return { swing_mode: cur };
+            return { swing_mode: next };
+          }
+          /* Combined swing_modes: off | vertical | horizontal | both. */
+          const cur = a.swing_mode;
+          let wantVert = axisOn(cur, 'vertical');
+          let wantHoriz = axisOn(cur, 'horizontal');
+          if (axis === 'vertical') wantVert = !wantVert;
+          else wantHoriz = !wantHoriz;
+          let target = null;
+          if (!wantVert && !wantHoriz) target = pick(modes, ['off']);
+          else if (wantVert && !wantHoriz) target = pick(modes, ['vertical', 'on']);
+          else if (!wantVert && wantHoriz) target = pick(modes, ['horizontal']);
+          else target = pick(modes, ['both']);
+          if (!target) return { swing_mode: cur };
+          return { swing_mode: target };
+        ]]]
+    extra_styles: |
+      [[[
+        const axis = variables.axis || 'vertical';
+        const a = (entity && entity.attributes) || {};
+        const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
+        const hModes = Array.isArray(a.swing_horizontal_modes)
+          ? a.swing_horizontal_modes
+          : null;
+        const axisOn = (mode, ax) => {
+          const m = String(mode || '').toLowerCase();
+          if (ax === 'vertical') {
+            return m === 'vertical' || m === 'both' || m === 'on';
+          }
+          return m === 'horizontal' || m === 'both';
+        };
+        let supported = true;
+        if (axis === 'horizontal') {
+          supported = !!(hModes && hModes.length)
+            || modes.some((m) => /^(horizontal|both)$/i.test(String(m)));
+        } else {
+          supported = modes.some((m) => /^(vertical|both|on|off)$/i.test(String(m)))
+            || modes.length === 0;
+        }
+        let active = false;
+        if (axis === 'horizontal' && hModes && hModes.length) {
+          const curH = a.swing_horizontal_mode;
+          active = String(curH || '').toLowerCase() !== 'off' && !!curH;
+        } else {
+          active = axisOn(a.swing_mode, axis);
+        }
+        const frost = active
+          ? 'var(--lg_color_climate_frost_other)'
+          : 'var(--lg_color_liquid_frost)';
+        const clipBg = `${frost}, var(--lg_color_liquid_base)`;
+        const glow = active ? 'var(--lg_glow_climate_other)' : 'none';
+        const clipShadow = active
+          ? `var(--lg_shadow_liquid), ${glow}`
+          : 'var(--lg_shadow_liquid)';
+        return `
+      {{ lg_aic_button_host_extra_styles() }}
+      :host {
+        display: ${supported ? 'block' : 'none'} !important;
+      }
+      #card {
+        position: relative;
+        width: var(--lg_size_climate_dock_col);
+        height: var(--lg_size_climate_chip_host_h);
+        max-width: var(--lg_size_climate_dock_col);
+        max-height: var(--lg_size_climate_chip_host_h);
+        aspect-ratio: unset;
+        box-sizing: border-box;
+        display: ${supported ? 'block' : 'none'};
+        margin: 0 auto;
+        background: transparent;
+        box-shadow: none !important;
+        cursor: pointer;
+        overflow: visible;
+        transition: var(--lg_transition_press);
+      }
+      {{ lg_climate_chip_icon_extra_styles() }}
+      #liquid_clip {
+        background: ${clipBg};
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: ${clipShadow};
+      }
+      #icon {
+        color: var(--lg_color_text) !important;
+        filter: ${active ? 'var(--lg_filter_climate_other)' : 'none'};
+        opacity: ${active ? '1' : '0.72'};
+      }
+      #name {
+        opacity: ${active ? '1' : '0.72'};
+        color: var(--lg_color_text) !important;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  climate_power_btn:
+    show_name: true
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    name: Жив.
     icon: mdi:power
     tap_action: |
       [[[
+        const id = (entity && entity.entity_id) || '';
         const on = entity && entity.state && entity.state !== 'off';
         return {
           action: 'call-service',
           service: on ? 'climate.turn_off' : 'climate.turn_on',
-          target: { entity_id: entity.entity_id },
+          target: { entity_id: id },
         };
       ]]]
     extra_styles: |
@@ -1667,47 +2316,209 @@ button_card_templates:
           ? 'var(--lg_glow_climate_heat)'
           : mode === 'cool'
             ? 'var(--lg_glow_climate_cool)'
-            : 'none';
+            : on
+              ? 'var(--lg_glow_climate_other)'
+              : 'none';
         const color = mode === 'heat'
           ? 'var(--lg_color_climate_heat)'
           : mode === 'cool'
             ? 'var(--lg_color_climate_cool)'
             : 'var(--lg_color_text)';
+        const iconFilter = !on
+          ? 'none'
+          : mode === 'cool'
+            ? 'var(--lg_filter_climate_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_filter_climate_heat)'
+              : 'var(--lg_filter_climate_other)';
+        /* Match switch_button ON frost+blur; round glow on #liquid_clip (not #card column). */
+        const frost = !on
+          ? 'var(--lg_color_liquid_frost)'
+          : mode === 'cool'
+            ? 'var(--lg_color_climate_frost_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_color_climate_frost_heat)'
+              : 'var(--lg_color_climate_frost_other)';
+        const clipBg = `${frost}, var(--lg_color_liquid_base)`;
+        const clipShadow = on
+          ? `var(--lg_shadow_liquid), ${glow}`
+          : 'var(--lg_shadow_liquid)';
         return `
-      :host {
-        width: var(--lg_size_climate_power) !important;
-        height: var(--lg_size_climate_power) !important;
-        display: block;
-        margin-left: auto;
-        background: transparent !important;
-        box-shadow: none !important;
-        --ha-card-border-radius: 50% !important;
-      }
-      ha-card {
-        width: var(--lg_size_climate_power) !important;
-        height: var(--lg_size_climate_power) !important;
-        border-radius: 50% !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
+      {{ lg_aic_button_host_extra_styles() }}
       #card {
         position: relative;
-        width: var(--lg_size_climate_power);
-        height: var(--lg_size_climate_power);
-        border-radius: 50%;
-        background: ${on ? 'rgba(255, 255, 255, 0.22)' : 'var(--lg_color_climate_chip_idle)'};
-        box-shadow: ${on ? glow : 'none'};
+        width: var(--lg_size_climate_dock_col);
+        height: var(--lg_size_climate_chip_host_h);
+        max-width: var(--lg_size_climate_dock_col);
+        max-height: var(--lg_size_climate_chip_host_h);
+        aspect-ratio: unset;
+        box-sizing: border-box;
+        display: block;
+        margin: 0 auto;
+        background: transparent;
+        box-shadow: none !important;
         cursor: pointer;
+        overflow: visible;
+        transition: var(--lg_transition_press);
+      }
+      {{ lg_climate_chip_icon_extra_styles() }}
+      #liquid_clip {
+        background: ${clipBg};
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: ${clipShadow};
       }
       #icon {
         color: ${on ? color : 'var(--lg_color_climate_off)'} !important;
-        --mdc-icon-size: clamp(1.125rem, 1.6vw, 1.375rem);
+        filter: ${iconFilter};
+      }
+      #name {
+        opacity: ${on ? '1' : '0.62'};
+        color: ${on ? color : 'var(--lg_color_climate_off)'} !important;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Half-size ± setpoint steppers — heat/cool only (parent #temp_steps gates visibility).
+  climate_temp_step_btn:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      direction: 1
+    tap_action:
+      action: call-service
+      service: climate.set_temperature
+      target:
+        entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      data:
+        temperature: |
+          [[[
+            const a = (entity && entity.attributes) || {};
+            const cur = Number(a.temperature);
+            const step = Number(a.target_temp_step) || 1;
+            const lo = Number(a.min_temp);
+            const hi = Number(a.max_temp);
+            const dir = Number(variables.direction) || 1;
+            if (!Number.isFinite(cur)) return cur;
+            let next = cur + (dir * step);
+            if (Number.isFinite(lo)) next = Math.max(lo, next);
+            if (Number.isFinite(hi)) next = Math.min(hi, next);
+            const rounded = Math.round(next / step) * step;
+            return Math.round(rounded * 10) / 10;
+          ]]]
+    extra_styles: |
+      [[[
+        const mode = entity ? entity.state : 'off';
+        const enabled = mode === 'heat' || mode === 'cool';
+        /* Never opacity:0 for missing entity — that hid ± when nest eval lagged. */
+        return `
+      :host {
+        width: var(--lg_size_climate_step_btn) !important;
+        max-width: var(--lg_size_climate_step_btn) !important;
+        min-width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        max-height: var(--lg_size_climate_step_btn) !important;
+        min-height: var(--lg_size_climate_step_btn) !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        pointer-events: ${enabled ? 'auto' : 'none'} !important;
+        opacity: ${enabled ? '1' : 'var(--lg_opacity_tab_side_disabled)'} !important;
+      }
+      ha-card, #card {
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        max-width: var(--lg_size_climate_step_btn) !important;
+        max-height: var(--lg_size_climate_step_btn) !important;
+        aspect-ratio: 1 / 1 !important;
+        border-radius: 50% !important;
+        box-sizing: border-box !important;
+        margin: 0 auto !important;
+        position: relative !important;
+        overflow: hidden !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        cursor: pointer;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "i" !important;
+        grid-template-columns: var(--lg_size_climate_step_btn) !important;
+        grid-template-rows: var(--lg_size_climate_step_btn) !important;
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        justify-items: center !important;
+        align-items: center !important;
+        margin: 0 auto !important;
+        position: relative !important;
+        padding: 0 !important;
+      }
+      #img-cell {
+        grid-area: i !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+        clip-path: none !important;
+        z-index: 1 !important;
+        position: relative !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+      #liquid_clip {
+        grid-area: i !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #liquid_clip .lg-liquid-clip-shell {
+        position: absolute !important;
+        inset: 0 !important;
+        border-radius: 50% !important;
+        pointer-events: none !important;
+      }
+      #icon,
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 auto !important;
+        width: var(--lg_size_climate_step_icon) !important;
+        height: var(--lg_size_climate_step_icon) !important;
+        --mdc-icon-size: var(--lg_size_climate_step_icon);
+        color: var(--lg_color_text) !important;
+        position: relative !important;
+        z-index: 1 !important;
       }
       #name, #label, #state { display: none !important; }
         `;
       ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
 
-  climate_thermostat:
+  climate_temp_step_row:
     show_icon: false
     show_name: false
     show_state: false
@@ -1715,31 +2526,545 @@ button_card_templates:
     show_ripple: false
     tap_action:
       action: none
+    extra_styles: |
+      :host {
+        width: var(--lg_size_climate_step_row_w) !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        min-height: var(--lg_size_climate_step_btn) !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        margin: 0 auto !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      ha-card, #card {
+        width: 100% !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "minus plus" !important;
+        grid-template-columns: var(--lg_size_climate_step_btn) var(--lg_size_climate_step_btn) !important;
+        column-gap: var(--lg_space_climate_step_gap) !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        align-items: center !important;
+        width: var(--lg_size_climate_step_row_w) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #temp_minus, #temp_plus {
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        justify-self: center !important;
+        align-self: center !important;
+        overflow: visible !important;
+      }
+      #temp_minus { grid-area: minus !important; }
+      #temp_plus { grid-area: plus !important; }
+      #temp_minus > *, #temp_plus > * {
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        display: block !important;
+        margin: 0 auto !important;
+      }
+    custom_fields:
+      temp_minus:
+        card:
+          type: custom:button-card
+          template: climate_temp_step_btn
+          entity: "[[[[ return (entity && entity.entity_id) || '' ]]]]"
+          icon: mdi:minus
+          variables:
+            direction: -1
+      temp_plus:
+        card:
+          type: custom:button-card
+          template: climate_temp_step_btn
+          entity: "[[[[ return (entity && entity.entity_id) || '' ]]]]"
+          icon: mdi:plus
+          variables:
+            direction: 1
+
+  # 2×2 HVAC mode cluster (left stack group1)
+  # 1×6 left flank (modes/fan/actions left halves) — dial sits between left_col and right_col
+  # 1×6 left flank (HVAC modes + power)
+  climate_left_col:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      :host {
+        width: var(--lg_size_climate_col_w) !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_col_h) !important;
+        min-height: var(--lg_size_climate_col_h) !important;
+        max-height: var(--lg_size_climate_col_h) !important;
+        display: block;
+        box-sizing: border-box;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_col_h) !important;
+        min-height: var(--lg_size_climate_col_h) !important;
+        max-height: var(--lg_size_climate_col_h) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "mc" "mh" "md" "fo" "ma" "power" !important;
+        grid-template-columns: var(--lg_size_climate_dock_col) !important;
+        grid-template-rows: repeat(6, var(--lg_size_climate_chip_host_h)) !important;
+        row-gap: var(--lg_space_climate_gap) !important;
+        justify-content: start !important;
+        justify-items: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        height: var(--lg_size_climate_col_h) !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #card {
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #mode_cool, #mode_heat, #mode_dry, #mode_fan, #mode_auto, #power {
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_aic_btn) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        justify-self: center !important;
+        align-self: center !important;
+        overflow: visible !important;
+        z-index: 1;
+      }
+      #mode_cool > *, #mode_heat > *, #mode_dry > *, #mode_fan > *, #mode_auto > *, #power > * {
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_dock_col) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        aspect-ratio: unset !important;
+        display: block !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+      }
+      #mode_cool { grid-area: mc !important; }
+      #mode_heat { grid-area: mh !important; }
+      #mode_dry { grid-area: md !important; }
+      #mode_fan { grid-area: fo !important; }
+      #mode_auto { grid-area: ma !important; }
+      #power { grid-area: power !important; }
+    custom_fields:
+      mode_cool:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:snowflake
+          name: Холод
+          variables:
+            mode: cool
+      mode_heat:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:fire
+          name: Тепло
+          variables:
+            mode: heat
+      mode_dry:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:water-percent
+          name: Сухе
+          variables:
+            mode: dry
+      mode_fan:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:fan
+          name: Вент.
+          variables:
+            mode: fan_only
+      mode_auto:
+        card:
+          type: custom:button-card
+          template: climate_mode_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:thermostat-auto
+          name: Авто
+          variables:
+            mode: auto
+      power:
+        card:
+          type: custom:button-card
+          template: climate_power_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          name: Жив.
+
+  # 1×6 right flank (fan speeds + swing axes)
+  climate_right_col:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      :host {
+        width: var(--lg_size_climate_col_w) !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_col_h) !important;
+        min-height: var(--lg_size_climate_col_h) !important;
+        max-height: var(--lg_size_climate_col_h) !important;
+        display: block;
+        box-sizing: border-box;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_col_h) !important;
+        min-height: var(--lg_size_climate_col_h) !important;
+        max-height: var(--lg_size_climate_col_h) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "fa" "fl" "fm" "fh" "sh" "sv" !important;
+        grid-template-columns: var(--lg_size_climate_dock_col) !important;
+        grid-template-rows: repeat(6, var(--lg_size_climate_chip_host_h)) !important;
+        row-gap: var(--lg_space_climate_gap) !important;
+        justify-content: start !important;
+        justify-items: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        height: var(--lg_size_climate_col_h) !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #card {
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #fan_auto, #fan_low, #fan_medium, #fan_high, #swing_horizontal, #swing_vertical {
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_aic_btn) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        justify-self: center !important;
+        align-self: center !important;
+        overflow: visible !important;
+        z-index: 1;
+      }
+      #fan_auto > *, #fan_low > *, #fan_medium > *, #fan_high > *, #swing_horizontal > *, #swing_vertical > * {
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_dock_col) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        aspect-ratio: unset !important;
+        display: block !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+      }
+      #fan_auto { grid-area: fa !important; }
+      #fan_low { grid-area: fl !important; }
+      #fan_medium { grid-area: fm !important; }
+      #fan_high { grid-area: fh !important; }
+      #swing_horizontal { grid-area: sh !important; }
+      #swing_vertical { grid-area: sv !important; }
+    custom_fields:
+      fan_auto:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:fan-auto
+          name: Авто
+          variables:
+            attrib: fan_mode
+            value: auto
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_low:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:speedometer-slow
+          name: Низ.
+          variables:
+            attrib: fan_mode
+            value: low
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_medium:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:speedometer-medium
+          name: Сер.
+          variables:
+            attrib: fan_mode
+            value: medium
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_high:
+        card:
+          type: custom:button-card
+          template: climate_attrib_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:speedometer
+          name: Вис.
+          variables:
+            attrib: fan_mode
+            value: high
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      swing_horizontal:
+        card:
+          type: custom:button-card
+          template: climate_swing_axis_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:arrow-left-right
+          name: Горіз.
+          variables:
+            axis: horizontal
+      swing_vertical:
+        card:
+          type: custom:button-card
+          template: climate_swing_axis_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:arrow-up-down
+          name: Верт.
+          variables:
+            axis: vertical
+
+  # Climate-only long timer bar (mirrors disable_room look via climate-scoped tokens; do NOT edit disable_room_button).
+  # Opens Bubble pop-up via navigate hash (constraints.allow_hacs_bubble_card_popup).
+  climate_timer_button:
+    show_icon: false
+    show_name: true
+    show_state: false
+    show_label: false
+    show_ripple: false
     variables:
-      min_temp: 16
-      max_temp: 32
-      temp_step: 1
+      clock_entity_id: ""
+      armed_entity_id: ""
+      popup_hash: ""
+    name: |
+      [[[
+        const idle = 'Встановити таймер';
+        const fmtClock = (hh, mm) => `Вимкнеться: ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+        if (entity && entity.state && (entity.state === 'active' || entity.state === 'paused')) {
+          const fin = entity.attributes && entity.attributes.finishes_at;
+          if (!fin) return 'Вимкнеться: …';
+          const d = new Date(fin);
+          if (Number.isNaN(d.getTime())) return 'Вимкнеться: …';
+          return fmtClock(d.getHours(), d.getMinutes());
+        }
+        const armedId = variables && variables.armed_entity_id;
+        const clockId = variables && variables.clock_entity_id;
+        if (armedId && clockId && states[armedId] && states[armedId].state === 'on') {
+          const clock = states[clockId];
+          if (clock && clock.state) {
+            const parts = String(clock.state).split(':');
+            if (parts.length >= 2) return fmtClock(parts[0], parts[1]);
+          }
+          return 'Вимкнеться: …';
+        }
+        return idle;
+      ]]]
+    tap_action:
+      action: navigate
+      navigation_path: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+    extra_styles: |
+      :host {
+        width: min(100%, var(--lg_size_climate_timer_bar_w)) !important;
+        max-width: min(100%, var(--lg_size_climate_timer_bar_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        max-height: var(--lg_size_climate_timer_bar_h) !important;
+        min-height: var(--lg_size_climate_timer_bar_h) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_climate_timer_bar_w)) !important;
+        max-width: min(100%, var(--lg_size_climate_timer_bar_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        max-height: var(--lg_size_climate_timer_bar_h) !important;
+        min-height: var(--lg_size_climate_timer_bar_h) !important;
+        aspect-ratio: unset !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      #container {
+        display: grid !important;
+        grid-template-areas: "n" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_climate_timer_bar_h) !important;
+        justify-content: center !important;
+        align-items: center !important;
+        place-content: center !important;
+      }
+      #card {
+        position: relative;
+        box-sizing: border-box;
+        width: min(100%, var(--lg_size_climate_timer_bar_w)) !important;
+        max-width: min(100%, var(--lg_size_climate_timer_bar_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        max-height: var(--lg_size_climate_timer_bar_h) !important;
+        min-height: var(--lg_size_climate_timer_bar_h) !important;
+        aspect-ratio: unset;
+        border-radius: var(--lg_radius_liquid);
+        border: var(--lg_stroke_glass) solid transparent;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        filter: none;
+        overflow: visible;
+        transition: var(--lg_transition_press);
+        margin: 0;
+        padding: 0;
+        justify-self: start;
+        place-self: start center;
+      }
+      #icon, #label, #state { display: none !important; }
+      #name {
+        position: relative;
+        z-index: 1;
+        grid-area: n !important;
+        justify-self: center !important;
+        align-self: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 var(--lg_space_gap_sm) !important;
+        box-sizing: border-box !important;
+        color: var(--lg_color_text) !important;
+        font-family: var(--lg_font_label_family) !important;
+        font-size: var(--lg_font_climate_timer_size) !important;
+        font-weight: var(--lg_font_title_weight) !important;
+        letter-spacing: var(--lg_font_body_tracking) !important;
+        line-height: var(--lg_line_height_label) !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base), var(--lg_color_liquid_burn_soft);
+        background-blend-mode: normal, plus-lighter, color-burn;
+        backdrop-filter: blur(var(--lg_blur_room_btn));
+        -webkit-backdrop-filter: blur(var(--lg_blur_room_btn));
+        box-shadow: var(--lg_shadow_room_btn);
+      }
+      #distort { display: none; }
+      @media (max-width: 48rem) {
+        :host, ha-card, #card {
+          width: min(100%, var(--lg_size_climate_timer_bar_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_climate_timer_bar_w_phone)) !important;
+        }
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+
+  # Climate timer pop-up mode chip (Duration | Clock). Entity = input_select; option in variables.option.
+  climate_timer_mode_btn:
+    show_icon: false
+    show_name: true
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      option: duration
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      target:
+        entity_id: "[[[ return entity.entity_id ]]]"
+      data:
+        option: "[[[ return (variables && variables.option) || 'duration' ]]]"
     extra_styles: |
       [[[
-        const mode = entity ? entity.state : 'off';
-        const accent =
-          mode === 'heat' ? 'var(--lg_color_climate_heat)' :
-          mode === 'cool' ? 'var(--lg_color_climate_cool)' :
-          mode === 'dry' ? 'var(--lg_color_climate_dry)' :
-          mode === 'fan_only' ? 'var(--lg_color_climate_fan)' :
-          mode === 'auto' ? 'var(--lg_color_climate_auto)' :
-          'var(--lg_color_climate_off)';
-        const glow =
-          mode === 'heat' ? 'var(--lg_glow_climate_heat)' :
-          mode === 'cool' ? 'var(--lg_glow_climate_cool)' :
-          'none';
+        const selected = entity && variables && entity.state === variables.option;
         return `
       :host {
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
         display: block;
         box-sizing: border-box;
+        margin: 0 !important;
         background: transparent !important;
         box-shadow: none !important;
         --ha-card-border-radius: var(--lg_radius_liquid) !important;
@@ -1747,33 +3072,1609 @@ button_card_templates:
       }
       ha-card {
         width: 100% !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      #container {
+        display: grid !important;
+        grid-template-areas: "n" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_climate_timer_action_h) !important;
+        place-content: center !important;
+      }
+      #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
+        border-radius: var(--lg_radius_liquid);
+        background: transparent;
+        box-shadow: ${selected ? 'var(--lg_glow_climate_timer_mode_on)' : 'none'} !important;
+        transition: var(--lg_transition_press);
+        cursor: pointer;
+      }
+      #icon, #label, #state { display: none !important; }
+      #name {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        font-family: var(--lg_font_label_family) !important;
+        font-size: var(--lg_font_climate_timer_action_size) !important;
+        font-weight: var(--lg_font_title_weight) !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: ${selected
+          ? 'var(--lg_color_climate_timer_mode_on_frost), var(--lg_color_liquid_base)'
+          : 'var(--lg_color_liquid_frost), var(--lg_color_liquid_base)'};
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort { display: none; }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Climate timer Save / Cancel — half-width glass pills (climate-scoped; do NOT edit switch_button).
+  climate_timer_action_btn:
+    show_icon: false
+    show_name: true
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      :host {
+        width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      #container {
+        display: grid !important;
+        grid-template-areas: "n" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_climate_timer_action_h) !important;
+        place-content: center !important;
+      }
+      #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
+        border-radius: var(--lg_radius_liquid);
+        background: transparent;
+        box-shadow: none;
+        transition: var(--lg_transition_press);
+        cursor: pointer;
+      }
+      #icon, #label, #state { display: none !important; }
+      #name {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        font-family: var(--lg_font_label_family) !important;
+        font-size: var(--lg_font_climate_timer_action_size) !important;
+        font-weight: var(--lg_font_title_weight) !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_liquid_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort { display: none; }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Climate timer Remove — full-width pill (mirrors disable_room look via climate tokens).
+  climate_timer_remove_btn:
+    show_icon: false
+    show_name: true
+    show_state: false
+    show_label: false
+    show_ripple: false
+    name: Видалити таймер
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: script.turn_on
+      target: |
+        [[[
+          const id = variables && variables.remove_script_id;
+          return id ? { entity_id: id } : {};
+        ]]]
+    variables:
+      remove_script_id: ""
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_remove_h) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_remove_h) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_disable_press_feedback_extra_styles() }}
+      #container {
+        display: grid !important;
+        grid-template-areas: "n" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_climate_timer_remove_h) !important;
+        place-content: center !important;
+      }
+      #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_remove_h) !important;
+        border-radius: var(--lg_radius_liquid);
+        background: transparent;
+        box-shadow: none;
+        transition: var(--lg_transition_press);
+        cursor: pointer;
+      }
+      #card:active {
+        box-shadow: var(--lg_glow_disable);
+      }
+      #icon, #label, #state { display: none !important; }
+      #name {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        font-family: var(--lg_font_label_family) !important;
+        font-size: var(--lg_font_climate_timer_action_size) !important;
+        font-weight: var(--lg_font_title_weight) !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+      }
+      #card:active #name {
+        color: var(--lg_color_disable_icon) !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base), var(--lg_color_liquid_burn_soft);
+        background-blend-mode: normal, plus-lighter, color-burn;
+        backdrop-filter: blur(var(--lg_blur_room_btn));
+        -webkit-backdrop-filter: blur(var(--lg_blur_room_btn));
+        box-shadow: var(--lg_shadow_room_btn);
+      }
+      #distort { display: none; }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Climate timer clock picker — phone Force Native (wheels).
+  # Proven path: glass __display + opacity:0 __overlay + showPicker (wheels open).
+  # Apply: LastValue stash + display mirror; callService on change/blur only;
+  # clear PickerOpen on blur only; sticky remount; never rewrite el.value mid-dismiss.
+  # Desktop uses climate_timer_dual_slider.
+  climate_timer_clock_picker:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      clock_hour_entity_id: ""
+      clock_minute_entity_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const parseHHMM = (state) => {
+          if (!state || state === 'unknown' || state === 'unavailable') return [0, 0];
+          const parts = String(state).split(':');
+          return [clampInt(parseInt(parts[0], 10) || 0, 0, 23), clampInt(parseInt(parts[1], 10) || 0, 0, 59)];
+        };
+        const card = this;
+        const ha = card.hass;
+        const clockEid = card.config && card.config.entity;
+        const hourEid = variables.clock_hour_entity_id;
+        const minuteEid = variables.clock_minute_entity_id;
+        card.__lgClockHourEid = hourEid;
+        card.__lgClockMinuteEid = minuteEid;
+        card.__lgClockEid = clockEid;
+        const hs = ha && hourEid && ha.states[hourEid];
+        const ms = ha && minuteEid && ha.states[minuteEid];
+        let h = clampInt(parseInt(hs && hs.state, 10) || 0, 0, 23);
+        let m = clampInt(parseInt(ms && ms.state, 10) || 0, 0, 59);
+        if ((!hs || hs.state === 'unknown' || hs.state === 'unavailable') && clockEid && ha && ha.states[clockEid]) {
+          [h, m] = parseHHMM(ha.states[clockEid].state);
+        }
+        const expected = `${pad2(h)}:${pad2(m)}`;
+        card.__lgClockApplyFromInput = (el) => {
+          const raw = (el && el.value) || card.__lgClockLastValue || '';
+          if (!raw) return;
+          const hass = card.hass;
+          const hEid = card.__lgClockHourEid;
+          const mEid = card.__lgClockMinuteEid;
+          if (!hass || !hEid || !mEid) return;
+          const parts = String(raw).split(':');
+          const nh = clampInt(parseInt(parts[0], 10) || 0, 0, 23);
+          const nm = clampInt(parseInt(parts[1], 10) || 0, 0, 59);
+          const next = `${pad2(nh)}:${pad2(nm)}`;
+          card.__lgClockLastValue = next;
+          // Never rewrite el.value during commit — mutates iOS picker mid-dismiss.
+          if (card.__lgClockDisplay) card.__lgClockDisplay.textContent = next;
+          const curH = clampInt(parseInt(hass.states[hEid] && hass.states[hEid].state, 10) || 0, 0, 23);
+          const curM = clampInt(parseInt(hass.states[mEid] && hass.states[mEid].state, 10) || 0, 0, 59);
+          if (nh !== curH) {
+            hass.callService('input_number', 'set_value', { entity_id: hEid, value: nh });
+          }
+          if (nm !== curM) {
+            hass.callService('input_number', 'set_value', { entity_id: mEid, value: nm });
+          }
+        };
+        // Mid-scroll: stash + mirror display only — no callService, keep PickerOpen.
+        card.__lgClockOnInput = (ev) => {
+          const el = ev && ev.target;
+          if (el && el.value) {
+            card.__lgClockLastValue = el.value;
+            if (card.__lgClockDisplay) card.__lgClockDisplay.textContent = el.value;
+          }
+        };
+        card.__lgClockOnChange = (ev) => {
+          const el = ev && ev.target;
+          if (el && el.value) {
+            card.__lgClockLastValue = el.value;
+            if (card.__lgClockDisplay) card.__lgClockDisplay.textContent = el.value;
+          }
+          card.__lgClockApplyFromInput(el);
+          // Keep PickerOpen until blur so remount cannot wipe before helpers catch up.
+        };
+        card.__lgClockOnBlur = (ev) => {
+          const el = ev && ev.target;
+          card.__lgClockApplyFromInput(el);
+          card.__lgClockPickerOpen = false;
+        };
+        card.__lgClockOpenPicker = (ev) => {
+          if (ev) {
+            ev.stopPropagation();
+            ev.stopImmediatePropagation && ev.stopImmediatePropagation();
+          }
+          const input = card.__lgClockInput;
+          if (!input) return;
+          card.__lgClockPickerOpen = true;
+          try { input.focus({ preventScroll: true }); } catch (_) { try { input.focus(); } catch (__) {} }
+          if (typeof input.showPicker === 'function') {
+            try { input.showPicker(); } catch (_) {}
+          }
+        };
+        if (!card.__lgClockOnInputBound) {
+          card.__lgClockOnInputBound = (ev) => card.__lgClockOnInput && card.__lgClockOnInput(ev);
+          card.__lgClockOnChangeBound = (ev) => card.__lgClockOnChange && card.__lgClockOnChange(ev);
+          card.__lgClockOnBlurBound = (ev) => card.__lgClockOnBlur && card.__lgClockOnBlur(ev);
+          card.__lgClockOpenPickerBound = (ev) => card.__lgClockOpenPicker && card.__lgClockOpenPicker(ev);
+        };
+        const syncHelpersFromClock = () => {
+          const hass = card.hass;
+          const hEid = card.__lgClockHourEid;
+          const mEid = card.__lgClockMinuteEid;
+          const cEid = card.__lgClockEid;
+          if (!hass || !hEid || !mEid || !cEid) return;
+          const st = hass.states[cEid];
+          if (!st || !st.state || st.state === 'unknown' || st.state === 'unavailable') return;
+          const [ch, cm] = parseHHMM(st.state);
+          const curH = clampInt(parseInt(hass.states[hEid] && hass.states[hEid].state, 10) || 0, 0, 23);
+          const curM = clampInt(parseInt(hass.states[mEid] && hass.states[mEid].state, 10) || 0, 0, 59);
+          if (curH === 0 && curM === 0 && (ch !== 0 || cm !== 0)) {
+            hass.callService('input_number', 'set_value', { entity_id: hEid, value: ch });
+            hass.callService('input_number', 'set_value', { entity_id: mEid, value: cm });
+          }
+        };
+        const mount = () => {
+          const root = card.shadowRoot;
+          if (!root) return;
+          const slot = root.querySelector('#clock_live') || root.querySelector('#container');
+          if (!slot) return;
+          let live = root.querySelector('#lg_clock_live');
+          // Drop visible-only __input experiment so overlay+showPicker remounts cleanly.
+          if (live && live.isConnected && !live.querySelector('.lg-climate-timer-clock__overlay')) {
+            live.remove();
+            live = null;
+          }
+          if (!live || !live.isConnected) {
+            live = document.createElement('div');
+            live.id = 'lg_clock_live';
+            live.className = 'lg-climate-timer-clock';
+            const label = document.createElement('span');
+            label.className = 'lg-climate-timer-clock__label';
+            label.textContent = 'Вимкнути о';
+            const row = document.createElement('div');
+            row.className = 'lg-climate-timer-clock__row';
+            const icon = document.createElement('ha-icon');
+            icon.className = 'lg-climate-timer-clock__icon';
+            icon.setAttribute('icon', 'mdi:clock-outline');
+            const hit = document.createElement('div');
+            hit.className = 'lg-climate-timer-clock__hit';
+            const display = document.createElement('span');
+            display.className = 'lg-climate-timer-clock__display';
+            display.textContent = expected;
+            const input = document.createElement('input');
+            input.className = 'lg-climate-timer-clock__overlay';
+            input.type = 'time';
+            input.step = '60';
+            input.value = expected;
+            input.setAttribute('aria-label', 'Вимкнути о');
+            hit.appendChild(display);
+            hit.appendChild(input);
+            row.appendChild(icon);
+            row.appendChild(hit);
+            live.appendChild(label);
+            live.appendChild(row);
+            slot.appendChild(live);
+            input.addEventListener('input', card.__lgClockOnInputBound);
+            input.addEventListener('change', card.__lgClockOnChangeBound);
+            input.addEventListener('blur', card.__lgClockOnBlurBound);
+            input.addEventListener('click', card.__lgClockOpenPickerBound);
+            input.addEventListener('pointerdown', card.__lgClockOpenPickerBound);
+            hit.addEventListener('click', card.__lgClockOpenPickerBound);
+            hit.addEventListener('pointerdown', card.__lgClockOpenPickerBound);
+            card.__lgClockInput = input;
+            card.__lgClockDisplay = display;
+            card.__lgClockLastValue = expected;
+            syncHelpersFromClock();
+          } else {
+            const input = live.querySelector('.lg-climate-timer-clock__overlay');
+            const display = live.querySelector('.lg-climate-timer-clock__display');
+            if (!input) return;
+            card.__lgClockInput = input;
+            card.__lgClockDisplay = display;
+            const focused = root.activeElement === input
+              || (typeof input.matches === 'function' && input.matches(':focus'));
+            if (card.__lgClockPickerOpen || focused) return;
+            // Sticky pending: prefer local commit before hass catches up.
+            if (card.__lgClockLastValue && card.__lgClockLastValue !== expected) {
+              card.__lgClockApplyFromInput(input);
+              return;
+            }
+            if (input.value !== expected) input.value = expected;
+            if (display && display.textContent !== expected) display.textContent = expected;
+          }
+        };
+        setTimeout(mount, 0);
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_clock_h_phone) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card, #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_clock_h_phone) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        background: transparent;
+        box-shadow: none;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      #container {
+        position: relative;
+        display: grid !important;
+        grid-template-areas: "live" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_climate_timer_clock_h_phone) !important;
+        place-content: center !important;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_clock_h_phone) !important;
+        box-sizing: border-box !important;
+        padding: 0 var(--lg_space_climate_timer_clock_pad_x) !important;
+        pointer-events: auto !important;
+      }
+      #clock_live {
+        grid-area: live !important;
+        position: relative;
+        z-index: 2;
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        pointer-events: auto !important;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+      #lg_clock_live {
+        position: relative;
+        z-index: 2;
+        width: 100% !important;
+        min-width: 0 !important;
+        pointer-events: auto !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_liquid_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort { display: none; }
+      .lg-climate-timer-clock {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_timer_clock_gap);
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+      .lg-climate-timer-clock__row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_timer_clock_gap);
+        width: 100%;
+        min-width: 0;
+      }
+      .lg-climate-timer-clock__icon {
+        --mdc-icon-size: var(--lg_font_climate_timer_clock_size_phone);
+        width: var(--lg_font_climate_timer_clock_size_phone);
+        height: var(--lg_font_climate_timer_clock_size_phone);
+        color: var(--lg_color_text);
+        flex-shrink: 0;
+        pointer-events: none;
+      }
+      .lg-climate-timer-clock__hit {
+        position: relative;
+        box-sizing: border-box;
+        flex: 0 0 auto;
+        width: var(--lg_size_climate_timer_clock_input_w_phone);
+        min-width: var(--lg_size_climate_timer_clock_input_w_phone);
+        max-width: 100%;
+        height: var(--lg_size_climate_timer_clock_input_h_phone);
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        border-radius: var(--lg_radius_liquid);
+        background: var(--lg_color_glass_fill);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        pointer-events: auto !important;
+        z-index: 3;
+        overflow: hidden;
+      }
+      .lg-climate-timer-clock__display {
+        position: relative;
+        z-index: 1;
+        pointer-events: none;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_clock_size_phone);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: 1;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .lg-climate-timer-clock__overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        opacity: 0;
+        cursor: pointer;
+        pointer-events: auto !important;
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        color: transparent;
+        font-size: 1.25rem;
+      }
+      .lg-climate-timer-clock__label {
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_clock_label_size);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        text-align: center;
+        white-space: nowrap;
+        opacity: 0.85;
+        pointer-events: none;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      clock_live: ""
+
+  # Climate timer duration picker — phone Force Native (wheels).
+  # Proven path: glass __display + opacity:0 __overlay + showPicker (same as clock).
+  # Apply: LastValue stash + display mirror; callService on change/blur only;
+  # clear PickerOpen on blur only; sticky remount; never rewrite el.value mid-dismiss.
+  climate_timer_duration_picker:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      minutes_entity_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const fmtDuration = (ha, hoursEid, minutesEid) => {
+          const hs = ha && ha.states && ha.states[hoursEid];
+          const ms = ha && ha.states && ha.states[minutesEid];
+          const h = clampInt(parseInt(hs && hs.state, 10) || 0, 0, 12);
+          const m = clampInt(parseInt(ms && ms.state, 10) || 0, 0, 59);
+          return `${pad2(h)}:${pad2(m)}`;
+        };
+        const card = this;
+        const hoursEid = card.config && card.config.entity;
+        const minutesEid = variables.minutes_entity_id;
+        const ha = card.hass;
+        const expected = fmtDuration(ha, hoursEid, minutesEid);
+        card.__lgDurationHoursEid = hoursEid;
+        card.__lgDurationMinutesEid = minutesEid;
+        card.__lgDurationApplyFromInput = (el) => {
+          const raw = (el && el.value) || card.__lgDurationLastValue || '';
+          if (!raw) return;
+          const hEid = card.__lgDurationHoursEid;
+          const mEid = card.__lgDurationMinutesEid;
+          const hass = card.hass;
+          if (!hEid || !mEid || !hass) return;
+          const parts = String(raw).split(':');
+          const h = clampInt(parseInt(parts[0], 10) || 0, 0, 12);
+          const m = clampInt(parseInt(parts[1], 10) || 0, 0, 59);
+          const next = `${pad2(h)}:${pad2(m)}`;
+          card.__lgDurationLastValue = next;
+          // Never rewrite el.value during commit — mutates iOS picker mid-dismiss.
+          if (card.__lgDurationDisplay) card.__lgDurationDisplay.textContent = next;
+          const hs = hass.states && hass.states[hEid];
+          const ms = hass.states && hass.states[mEid];
+          const curH = clampInt(parseInt(hs && hs.state, 10) || 0, 0, 12);
+          const curM = clampInt(parseInt(ms && ms.state, 10) || 0, 0, 59);
+          if (h !== curH) {
+            hass.callService('input_number', 'set_value', { entity_id: hEid, value: h });
+          }
+          if (m !== curM) {
+            hass.callService('input_number', 'set_value', { entity_id: mEid, value: m });
+          }
+        };
+        card.__lgDurationOnInput = (ev) => {
+          const el = ev && ev.target;
+          if (el && el.value) {
+            card.__lgDurationLastValue = el.value;
+            if (card.__lgDurationDisplay) card.__lgDurationDisplay.textContent = el.value;
+          }
+        };
+        card.__lgDurationOnChange = (ev) => {
+          const el = ev && ev.target;
+          if (el && el.value) {
+            card.__lgDurationLastValue = el.value;
+            if (card.__lgDurationDisplay) card.__lgDurationDisplay.textContent = el.value;
+          }
+          card.__lgDurationApplyFromInput(el);
+        };
+        card.__lgDurationOnBlur = (ev) => {
+          const el = ev && ev.target;
+          card.__lgDurationApplyFromInput(el);
+          card.__lgDurationPickerOpen = false;
+        };
+        card.__lgDurationOpenPicker = (ev) => {
+          if (ev) {
+            ev.stopPropagation();
+            ev.stopImmediatePropagation && ev.stopImmediatePropagation();
+          }
+          const input = card.__lgDurationInput;
+          if (!input) return;
+          card.__lgDurationPickerOpen = true;
+          try { input.focus({ preventScroll: true }); } catch (_) { try { input.focus(); } catch (__) {} }
+          if (typeof input.showPicker === 'function') {
+            try { input.showPicker(); } catch (_) {}
+          }
+        };
+        if (!card.__lgDurationOnInputBound) {
+          card.__lgDurationOnInputBound = (ev) => card.__lgDurationOnInput && card.__lgDurationOnInput(ev);
+          card.__lgDurationOnChangeBound = (ev) => card.__lgDurationOnChange && card.__lgDurationOnChange(ev);
+          card.__lgDurationOnBlurBound = (ev) => card.__lgDurationOnBlur && card.__lgDurationOnBlur(ev);
+          card.__lgDurationOpenPickerBound = (ev) => card.__lgDurationOpenPicker && card.__lgDurationOpenPicker(ev);
+        };
+        const mount = () => {
+          const root = card.shadowRoot;
+          if (!root) return;
+          const slot = root.querySelector('#duration_live') || root.querySelector('#container');
+          if (!slot) return;
+          let live = root.querySelector('#lg_duration_live');
+          if (live && live.isConnected && !live.querySelector('.lg-climate-timer-duration__overlay')) {
+            live.remove();
+            live = null;
+          }
+          if (!live || !live.isConnected) {
+            live = document.createElement('div');
+            live.id = 'lg_duration_live';
+            live.className = 'lg-climate-timer-duration';
+            const label = document.createElement('span');
+            label.className = 'lg-climate-timer-duration__label';
+            label.textContent = 'Тривалість';
+            const row = document.createElement('div');
+            row.className = 'lg-climate-timer-duration__row';
+            const icon = document.createElement('ha-icon');
+            icon.className = 'lg-climate-timer-duration__icon';
+            icon.setAttribute('icon', 'mdi:timer-outline');
+            const hit = document.createElement('div');
+            hit.className = 'lg-climate-timer-duration__hit';
+            const display = document.createElement('span');
+            display.className = 'lg-climate-timer-duration__display';
+            display.textContent = expected;
+            const input = document.createElement('input');
+            input.className = 'lg-climate-timer-duration__overlay';
+            input.type = 'time';
+            input.step = '60';
+            input.value = expected;
+            input.setAttribute('aria-label', 'Тривалість');
+            hit.appendChild(display);
+            hit.appendChild(input);
+            row.appendChild(icon);
+            row.appendChild(hit);
+            live.appendChild(label);
+            live.appendChild(row);
+            slot.appendChild(live);
+            input.addEventListener('input', card.__lgDurationOnInputBound);
+            input.addEventListener('change', card.__lgDurationOnChangeBound);
+            input.addEventListener('blur', card.__lgDurationOnBlurBound);
+            input.addEventListener('click', card.__lgDurationOpenPickerBound);
+            input.addEventListener('pointerdown', card.__lgDurationOpenPickerBound);
+            hit.addEventListener('click', card.__lgDurationOpenPickerBound);
+            hit.addEventListener('pointerdown', card.__lgDurationOpenPickerBound);
+            card.__lgDurationInput = input;
+            card.__lgDurationDisplay = display;
+            card.__lgDurationLastValue = expected;
+          } else {
+            const input = live.querySelector('.lg-climate-timer-duration__overlay');
+            const display = live.querySelector('.lg-climate-timer-duration__display');
+            if (!input) return;
+            card.__lgDurationInput = input;
+            card.__lgDurationDisplay = display;
+            const focused = root.activeElement === input
+              || (typeof input.matches === 'function' && input.matches(':focus'));
+            if (card.__lgDurationPickerOpen || focused) return;
+            if (card.__lgDurationLastValue && card.__lgDurationLastValue !== expected) {
+              card.__lgDurationApplyFromInput(input);
+              return;
+            }
+            if (input.value !== expected) input.value = expected;
+            if (display && display.textContent !== expected) display.textContent = expected;
+          }
+        };
+        setTimeout(mount, 0);
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_duration_h_phone) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card, #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_duration_h_phone) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        background: transparent;
+        box-shadow: none;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      #container {
+        position: relative;
+        display: grid !important;
+        grid-template-areas: "live" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_climate_timer_duration_h_phone) !important;
+        place-content: center !important;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_duration_h_phone) !important;
+        box-sizing: border-box !important;
+        padding: 0 var(--lg_space_climate_timer_duration_pad_x) !important;
+        pointer-events: auto !important;
+      }
+      #duration_live {
+        grid-area: live !important;
+        position: relative;
+        z-index: 2;
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        pointer-events: auto !important;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+      #lg_duration_live {
+        position: relative;
+        z-index: 2;
+        width: 100% !important;
+        min-width: 0 !important;
+        pointer-events: auto !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_liquid_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort { display: none; }
+      .lg-climate-timer-duration {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_timer_duration_gap);
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+      .lg-climate-timer-duration__row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_timer_duration_gap);
+        width: 100%;
+        min-width: 0;
+      }
+      .lg-climate-timer-duration__icon {
+        --mdc-icon-size: var(--lg_font_climate_timer_duration_size_phone);
+        width: var(--lg_font_climate_timer_duration_size_phone);
+        height: var(--lg_font_climate_timer_duration_size_phone);
+        color: var(--lg_color_text);
+        flex-shrink: 0;
+        pointer-events: none;
+      }
+      .lg-climate-timer-duration__hit {
+        position: relative;
+        box-sizing: border-box;
+        flex: 0 0 auto;
+        width: var(--lg_size_climate_timer_duration_input_w_phone);
+        min-width: var(--lg_size_climate_timer_duration_input_w_phone);
+        max-width: 100%;
+        height: var(--lg_size_climate_timer_duration_input_h_phone);
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        border-radius: var(--lg_radius_liquid);
+        background: var(--lg_color_glass_fill);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        pointer-events: auto !important;
+        z-index: 3;
+        overflow: hidden;
+      }
+      .lg-climate-timer-duration__display {
+        position: relative;
+        z-index: 1;
+        pointer-events: none;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_duration_size_phone);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: 1;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .lg-climate-timer-duration__overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        opacity: 0;
+        cursor: pointer;
+        pointer-events: auto !important;
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        color: transparent;
+        font-size: 1.25rem;
+      }
+      .lg-climate-timer-duration__label {
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_duration_label_size);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        text-align: center;
+        white-space: nowrap;
+        opacity: 0.85;
+        pointer-events: none;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      duration_live: ""
+
+  climate_timer_dual_slider:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      minutes_entity_id: ""
+      hours_label: "Години"
+      minutes_label: "Хвилини"
+      seed_clock_entity_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+        const card = this;
+        const ha = card.hass;
+        const hourEid = card.config && card.config.entity;
+        const minuteEid = variables.minutes_entity_id;
+        const seedEid = variables.seed_clock_entity_id;
+        const fillColor = 'var(--lg_color_climate_cc_fill)';
+        if (ha && seedEid && hourEid && minuteEid && !card.__lgDualSeeded) {
+          const st = ha.states[seedEid];
+          const hs = ha.states[hourEid];
+          const ms = ha.states[minuteEid];
+          if (st && st.state && st.state !== 'unknown' && st.state !== 'unavailable') {
+            const parts = String(st.state).split(':');
+            const ch = clampInt(parseInt(parts[0], 10) || 0, 0, 23);
+            const cm = clampInt(parseInt(parts[1], 10) || 0, 0, 59);
+            const curH = clampInt(parseInt(hs && hs.state, 10) || 0, 0, 23);
+            const curM = clampInt(parseInt(ms && ms.state, 10) || 0, 0, 59);
+            if (curH === 0 && curM === 0 && (ch !== 0 || cm !== 0)) {
+              ha.callService('input_number', 'set_value', { entity_id: hourEid, value: ch });
+              ha.callService('input_number', 'set_value', { entity_id: minuteEid, value: cm });
+            }
+          }
+          card.__lgDualSeeded = true;
+        }
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_dual_h_desktop) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_dual_h_desktop) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_climate_cc_shell_extra_styles() }}
+      /* Two-column vertical TEMP pills: labels above, H | M */
+      #container {
+        position: relative;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: auto var(--lg_size_climate_timer_pill_h_desktop) !important;
+        grid-template-areas: "hl ml" "hs ms" !important;
+        justify-items: center !important;
+        align-content: center !important;
+        column-gap: var(--lg_space_climate_timer_slider_col_gap_desktop) !important;
+        row-gap: var(--lg_space_climate_timer_slider_gap_desktop) !important;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_dual_h_desktop) !important;
+        box-sizing: border-box !important;
+        padding: 0 var(--lg_space_climate_timer_clock_pad_x) !important;
+        pointer-events: auto !important;
+      }
+      ha-card, #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_dual_h_desktop) !important;
+        border-radius: var(--lg_radius_liquid);
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_liquid_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort { display: none; }
+      #hours_label, #minutes_label {
+        position: relative;
+        z-index: 2;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_slider_label_desktop);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        text-align: center;
+        opacity: 0.85;
+        pointer-events: none;
+        justify-self: center !important;
+      }
+      #hours_label { grid-area: hl !important; }
+      #minutes_label { grid-area: ml !important; }
+      #hours_slider, #minutes_slider {
+        position: relative;
+        z-index: 2;
+        width: var(--lg_size_climate_timer_pill_w_desktop) !important;
+        min-width: var(--lg_size_climate_timer_pill_w_desktop) !important;
+        max-width: var(--lg_size_climate_timer_pill_w_desktop) !important;
+        height: var(--lg_size_climate_timer_pill_h_desktop) !important;
+        min-height: var(--lg_size_climate_timer_pill_h_desktop) !important;
+        border-radius: var(--lg_radius_climate_timer_pill_desktop);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_climate_timer_pill_desktop));
+        pointer-events: auto !important;
+        touch-action: none !important;
+        justify-self: center !important;
+        background: var(--lg_color_climate_cc_track) !important;
+        --ha-card-background: var(--lg_color_climate_cc_track);
+        --card-background-color: var(--lg_color_climate_cc_track);
+        --btn-bg-color-on: var(--lg_color_climate_cc_track);
+        --btn-bg-color-off: var(--lg_color_climate_cc_track);
+        --slider-track-color: var(--lg_color_climate_cc_track);
+        --slider-color: ${fillColor};
+        --slider-bg-color: ${fillColor};
+        --slider-transition-duration: 0s;
+        --state-color-on: var(--lg_color_climate_timer_slider_value);
+        --state-color-off: var(--lg_color_climate_timer_slider_value);
+        box-shadow: var(--lg_shadow_climate_cc_inset);
+      }
+      #hours_slider { grid-area: hs !important; }
+      #minutes_slider { grid-area: ms !important; }
+      #hours_shell { grid-area: hs !important; }
+      #minutes_shell { grid-area: ms !important; }
+      #hours_shell, #minutes_shell {
+        position: relative;
+        z-index: 3;
+        width: var(--lg_size_climate_timer_pill_w_desktop) !important;
+        height: var(--lg_size_climate_timer_pill_h_desktop) !important;
+        justify-self: center !important;
+        pointer-events: none !important;
+      }
+      #hours_shell .lg-climate-cc,
+      #minutes_shell .lg-climate-cc {
+        border-radius: var(--lg_radius_climate_timer_pill_desktop);
+        clip-path: inset(0 round var(--lg_radius_climate_timer_pill_desktop));
+      }
+      #hours_shell .lg-climate-cc__frost,
+      #minutes_shell .lg-climate-cc__frost,
+      #hours_shell .lg-climate-cc__rim,
+      #minutes_shell .lg-climate-cc__rim {
+        border-radius: var(--lg_radius_climate_timer_pill_desktop);
+      }
+      #hours_slider slider-button-card,
+      #minutes_slider slider-button-card {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      hours_label: >
+        [[[
+          return `<span class="lg-climate-timer-slider-label">${variables.hours_label || 'Години'}</span>`;
+        ]]]
+      minutes_label: >
+        [[[
+          return `<span class="lg-climate-timer-slider-label">${variables.minutes_label || 'Хвилини'}</span>`;
+        ]]]
+      hours_shell: >
+        {{ lg_climate_cc_shell_html() }}
+      minutes_shell: >
+        {{ lg_climate_cc_shell_html() }}
+      # Prefer state object; fall back to parent config.entity / variables so
+      # slider-button-card never receives '' when helpers exist but state unbound.
+      hours_slider:
+        card:
+          type: custom:slider-button-card
+          entity: "[[[ return (entity && entity.entity_id) || (this && this.config && this.config.entity) || (this && this._config && this._config.entity) || '' ]]]"
+          show_name: false
+          show_state: true
+          compact: false
+          icon:
+            show: false
+          action_button:
+            show: false
+          slider:
+            direction: bottom-top
+            background: solid
+            use_state_color: false
+            use_percentage_bg_opacity: false
+            show_track: false
+            force_square: false
+      minutes_slider:
+        card:
+          type: custom:slider-button-card
+          entity: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+          show_name: false
+          show_state: true
+          compact: false
+          icon:
+            show: false
+          action_button:
+            show: false
+          slider:
+            direction: bottom-top
+            background: solid
+            use_state_color: false
+            use_percentage_bg_opacity: false
+            show_track: false
+            force_square: false
+
+  climate_thermostat:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      timer_entity_id: ""
+      clock_entity_id: ""
+      armed_entity_id: ""
+      popup_hash: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const mode = entity ? entity.state : 'off';
+        const attrs = (entity && entity.attributes) || {};
+        const action = attrs.hvac_action || '';
+        const accent =
+          action === 'heating' || mode === 'heat' ? 'var(--lg_color_climate_heat)' :
+          action === 'cooling' || mode === 'cool' ? 'var(--lg_color_climate_cool)' :
+          mode === 'dry' || action === 'drying' ? 'var(--lg_color_climate_dry)' :
+          mode === 'fan_only' ? 'var(--lg_color_climate_fan)' :
+          mode === 'auto' ? 'var(--lg_color_climate_auto)' :
+          'var(--lg_color_climate_off)';
+        const glow =
+          action === 'heating' ? 'var(--lg_glow_climate_heat)' :
+          action === 'cooling' ? 'var(--lg_glow_climate_cool)' :
+          action === 'idle' && mode !== 'off' ? 'var(--lg_glow_climate_idle)' :
+          mode === 'heat' ? 'var(--lg_glow_climate_heat)' :
+          mode === 'cool' ? 'var(--lg_glow_climate_cool)' :
+          mode !== 'off' ? 'var(--lg_glow_climate_other)' :
+          'none';
+        const tempEnabled = mode === 'heat' || mode === 'cool';
+        const tempPointer = tempEnabled ? 'auto' : 'none';
+        const tempOpacity = tempEnabled ? '1' : 'var(--lg_opacity_tab_side_disabled)';
+        const tempTouch = tempEnabled ? 'none' : 'auto';
+        const fillColor = mode === 'cool'
+          ? 'var(--lg_color_climate_cc_fill_cool)'
+          : mode === 'heat'
+            ? 'var(--lg_color_climate_cc_fill_heat)'
+            : 'var(--lg_color_climate_cc_fill)';
+        /* Parent-owned fill % — slider-button-card paints inherit when use_state_color:false. */
+        const minT = Number(attrs.min_temp);
+        const maxT = Number(attrs.max_temp);
+        const setT = Number(attrs.temperature);
+        const span = (Number.isFinite(minT) && Number.isFinite(maxT) && maxT > minT)
+          ? (maxT - minT)
+          : 0;
+        const fillPct = (!tempEnabled || !span || !Number.isFinite(setT))
+          ? '0%'
+          : `${Math.max(0, Math.min(100, ((setT - minT) / span) * 100))}%`;
+        /* FAST center ° always visible: rAF pending while dragging; idle = HA
+           attributes.temperature. SYNCED #setpoint removed — only pending_setpoint
+           (CSS ::after via --lg_climate_pending_label). Dual persist: __lgPendingTemp
+           + --lg_climate_pending_temp. Visibility MUST stay emitted into :host from
+           JS (never hardcode hidden — wiped mid-drag on styles re-eval). Bridge via
+           card.__lgClimate* so styles re-evals refresh closures without stale listeners. */
+        if (this && typeof this.__lgPendingTemp === 'number' && Number.isFinite(setT)
+            && Math.abs(this.__lgPendingTemp - setT) < 0.05) {
+          this.__lgPendingTemp = undefined;
+          this.__lgPendingFillPct = undefined;
+          this.style.removeProperty('--lg_climate_pending_temp');
+        }
+        const liveFillPct = (this && typeof this.__lgPendingFillPct === 'string')
+          ? this.__lgPendingFillPct
+          : fillPct;
+        const hasLivePending = this && typeof this.__lgPendingTemp === 'number'
+          && Number.isFinite(this.__lgPendingTemp);
+        const idleFastLabel = Number.isFinite(setT) ? `"${setT}°"` : '"—"';
+        const livePendingLabel = hasLivePending ? `"${this.__lgPendingTemp}°"` : idleFastLabel;
+        const livePendingOpacity = 'var(--lg_opacity_climate_pending)';
+        const livePendingVisibility = 'visible';
+        if (this) {
+          this.__lgClimateRange = {
+            min: minT,
+            max: maxT,
+            step: Number(attrs.target_temp_step) || 1,
+            mode,
+            setT,
+            entityId: (entity && entity.entity_id) || '',
+          };
+        }
+        if (this && this.updateComplete) {
+          const card = this;
+          const eid = () =>
+            (card._config && card._config.entity)
+            || (card.config && card.config.entity)
+            || (card.__lgClimateRange && card.__lgClimateRange.entityId)
+            || (entity && entity.entity_id)
+            || '';
+          /* Pending label is CSS-var driven (::after content) — no Lit HTML rewrite mid-drag.
+             Host setProperty is value-gated to avoid style-attr churn → slider recreate loops. */
+          const setHostVar = (name, next) => {
+            const cur = card.style.getPropertyValue(name);
+            if (next === null || next === undefined || next === '') {
+              if (cur) card.style.removeProperty(name);
+              return;
+            }
+            if (cur === next) return;
+            card.style.setProperty(name, next);
+          };
+          const writePending = (value) => {
+            /* Always-visible FAST: null clears drag state → fall back to HA target. */
+            let shown = value;
+            if (shown === null || shown === undefined || !Number.isFinite(shown)) {
+              const haT = Number(
+                (card.__lgClimateRange && card.__lgClimateRange.setT)
+                || setT
+              );
+              shown = Number.isFinite(haT) ? haT : null;
+            }
+            if (shown === null || shown === undefined || !Number.isFinite(shown)) {
+              setHostVar('--lg_climate_pending_label', '"—"');
+            } else {
+              setHostVar('--lg_climate_pending_label', `"${shown}°"`);
+            }
+            setHostVar('--lg_climate_pending_opacity', 'var(--lg_opacity_climate_pending)');
+            setHostVar('--lg_climate_pending_visibility', 'visible');
+          };
+          const deepFindSlider = (root, depth) => {
+            if (!root || depth > 6) return null;
+            const direct = root.querySelector && root.querySelector('slider-button-card');
+            if (direct) return direct;
+            const nodes = root.querySelectorAll ? root.querySelectorAll('*') : [];
+            for (let i = 0; i < nodes.length; i++) {
+              const el = nodes[i];
+              if (el.shadowRoot) {
+                const hit = deepFindSlider(el.shadowRoot, depth + 1);
+                if (hit) return hit;
+              }
+            }
+            return null;
+          };
+          const findButton = () => {
+            const root = card.shadowRoot;
+            const tempMod = root && root.querySelector('#temp_mod');
+            if (!tempMod) return null;
+            const slider = deepFindSlider(tempMod, 0);
+            if (!slider || !slider.shadowRoot) return null;
+            const sliderEl = slider.shadowRoot.querySelector('.slider');
+            const button = slider.shadowRoot.querySelector('.button');
+            if (!sliderEl || !button) return null;
+            return { tempMod, sliderEl, button, slider };
+          };
+          const readPending = (button) => {
+            if (!button || !button.isConnected) return null;
+            const pctRaw = button.style.getPropertyValue('--slider-value')
+              || getComputedStyle(button).getPropertyValue('--slider-value');
+            const pct = parseFloat(String(pctRaw).replace('%', ''));
+            if (!Number.isFinite(pct)) return null;
+            const changing = button.classList && button.classList.contains('changing');
+            const engaged = changing || !!card.__lgClimatePointerDown;
+            const id = eid();
+            const st = (id && card.hass && card.hass.states && card.hass.states[id]) || null;
+            /* Same attrs SoT as fillPct (styles-time entity) — hass.states alone can
+               miss min/max on some climate integrations mid-update. */
+            const a = (st && st.attributes)
+              || attrs
+              || {};
+            const modeNow = (st && st.state)
+              || (card.__lgClimateRange && card.__lgClimateRange.mode)
+              || (entity && entity.state)
+              || 'off';
+            if (modeNow !== 'heat' && modeNow !== 'cool' && !engaged) return null;
+            const range = card.__lgClimateRange || {};
+            const lo = Number.isFinite(Number(a.min_temp)) ? Number(a.min_temp) : Number(range.min);
+            const hi = Number.isFinite(Number(a.max_temp)) ? Number(a.max_temp) : Number(range.max);
+            const step = Number(a.target_temp_step) || Number(range.step) || 1;
+            if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi <= lo) return null;
+            /* Inverse of HACS Controller.percentage (mattieha controller.ts). */
+            const clamped = Math.max(0, Math.min(100, pct));
+            const raw = lo + (clamped / 100) * (hi - lo);
+            const rounded = Math.round(raw / step) * step;
+            const value = Math.round(rounded * 10) / 10;
+            return { value, fillPct: `${clamped}%` };
+          };
+          const clearPending = () => {
+            card.__lgPendingTemp = undefined;
+            card.__lgPendingFillPct = undefined;
+            setHostVar('--lg_climate_pending_temp', '');
+            writePending(null);
+          };
+          const paint = () => {
+            if (card.__lgClimatePainting) return;
+            card.__lgClimatePainting = true;
+            try {
+              if (!card.__lgClimateSliderButton || !card.__lgClimateSliderButton.isConnected) {
+                if (!card.__lgClimateBinding) tryBind();
+              }
+              const button = card.__lgClimateSliderButton;
+              const pending = readPending(button);
+              if (!pending) return;
+              const changing = button.classList && button.classList.contains('changing');
+              const engaged = changing || card.__lgClimatePointerDown;
+              const id = eid();
+              const st = (id && card.hass && card.hass.states && card.hass.states[id]) || null;
+              const haT = Number(
+                (st && st.attributes && st.attributes.temperature)
+                || (card.__lgClimateRange && card.__lgClimateRange.setT)
+                || setT
+              );
+              if (!engaged && Number.isFinite(haT) && Math.abs(pending.value - haT) < 0.05) {
+                clearPending();
+                return;
+              }
+              const hadPending = typeof card.__lgPendingTemp === 'number'
+                || !!card.style.getPropertyValue('--lg_climate_pending_temp');
+              if (!engaged && !hadPending) return;
+              /* Hide pending when equal to synced (box rule); keep fill live while engaged. */
+              if (Number.isFinite(haT) && Math.abs(pending.value - haT) < 0.05) {
+                if (hadPending) clearPending();
+                else setHostVar('--lg_climate_temp_fill_pct', pending.fillPct);
+                return;
+              }
+              card.__lgPendingTemp = pending.value;
+              card.__lgPendingFillPct = pending.fillPct;
+              setHostVar('--lg_climate_pending_temp', String(pending.value));
+              setHostVar('--lg_climate_temp_fill_pct', pending.fillPct);
+              writePending(pending.value);
+            } finally {
+              card.__lgClimatePainting = false;
+            }
+          };
+          const rafLoop = () => {
+            if (typeof card.__lgClimatePaint === 'function') card.__lgClimatePaint();
+            const button = card.__lgClimateSliderButton;
+            const changing = button && button.classList && button.classList.contains('changing');
+            if (changing || card.__lgClimatePointerDown) {
+              card.__lgClimateRaf = requestAnimationFrame(rafLoop);
+            } else {
+              card.__lgClimateRaf = undefined;
+              if (typeof card.__lgClimatePaint === 'function') card.__lgClimatePaint();
+            }
+          };
+          const startRaf = () => {
+            if (card.__lgClimateRaf) return;
+            card.__lgClimateRaf = requestAnimationFrame(rafLoop);
+          };
+          const onPointerDown = () => {
+            card.__lgClimatePointerDown = true;
+            tryBind();
+            startRaf();
+          };
+          const onPointerMove = () => {
+            startRaf();
+          };
+          const onPointerUp = () => {
+            card.__lgClimatePointerDown = false;
+            startRaf();
+          };
+          /* Indirection — styles re-eval swaps these each pass; DOM listeners stay once. */
+          card.__lgClimatePaint = paint;
+          card.__lgClimateStartRaf = startRaf;
+          card.__lgClimateOnDown = onPointerDown;
+          card.__lgClimateOnMove = onPointerMove;
+          card.__lgClimateOnUp = onPointerUp;
+          if (!card.__lgClimateBridge) {
+            card.__lgClimateBridge = {
+              down: () => { if (card.__lgClimateOnDown) card.__lgClimateOnDown(); },
+              move: () => { if (card.__lgClimateOnMove) card.__lgClimateOnMove(); },
+              up: () => { if (card.__lgClimateOnUp) card.__lgClimateOnUp(); },
+              mo: () => { if (card.__lgClimateStartRaf) card.__lgClimateStartRaf(); },
+            };
+          }
+          const unbindSliderOnly = () => {
+            const sliderEl = card.__lgClimateSliderEl;
+            const bridge = card.__lgClimateBridge;
+            if (sliderEl && bridge) {
+              /* Pointer-only — never attach touch* (passive touch on .slider makes HACS
+                 onPointerDown preventDefault warn: Chrome scrolling intervention). */
+              sliderEl.removeEventListener('pointerdown', bridge.down, false);
+              sliderEl.removeEventListener('pointermove', bridge.move, false);
+              sliderEl.removeEventListener('pointerup', bridge.up, false);
+              sliderEl.removeEventListener('pointercancel', bridge.up, false);
+            }
+            if (card.__lgClimateBtnObserver) {
+              card.__lgClimateBtnObserver.disconnect();
+              card.__lgClimateBtnObserver = undefined;
+            }
+            card.__lgClimateSliderEl = undefined;
+            card.__lgClimateSliderButton = undefined;
+            card.__lgClimateOptimisticBound = false;
+          };
+          const ensureTempModListeners = () => {
+            const root = card.shadowRoot;
+            const tempMod = root && root.querySelector('#temp_mod');
+            if (!tempMod) return null;
+            const bridge = card.__lgClimateBridge;
+            if (card.__lgClimateTempMod === tempMod && card.__lgClimateTempModListening) {
+              return tempMod;
+            }
+            if (card.__lgClimateTempMod && card.__lgClimateTempModListening && bridge) {
+              const prev = card.__lgClimateTempMod;
+              prev.removeEventListener('pointerdown', bridge.down, true);
+              prev.removeEventListener('pointermove', bridge.move, true);
+              prev.removeEventListener('pointerup', bridge.up, true);
+              prev.removeEventListener('pointercancel', bridge.up, true);
+            }
+            card.__lgClimateTempMod = tempMod;
+            card.__lgClimateTempModListening = true;
+            tempMod.addEventListener('pointerdown', bridge.down, true);
+            tempMod.addEventListener('pointermove', bridge.move, true);
+            tempMod.addEventListener('pointerup', bridge.up, true);
+            tempMod.addEventListener('pointercancel', bridge.up, true);
+            return tempMod;
+          };
+          const bindTo = (tempMod, sliderEl, button) => {
+            ensureTempModListeners();
+            const bridge = card.__lgClimateBridge;
+            if (card.__lgClimateSliderButton === button && button.isConnected
+                && card.__lgClimateOptimisticBound) {
+              /* Refresh MO to current startRaf via bridge; handlers already swapped. */
+              if (card.__lgClimateBtnObserver) {
+                card.__lgClimateBtnObserver.disconnect();
+              }
+              const mo = new MutationObserver(bridge.mo);
+              mo.observe(button, { attributes: true, attributeFilter: ['style', 'class'] });
+              card.__lgClimateBtnObserver = mo;
+              startRaf();
+              return;
+            }
+            unbindSliderOnly();
+            card.__lgClimateTempMod = tempMod;
+            card.__lgClimateSliderEl = sliderEl;
+            card.__lgClimateSliderButton = button;
+            card.__lgClimateOptimisticBound = true;
+            sliderEl.addEventListener('pointerdown', bridge.down, false);
+            sliderEl.addEventListener('pointermove', bridge.move, false);
+            sliderEl.addEventListener('pointerup', bridge.up, false);
+            sliderEl.addEventListener('pointercancel', bridge.up, false);
+            /* HACS sets --slider-value + .changing in updateValue — observe + rAF. */
+            const mo = new MutationObserver(bridge.mo);
+            mo.observe(button, { attributes: true, attributeFilter: ['style', 'class'] });
+            card.__lgClimateBtnObserver = mo;
+            startRaf();
+          };
+          const tryBind = () => {
+            if (card.__lgClimateBinding) return false;
+            card.__lgClimateBinding = true;
+            try {
+              ensureTempModListeners();
+              const found = findButton();
+              if (!found) return false;
+              bindTo(found.tempMod, found.sliderEl, found.button);
+              return true;
+            } finally {
+              card.__lgClimateBinding = false;
+            }
+          };
+          if (!card.__lgClimateOptimisticWatch) {
+            card.__lgClimateOptimisticWatch = true;
+            card.updateComplete.then(() => {
+              queueMicrotask(() => tryBind());
+              setTimeout(() => tryBind(), 50);
+              setTimeout(() => tryBind(), 200);
+              setTimeout(() => tryBind(), 800);
+              const root = card.shadowRoot;
+              const tempMod = root && root.querySelector('#temp_mod');
+              if (tempMod && !card.__lgClimateHostObserver) {
+                let hostMoScheduled = false;
+                const hostMo = new MutationObserver(() => {
+                  if (hostMoScheduled) return;
+                  hostMoScheduled = true;
+                  queueMicrotask(() => {
+                    hostMoScheduled = false;
+                    tryBind();
+                  });
+                });
+                hostMo.observe(tempMod, { childList: true, subtree: true });
+                card.__lgClimateHostObserver = hostMo;
+              }
+            });
+          } else {
+            queueMicrotask(() => tryBind());
+          }
+        }
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+        box-sizing: border-box;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+        --lg_climate_temp_fill_pct: ${liveFillPct};
+        --lg_climate_temp_fill_color: ${fillColor};
+        --lg_climate_pending_label: ${livePendingLabel};
+        --lg_climate_pending_opacity: ${livePendingOpacity};
+        --lg_climate_pending_visibility: ${livePendingVisibility};
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
         box-sizing: border-box;
         border-radius: var(--lg_radius_liquid) !important;
         background: transparent !important;
         box-shadow: none !important;
         overflow: visible !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
       }
       #container {
         display: grid !important;
+        /* left 1×6 | center dial | right 1×6; timer bar full width below. */
         grid-template-areas:
-          "caption caption caption caption caption"
-          "dec hero hero hero inc"
-          "mc mh ma mf md"
-          "fa fl fm fh fh"
-          "so sv power power power" !important;
-        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-        grid-template-rows: auto auto auto auto auto !important;
-        justify-items: center !important;
+          "caption caption caption"
+          "left temp right"
+          "timer timer timer" !important;
+        grid-template-columns: var(--lg_size_climate_col_w) var(--lg_size_climate_cc_w) var(--lg_size_climate_col_w) !important;
+        grid-template-rows: auto var(--lg_size_climate_col_h) var(--lg_size_climate_timer_bar_h) !important;
+        justify-items: start !important;
         align-items: center !important;
+        justify-content: start !important;
+        place-content: start start !important;
         row-gap: var(--lg_space_climate_gap) !important;
-        column-gap: var(--lg_space_gap_xs) !important;
-        padding: var(--lg_space_climate_pad) !important;
+        column-gap: var(--lg_space_climate_col_gap) !important;
+        padding: var(--lg_space_climate_caption_top) var(--lg_space_climate_pad) var(--lg_space_climate_pad) !important;
         box-sizing: border-box !important;
+        width: max-content !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+        position: relative !important;
       }
       #card {
         position: relative;
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
         box-sizing: border-box;
         border-radius: var(--lg_radius_liquid);
         background: transparent;
@@ -1781,26 +4682,243 @@ button_card_templates:
         overflow: visible;
       }
       #name, #icon, #label, #state { display: none !important; }
-      #caption { grid-area: caption; width: 100%; }
-      #dec { grid-area: dec; justify-self: end; }
-      #hero { grid-area: hero; }
-      #inc { grid-area: inc; justify-self: start; }
-      #mode_cool { grid-area: mc; }
-      #mode_heat { grid-area: mh; }
-      #mode_auto { grid-area: ma; }
-      #mode_fan { grid-area: mf; }
-      #mode_dry { grid-area: md; }
-      #fan_auto { grid-area: fa; }
-      #fan_low { grid-area: fl; }
-      #fan_medium { grid-area: fm; }
-      #fan_high { grid-area: fh; }
-      #swing_off { grid-area: so; }
-      #swing_vertical { grid-area: sv; }
-      #power { grid-area: power; justify-self: end; }
+      #caption {
+        grid-area: caption !important;
+        width: 100%;
+        min-width: 0;
+        z-index: 2;
+        justify-self: stretch !important;
+      }
+      #left_col {
+        grid-area: left !important;
+        width: var(--lg_size_climate_col_w) !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_col_h) !important;
+        min-height: var(--lg_size_climate_col_h) !important;
+        max-height: var(--lg_size_climate_col_h) !important;
+        justify-self: start !important;
+        align-self: stretch !important;
+        overflow: visible !important;
+        z-index: 1;
+        position: relative;
+      }
+      #right_col {
+        grid-area: right !important;
+        width: var(--lg_size_climate_col_w) !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_col_h) !important;
+        min-height: var(--lg_size_climate_col_h) !important;
+        max-height: var(--lg_size_climate_col_h) !important;
+        justify-self: start !important;
+        align-self: stretch !important;
+        overflow: visible !important;
+        z-index: 1;
+        position: relative;
+      }
+      #left_col > *, #right_col > * {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_col_h) !important;
+        min-height: var(--lg_size_climate_col_h) !important;
+        max-height: var(--lg_size_climate_col_h) !important;
+        display: block !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+      }
+      #timer_bar {
+        grid-area: timer !important;
+        width: var(--lg_size_climate_timer_bar_w) !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        min-height: var(--lg_size_climate_timer_bar_h) !important;
+        max-height: var(--lg_size_climate_timer_bar_h) !important;
+        justify-self: start !important;
+        align-self: center !important;
+        overflow: visible !important;
+        z-index: 1;
+        position: relative;
+        margin-top: 0 !important;
+      }
+      #timer_bar > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        display: block !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+      }
+      #temp_mod {
+        grid-area: temp !important;
+        width: var(--lg_size_climate_cc_w) !important;
+        max-width: var(--lg_size_climate_cc_w) !important;
+        height: var(--lg_size_climate_cc_h) !important;
+        min-width: var(--lg_size_climate_cc_w) !important;
+        min-height: var(--lg_size_climate_cc_h) !important;
+        aspect-ratio: unset !important;
+        z-index: 0;
+        justify-self: center;
+        align-self: stretch;
+        /* Chrome: prefer touch-action over HACS preventDefault on passive touch
+           https://developer.chrome.com/blog/scrolling-intervention
+           https://developer.mozilla.org/en-US/docs/Web/CSS/touch-action
+           Residual "Unable to preventDefault inside passive event listener"
+           console lines come from slider-button-card's own onPointerDown —
+           confirmed unresolved upstream (mattieha/slider-button-card#6, #52).
+           See build/reports/climate_slider_passive_listener_proof.md. Do not
+           re-diagnose as a new regression without a probe script proof. */
+        touch-action: ${tempTouch} !important;
+        position: relative;
+        border-radius: var(--lg_radius_climate_cc);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_climate_cc));
+        pointer-events: ${tempPointer} !important;
+        opacity: ${tempOpacity};
+        background: var(--lg_color_climate_cc_track) !important;
+        --ha-card-background: var(--lg_color_climate_cc_track);
+        --card-background-color: var(--lg_color_climate_cc_track);
+        --btn-bg-color-on: var(--lg_color_climate_cc_track);
+        --btn-bg-color-off: var(--lg_color_climate_cc_track);
+        --slider-track-color: var(--lg_color_climate_cc_track);
+        --slider-color: ${fillColor};
+        --slider-bg-color: ${fillColor};
+        --slider-transition-duration: 0s;
+      }
+      /* Fallback fill when nested slider inherit paint fails (mattieha use_state_color:false). */
+      #temp_mod::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: var(--lg_climate_temp_fill_pct, 0%);
+        max-height: 100%;
+        background: var(--lg_climate_temp_fill_color, ${fillColor});
+        pointer-events: none;
+        z-index: 0;
+        transition: var(--lg_transition_climate_fill);
+      }
+      #temp_mod > * {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+        aspect-ratio: unset !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        border-radius: var(--lg_radius_climate_cc) !important;
+        overflow: hidden !important;
+        clip-path: inset(0 round var(--lg_radius_climate_cc));
+        pointer-events: ${tempPointer} !important;
+        touch-action: ${tempTouch} !important;
+        position: relative !important;
+        z-index: 1 !important;
+        background: transparent !important;
+        --ha-card-background: var(--lg_color_climate_cc_track);
+        --card-background-color: var(--lg_color_climate_cc_track);
+        --btn-bg-color-on: var(--lg_color_climate_cc_track);
+        --btn-bg-color-off: var(--lg_color_climate_cc_track);
+        --slider-track-color: var(--lg_color_climate_cc_track);
+        --slider-color: ${fillColor};
+        --slider-bg-color: ${fillColor};
+        --slider-transition-duration: 0s;
+      }
+      #temp_shell {
+        grid-area: temp !important;
+        width: var(--lg_size_climate_cc_w) !important;
+        max-width: var(--lg_size_climate_cc_w) !important;
+        height: var(--lg_size_climate_cc_h) !important;
+        min-width: var(--lg_size_climate_cc_w) !important;
+        min-height: var(--lg_size_climate_cc_h) !important;
+        aspect-ratio: unset !important;
+        justify-self: center !important;
+        align-self: stretch !important;
+        position: relative !important;
+        border-radius: var(--lg_radius_climate_cc) !important;
+        overflow: hidden !important;
+        clip-path: inset(0 round var(--lg_radius_climate_cc));
+        pointer-events: none !important;
+        z-index: 1 !important;
+        opacity: ${tempOpacity};
+        background: transparent !important;
+      }
+      #pending_setpoint {
+        grid-area: temp !important;
+        z-index: 3;
+        justify-self: center !important;
+        align-self: center !important;
+        margin-top: 0 !important;
+        pointer-events: none !important;
+        width: max-content;
+        max-width: 100%;
+        min-height: var(--lg_font_climate_pending_size);
+        opacity: var(--lg_climate_pending_opacity, var(--lg_opacity_climate_pending));
+        visibility: var(--lg_climate_pending_visibility, visible);
+      }
+      /* ± steppers hidden — setpoint via vertical slider only (intent: Klimat swing toggles). */
+      #temp_steps {
+        grid-area: temp !important;
+        z-index: 3;
+        justify-self: center !important;
+        align-self: end !important;
+        margin-bottom: var(--lg_space_climate_step_offset) !important;
+        width: var(--lg_size_climate_step_row_w) !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        min-height: var(--lg_size_climate_step_btn) !important;
+        display: none !important;
+        pointer-events: none !important;
+        opacity: 0;
+        overflow: visible !important;
+        position: relative !important;
+      }
+      #temp_steps > * {
+        width: 100% !important;
+        height: 100% !important;
+        display: none !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        pointer-events: none !important;
+      }
+      {{ lg_climate_cc_shell_extra_styles() }}
+      @media (max-width: 48rem) {
+        #container {
+          grid-template-columns: var(--lg_size_climate_col_w) var(--lg_size_climate_cc_w_phone) var(--lg_size_climate_col_w) !important;
+          grid-template-rows: auto var(--lg_size_climate_col_h) var(--lg_size_climate_timer_bar_h) !important;
+        }
+        #timer_bar {
+          width: var(--lg_size_climate_timer_bar_w_phone) !important;
+        }
+        #temp_mod, #temp_shell {
+          width: var(--lg_size_climate_cc_w_phone) !important;
+          max-width: var(--lg_size_climate_cc_w_phone) !important;
+          height: var(--lg_size_climate_cc_h_phone) !important;
+          min-width: var(--lg_size_climate_cc_w_phone) !important;
+          min-height: var(--lg_size_climate_cc_h_phone) !important;
+          border-radius: var(--lg_radius_climate_cc_phone) !important;
+          clip-path: inset(0 round var(--lg_radius_climate_cc_phone));
+        }
+        #temp_mod > * {
+          border-radius: var(--lg_radius_climate_cc_phone) !important;
+          clip-path: inset(0 round var(--lg_radius_climate_cc_phone));
+        }
+        .lg-climate-cc,
+        .lg-climate-cc__frost,
+        .lg-climate-cc__rim {
+          border-radius: var(--lg_radius_climate_cc_phone) !important;
+        }
+        .lg-climate-cc {
+          clip-path: inset(0 round var(--lg_radius_climate_cc_phone));
+        }
+      }
       .lg-climate-caption {
         display: flex;
         flex-wrap: wrap;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: baseline;
         gap: var(--lg_space_gap_xs);
         width: 100%;
@@ -1815,26 +4933,34 @@ button_card_templates:
         opacity: 1;
         font-weight: var(--lg_font_title_weight);
       }
-      .lg-climate-hero {
-        color: ${accent};
+      .lg-climate-pending {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--lg_color_text);
         font-family: var(--lg_font_label_family);
-        font-size: var(--lg_font_climate_temp_size);
-        font-weight: 600;
+        font-size: var(--lg_font_climate_setpoint_size);
+        font-weight: var(--lg_font_title_weight);
         line-height: 1;
-        letter-spacing: -0.02em;
-        text-align: center;
-        -webkit-font-smoothing: var(--lg_font_smoothing);
+        text-shadow: 0 0.0625rem 0.25rem rgba(0, 0, 0, 0.45);
+        white-space: nowrap;
+        min-height: 1em;
+      }
+      .lg-climate-pending::after {
+        content: var(--lg_climate_pending_label, none);
       }
         `;
       ]]]
     custom_fields:
+      temp_shell: >
+        {{ lg_climate_cc_shell_html() }}
       caption: |
         [[[
           const modeLabels = {
             off: 'Вимк',
             cool: 'Холод',
             heat: 'Тепло',
-            dry: 'Сушка',
+            dry: 'Сухе',
             fan_only: 'Вентилятор',
             auto: 'Авто',
           };
@@ -1846,147 +4972,54 @@ button_card_templates:
           const label = modeLabels[mode] || mode;
           return `<div class="lg-climate-caption"><span>${ambient}</span><span class="lg-climate-caption__mode">· ${label}</span></div>`;
         ]]]
-      hero: |
+      pending_setpoint: |
         [[[
-          const t = entity && entity.attributes
-            ? entity.attributes.temperature
-            : null;
-          const display = (t === 0 || t) ? t : '–';
-          return `<div class="lg-climate-hero">${display}°</div>`;
+          /* Shell only — always-visible FAST ° via --lg_climate_pending_label ::after. */
+          return `<div class="lg-climate-pending"></div>`;
         ]]]
-      dec:
+      # Parent evals entity; nested ± use [[[[]]]] (button-card nested JS templates).
+      temp_steps:
         card:
           type: custom:button-card
-          template: climate_temp_btn
-          entity: "[[[ return entity.entity_id ]]]"
-          icon: mdi:minus
+          template: climate_temp_step_row
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      temp_mod:
+        card:
+          type: custom:slider-button-card
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          show_name: false
+          show_state: false
+          compact: false
+          icon:
+            show: false
+          action_button:
+            show: false
+          slider:
+            direction: bottom-top
+            background: solid
+            use_state_color: false
+            use_percentage_bg_opacity: false
+            show_track: false
+            force_square: false
+      left_col:
+        card:
+          type: custom:button-card
+          template: climate_left_col
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      right_col:
+        card:
+          type: custom:button-card
+          template: climate_right_col
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      timer_bar:
+        card:
+          type: custom:button-card
+          template: climate_timer_button
+          entity: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
           variables:
-            delta: -1
-            min_temp: "[[[ return variables.min_temp ]]]"
-            max_temp: "[[[ return variables.max_temp ]]]"
-            temp_step: "[[[ return variables.temp_step ]]]"
-      inc:
-        card:
-          type: custom:button-card
-          template: climate_temp_btn
-          entity: "[[[ return entity.entity_id ]]]"
-          icon: mdi:plus
-          variables:
-            delta: 1
-            min_temp: "[[[ return variables.min_temp ]]]"
-            max_temp: "[[[ return variables.max_temp ]]]"
-            temp_step: "[[[ return variables.temp_step ]]]"
-      mode_cool:
-        card:
-          type: custom:button-card
-          template: climate_mode_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Холод
-          variables:
-            mode: cool
-      mode_heat:
-        card:
-          type: custom:button-card
-          template: climate_mode_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Тепло
-          variables:
-            mode: heat
-      mode_auto:
-        card:
-          type: custom:button-card
-          template: climate_mode_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Авто
-          variables:
-            mode: auto
-      mode_fan:
-        card:
-          type: custom:button-card
-          template: climate_mode_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Вент.
-          variables:
-            mode: fan_only
-      mode_dry:
-        card:
-          type: custom:button-card
-          template: climate_mode_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Сушка
-          variables:
-            mode: dry
-      fan_auto:
-        card:
-          type: custom:button-card
-          template: climate_attrib_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Авто
-          variables:
-            attrib: fan_mode
-            value: auto
-            service: climate.set_fan_mode
-            data_key: fan_mode
-      fan_low:
-        card:
-          type: custom:button-card
-          template: climate_attrib_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Тихий
-          variables:
-            attrib: fan_mode
-            value: low
-            service: climate.set_fan_mode
-            data_key: fan_mode
-      fan_medium:
-        card:
-          type: custom:button-card
-          template: climate_attrib_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Сер.
-          variables:
-            attrib: fan_mode
-            value: medium
-            service: climate.set_fan_mode
-            data_key: fan_mode
-      fan_high:
-        card:
-          type: custom:button-card
-          template: climate_attrib_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Сильн.
-          variables:
-            attrib: fan_mode
-            value: high
-            service: climate.set_fan_mode
-            data_key: fan_mode
-      swing_off:
-        card:
-          type: custom:button-card
-          template: climate_attrib_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Вимк
-          variables:
-            attrib: swing_mode
-            value: off
-            service: climate.set_swing_mode
-            data_key: swing_mode
-      swing_vertical:
-        card:
-          type: custom:button-card
-          template: climate_attrib_chip
-          entity: "[[[ return entity.entity_id ]]]"
-          name: Вертик.
-          variables:
-            attrib: swing_mode
-            value: vertical
-            service: climate.set_swing_mode
-            data_key: swing_mode
-      power:
-        card:
-          type: custom:button-card
-          template: climate_power_btn
-          entity: "[[[ return entity.entity_id ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
 
   climate_floor_off_button:
     show_icon: true

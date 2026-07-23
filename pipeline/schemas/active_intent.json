@@ -3,26 +3,35 @@
   "intent_class": "STYLISTIC",
   "target_agent": "@stylist",
   "payload": {
-    "action_summary": "Emit liquid_glass theme under modes.dark so HA darkMode=true; set ha-color-form-background for ha-picker-field legibility",
-    "requested_entities": [],
+    "action_summary": "Klimat: reorder flank chips — left HVAC modes (cool/heat/dry/fan_only/auto) + Power; right fan speeds (auto/low/med/high) + Горіз./Верт. swings (Option 1 trial: Power left bottom). Both ACs via shared climate_thermostat cols.",
+    "requested_entities": [
+      "kabinet_ac",
+      "spalnia_ac"
+    ],
     "preserve_behavior": [
-      "floor room mosaic (custom:masonry-layout on rooms-only shell)",
-      "disable-floor header full width sibling above mosaic",
-      "room switch stack (1-column inside room)",
-      "dashboard card liquid glass unchanged (ha-card-background stays transparent)",
-      "dialog/menu opaque chrome tokens retained"
+      "floor room mosaic packing via custom:masonry-layout with disable-floor header sibling above",
+      "room switch stack 1-column inside room",
+      "glass / liquid visuals unchanged",
+      "light switch_button / disable_room_button primitives untouched",
+      "TEMP slider heat/cool gate unchanged (pointer-events + opacity)",
+      "timer View Independence phone Force Native wheels vs desktop dual vertical HACS TEMP chrome",
+      "Bubble popup glass + Save/Cancel/Remove",
+      "chip services unchanged: mode/fan one-shot set; swing axis toggle; power turn_on/off",
+      "both Kabinet and Spalnia via shared climate_left_col / climate_right_col"
+    ],
+    "evidence": [
+      "HA climate.set_hvac_mode / set_fan_mode / set_swing_mode / set_swing_horizontal_mode / turn_on / turn_off — https://www.home-assistant.io/integrations/climate/",
+      "SoT: design_system/templates/button_card_templates.yaml climate_left_col + climate_right_col (grid-template-areas + custom_fields)",
+      "Existing chips: climate_mode_chip, climate_attrib_chip, climate_swing_axis_chip, climate_power_btn — reorder only, no new services"
     ]
   },
   "constraints": {
+    "allow_template_layout_edit": false,
     "tokens_and_button_card_templates_only": true,
-    "allow_template_layout_edit": false
-  },
-  "evidence": {
-    "probe": "profile/general",
-    "darkMode": false,
-    "selectedThemeDark": true,
-    "hasModesDark": false,
-    "formBg": "#f3f3f3",
-    "primaryText": "rgb(255, 255, 255)"
+    "dashboard_isolation": true,
+    "view_independence": true,
+    "allow_hacs_slider_button_card_climate_temp": true,
+    "allow_hacs_bubble_card_popup": true,
+    "acceptance": "Left top→bottom: Холод Тепло Сухе Вент. Авто(HVAC) Жив.; Right: Авто(fan) Низ. Сер. Вис. Горіз. Верт.; chip chrome/services unchanged; both Kabinet and Spalnia"
   }
 }

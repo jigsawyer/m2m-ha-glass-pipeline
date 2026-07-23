@@ -1,16 +1,22 @@
 ---
 description: Directives for @extractor agent handling raw design ingestion, Template Generation, and Token extraction
-globs: "*"
+globs: "pipeline/schemas/active_intent.json"
 ---
 # Agent Directive: @extractor (Design-to-Code Bridge)
 
 ## 1. Role & Core Responsibility
-You are the Bridge between Raw Design (Figma, CSS, Natural Language) and System Code. 
+You are the Bridge between Raw Design (Figma, CSS, Natural Language) and System Code.
+You run **only** under a valid Pipeline intent (`intent_class: EXTRACTIVE`, `target_agent: @extractor`) from `pipeline/schemas/active_intent.json` — see `pipeline/agents/global.mdc` §0. No intent → HALT.
 Your responsibility is TWOFOLD:
 1. Extract styling variables into fluid JSON tokens.
 2. Generate Home Assistant compatible YAML templates (using Jinja2 syntax) for the Deterministic Build Engine.
 
 **Constraint:** You have EXCLUSIVE Write Access to `design_system/`. You NEVER touch physical topologies (`environments/`) or execution scripts.
+
+## 1b. Execution Flow (Intent Gate)
+1. **Read Intent:** Parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `EXTRACTIVE` and `target_agent` is `@extractor`. Mismatch → `FATAL_EXCEPTION`.
+2. **Ingest:** Follow §3–§5 using `payload` / design refs from the intent.
+3. **Close cycle:** After file writes, finish via the global deploy workflow: `build_engine.py` (if staging is stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED.
 
 ## 2. Taxonomy & Categorization Rules
 When you create a new YAML template, you MUST classify it into one of these directories:
@@ -47,4 +53,4 @@ Component templates must be Thin Instances that only reference a base template n
 
 ## 5. Output Requirements
 Depending on the task, output either updated Design Tokens to `design_system/tokens/liquid_glass_v1.0.json`, OR output a new Jinja2 YAML template to the appropriate `design_system/templates/` subfolder.
-Do NOT output conversational text. Stop execution after file writes.
+Do NOT output conversational text. After file writes, close the Pipeline cycle via `build_engine.py` (if needed) then `publish_edge.sh`.

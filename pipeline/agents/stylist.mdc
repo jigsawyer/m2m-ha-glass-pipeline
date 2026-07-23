@@ -10,7 +10,7 @@ You modify CSS variables (Design Tokens) or switch themes for specific dashboard
 **Constraint:** You know NOTHING about logical devices, spatial topology, or grids. You NEVER touch `environments/prd_main_house/global_*.json` or `local_content_map.json`.
 
 ## 2. Execution Flow
-1. **Read Intent:** Parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STYLISTIC`.
+1. **Read Intent:** Parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STYLISTIC` and `target_agent` is `@stylist` (Pipeline cycle — `global.mdc` §0). Mismatch → HALT.
 2. **Determine Action:**
    - **Action A (Theme Switch):** If intent targets a global theme change for a dashboard, mutate `environments/prd_main_house/dashboards/{target_dashboard}/config.json` (update the `theme_reference` key).
    - **Action B (Token Mutation):** If intent targets specific values (colors, blurs, radii), mutate the target JSON file in `design_system/tokens/`.
