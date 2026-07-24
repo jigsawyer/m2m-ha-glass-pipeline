@@ -1,0 +1,7 @@
+# m2m-generated: 2026-07-24 19:21:58
+# Auto-generated Dashboard: svitlo
+button_card_templates: !include button_card_templates.yaml
+theme: liquid_glass_v1.0
+views:
+  - !include views/home.yaml
+  - !include views/klimat.yaml
