@@ -182,10 +182,15 @@ def wrap_conditional(card_yaml, entity_id, state):
     )
 
 
-def render_wrapper(env, wrapper_name, name, cards, header_cards=None):
+def render_wrapper(env, wrapper_name, name, cards, header_cards=None, corner_card=None):
     """Render a floor/room structural wrapper around nested card YAML blocks.
 
     header_cards: optional full-width row above the mosaic (e.g. floor_disable).
+    corner_card: optional single card YAML block, absolutely positioned in the
+      room_container's top-right corner (e.g. climate_room_off_button). Only
+      climate_room_container's Jinja template consumes it; other wrappers
+      (room_container, floor_container, climate_floor_container) simply
+      ignore the unused template var.
     """
     try:
         template = env.get_template(f"{wrapper_name}.yaml")
@@ -193,6 +198,7 @@ def render_wrapper(env, wrapper_name, name, cards, header_cards=None):
             name=name,
             cards=cards,
             header_cards=header_cards or [],
+            corner_card=corner_card or "",
         ).strip()
     except Exception as e:
         print(f"FATAL_EXCEPTION: Failed to render {wrapper_name}.yaml: {e}")
@@ -271,7 +277,10 @@ def _render_flanker_pair(env, hardware_map, flankers):
     return left_yaml, right_yaml
 
 
-def _render_room_cards_for_floor(env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id):
+def _render_room_cards_for_floor(
+    env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id,
+    room_corner_actions_map=None,
+):
     """Build room_container YAML blocks for a floor's room id list."""
     floor_cards = []
     for room_id in rooms:
@@ -286,7 +295,15 @@ def _render_room_cards_for_floor(env, hardware_map, room_wrapper, room_names, ro
             render_component(env, hardware_map, comp) for comp in components
         ]
         room_name = room_names.get(room_id, room_id.replace("_", " ").title())
-        floor_cards.append(render_wrapper(env, room_wrapper, room_name, room_cards))
+        corner_defs = (room_corner_actions_map or {}).get(room_id) or []
+        corner_card = (
+            render_component(env, hardware_map, corner_defs[0])
+            if corner_defs
+            else None
+        )
+        floor_cards.append(
+            render_wrapper(env, room_wrapper, room_name, room_cards, corner_card=corner_card)
+        )
     return floor_cards
 
 
@@ -298,6 +315,7 @@ def compile_hierarchical_view(
     room_content,
     names,
     floor_actions_map=None,
+    room_corner_actions_map=None,
 ):
     """Compile optional floor_tab_switch + per-floor or flat room trees.
 
@@ -308,12 +326,17 @@ def compile_hierarchical_view(
       - floor_tab_flankers: replace layout_containers.floor_tab_flankers
       - floor_wrapper / room_wrapper: replace layout_containers wrappers
     floor_actions_map defaults to content_map["floor_actions"].
+    room_corner_actions_map: optional {room_id: [component]} — single card
+      absolutely positioned in that room_container's top-right corner (e.g.
+      climate_room_off_button). Defaults to content_map["room_corner_actions"].
     """
     floor_names, room_names = names
     floors = view_def["include_floors"]
     layout = content_map.get("layout_containers", {})
     if floor_actions_map is None:
         floor_actions_map = content_map.get("floor_actions", {})
+    if room_corner_actions_map is None:
+        room_corner_actions_map = content_map.get("room_corner_actions", {})
 
     floor_wrapper = view_def.get(
         "floor_wrapper", layout.get("floor_wrapper", "floor_container")
@@ -359,7 +382,8 @@ def compile_hierarchical_view(
         for floor_id, rooms in floors.items():
             all_rooms.extend(
                 _render_room_cards_for_floor(
-                    env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id
+                    env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id,
+                    room_corner_actions_map=room_corner_actions_map,
                 )
             )
         if all_rooms:
@@ -378,7 +402,8 @@ def compile_hierarchical_view(
             header_cards.append(render_component(env, hardware_map, action_comp))
 
         floor_cards = _render_room_cards_for_floor(
-            env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id
+            env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id,
+            room_corner_actions_map=room_corner_actions_map,
         )
 
         floor_name = floor_names.get(floor_id, floor_id)
@@ -619,6 +644,7 @@ def build_dashboard(dashboard_id):
     spa_views = routing.get("views", [])
     default_room_content = content_map.get("room_content", {})
     default_floor_actions = content_map.get("floor_actions", {})
+    default_room_corner_actions = content_map.get("room_corner_actions", {})
 
     print("[2/4] Compiling Views...")
     generated_views = []
@@ -641,6 +667,12 @@ def build_dashboard(dashboard_id):
             floor_actions_map = content_map.get(
                 floor_actions_key, default_floor_actions
             )
+            room_corner_actions_key = view_def.get(
+                "room_corner_actions_key", "room_corner_actions"
+            )
+            room_corner_actions_map = content_map.get(
+                room_corner_actions_key, default_room_corner_actions
+            )
 
             if "include_floors" in view_def:
                 card_blocks = compile_hierarchical_view(
@@ -651,6 +683,7 @@ def build_dashboard(dashboard_id):
                     room_content,
                     names,
                     floor_actions_map=floor_actions_map,
+                    room_corner_actions_map=room_corner_actions_map,
                 )
                 strategy = "floors"
                 floor_count = len(view_def["include_floors"])

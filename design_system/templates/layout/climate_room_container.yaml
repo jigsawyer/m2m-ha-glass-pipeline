@@ -16,3 +16,8 @@ custom_fields:
         padding: "0"
       cards:
 {{ cards | yaml_cards(8) }}
+{%- if corner_card %}
+  corner:
+    card:
+{{ corner_card | indent(6, first=True) }}
+{%- endif %}

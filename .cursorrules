@@ -1,0 +1,16 @@
+# Context Hydration Protocol (READ PATH)
+Before routing any intent, generating contracts, or writing code, you MUST silently execute a semantic read of the `/docs/adr/` directory.
+1. Identify all ADRs matching the active domain (e.g., layout, climate, styling).
+2. Apply those constraints strictly to your logic and output.
+3. DO NOT output the contents of the ADRs to the user unless explicitly asked.
+
+---
+
+# ADR Generation Protocol (WRITE PATH)
+When you and the user finalize a NEW architectural rule, design pattern, or global constraint, you MUST proactively document it.
+1. DO NOT ask for permission.
+2. Generate a new file in `/docs/adr/` named sequentially (`XXXX-topic-name.md`).
+3. Format strictly with:
+   - **Context:** Why is this problem occurring?
+   - **Decision:** What is the exact technical solution?
+   - **Consequences:** What does this break, fix, or require?

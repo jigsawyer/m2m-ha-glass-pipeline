@@ -29,6 +29,8 @@
   "kabinet_ac_timer_minutes": { "domain": "input_number", "entity_id": "input_number.kabinet_ac_timer_minutes" },
   "kabinet_ac_off_hour": { "domain": "input_number", "entity_id": "input_number.kabinet_ac_off_hour" },
   "kabinet_ac_off_minute": { "domain": "input_number", "entity_id": "input_number.kabinet_ac_off_minute" },
+  "kabinet_ac_turbo": { "domain": "switch", "entity_id": "switch.kabinet_konditsioner_kabinet_fast_heating_cooling" },
+  "kabinet_ac_quiet": { "domain": "switch", "entity_id": "switch.kabinet_konditsioner_kabinet_quiet_mode" },
 
   "skhody_svitlo_switch": { "domain": "switch", "entity_id": "switch.svitlo_switch" },
   "korydor_svitlo_switch_2": { "domain": "switch", "entity_id": "switch.svitlo_switch_2" },
@@ -47,6 +49,8 @@
   "spalnia_ac_timer_minutes": { "domain": "input_number", "entity_id": "input_number.spalnia_ac_timer_minutes" },
   "spalnia_ac_off_hour": { "domain": "input_number", "entity_id": "input_number.spalnia_ac_off_hour" },
   "spalnia_ac_off_minute": { "domain": "input_number", "entity_id": "input_number.spalnia_ac_off_minute" },
+  "spalnia_ac_turbo": { "domain": "switch", "entity_id": "switch.spalnia_konditsioner_spalnia_fast_heating_cooling" },
+  "spalnia_ac_quiet": { "domain": "switch", "entity_id": "switch.spalnia_konditsioner_spalnia_quiet_mode" },
   "spalnia_disable": { "domain": "area", "entity_id": "bedroom" },
 
   "ditiacha_pidsvitka_switch": { "domain": "switch", "entity_id": "switch.pidsvitka" },

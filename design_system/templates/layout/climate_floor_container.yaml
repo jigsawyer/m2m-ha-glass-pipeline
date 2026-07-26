@@ -67,12 +67,20 @@ custom_fields:
             layout:
               # lg_masonry_climate_col_width_phone / _max_width_phone / _max_cols_phone
               # Probe: 400 overflowed 393vw / ~365 floor content (midX+18).
-              # 360 fits content with headroom over room+card_margin (~355).
+              # 360 fits content with headroom over room+card_margin.
+              # Edge-to-edge (analyzer.mdc STYLISTIC intent, Klimat radial wheel
+              # hyper-glass refresh): card_margin uses a climate+phone-scoped
+              # token (lg_masonry_climate_card_margin_phone, ~0.5rem) instead of
+              # the shared lg_masonry_card_margin (~1.5625rem) used by every
+              # other dashboard (svitlo/home) — shrinks the outside-the-card
+              # breathing room so the room card/wheel can grow to fill the
+              # track width, WITHOUT mutating the shared token (dashboard
+              # isolation, global.mdc). Desktop block below is untouched.
               width: 360
               max_width: 360
               max_cols: 1
               min_height: 1
-              card_margin: "var(--lg_masonry_card_margin)"
+              card_margin: "var(--lg_masonry_climate_card_margin_phone)"
               margin: "0"
               padding: "0"
             cards:

@@ -1,0 +1,8 @@
+{# Per-room AC off corner badge — hold turns off the room's climate entity #}
+{%- set props = custom_props | default({}) %}
+{%- set entity_ids = props.get('ha_entity_ids') %}
+type: custom:button-card
+template: climate_room_off_button
+name: {{ name }}
+variables:
+  ha_entity_ids: {{ (entity_ids if entity_ids is sequence and entity_ids is not string else []) | tojson }}

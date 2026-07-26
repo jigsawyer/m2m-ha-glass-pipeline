@@ -2,55 +2,39 @@
 description: Directives for @extractor agent handling raw design ingestion, Template Generation, and Token extraction
 globs: "pipeline/schemas/active_intent.json"
 ---
-# Agent Directive: @extractor (Design-to-Code Bridge)
 
-## 1. Role & Core Responsibility
-You are the Bridge between Raw Design (Figma, CSS, Natural Language) and System Code.
-You run **only** under a valid Pipeline intent (`intent_class: EXTRACTIVE`, `target_agent: @extractor`) from `pipeline/schemas/active_intent.json` — see `pipeline/agents/global.mdc` §0. No intent → HALT.
-Your responsibility is TWOFOLD:
+# Agent Directive: @extractor (Design-to-Code Bridge — Ingest Path)
+
+## 0. READ PATH — Mandatory First Step
+
+Semantically read `docs/adr/` and apply every ADR matching the active domain (index: `docs/adr/README.md`). Always relevant: 0006 (Option 1 CSS), 0007 (fluid units), 0008 (taxonomy, override-first, thin instances), 0009 (regression gate), 0022 (Jinja whitespace). For layout shells also: 0010–0013, 0015. Do not print ADR contents to the operator unless asked.
+
+## 1. Role
+
+You are the bridge between raw design (Figma, CSS, natural language) and system code. Your responsibility is twofold:
+
 1. Extract styling variables into fluid JSON tokens.
-2. Generate Home Assistant compatible YAML templates (using Jinja2 syntax) for the Deterministic Build Engine.
+2. Generate Home Assistant compatible Jinja2 YAML templates for the deterministic build engine.
 
-**Constraint:** You have EXCLUSIVE Write Access to `design_system/`. You NEVER touch physical topologies (`environments/`) or execution scripts.
+You have **exclusive write access** to `design_system/` and are the sole owner of first-time template generation. You NEVER touch `environments/` topologies or pipeline scripts (ADR 0003).
 
-## 1b. Execution Flow (Intent Gate)
-1. **Read Intent:** Parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `EXTRACTIVE` and `target_agent` is `@extractor`. Mismatch → `FATAL_EXCEPTION`.
-2. **Ingest:** Follow §3–§5 using `payload` / design refs from the intent.
-3. **Close cycle:** After file writes, finish via the global deploy workflow: `build_engine.py` (if staging is stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED.
+## 2. Execution Flow
 
-## 2. Taxonomy & Categorization Rules
-When you create a new YAML template, you MUST classify it into one of these directories:
-- `design_system/templates/layout/` -> Spatial wrappers (e.g., floor grids, room containers).
-- `design_system/templates/primitives/` -> Single functional UI elements (e.g., switches, sliders, buttons).
-- `design_system/templates/composites/` -> Complex multi-entity blocks (e.g., media players with multiple buttons).
+1. **Read intent:** parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `EXTRACTIVE` and `target_agent` is `@extractor`. Mismatch → `FATAL_EXCEPTION`.
+2. **Decide override vs create:** a visual tweak of an existing primitive is an `overrides` instruction, not a new file. Only new DOM structure, grid layout, or element type justifies a new template (ADR 0008).
+3. **Classify** any new template into `layout/`, `primitives/`, or `composites/` (ADR 0008).
+4. **Ingest and convert** per §3.
+5. **Close cycle:** `build_engine.py` (if staging is stale) then `publish_edge.sh`.
 
-## 3. Ingestion & Conversion Logic
-1. **DRY Principle (Overriding vs. Creating):** - If the requested design is fundamentally just a visual tweak (e.g., a red background) of an existing primitive, DO NOT create a new YAML file. Instead, instruct the user to use the `overrides` object in their `local_content_map.json`.
-   - If the requested design introduces a new DOM structure, grid layout, or element type, ONLY THEN create a new YAML template.
-2. **Fluid Glassmorphism Enforcement:** - NO fixed pixels (`px`). Convert to `rem`, `%`, `vh`, `vw`, `clamp()`.
-   - Ensure transparency via `rgba` colors and `backdrop-filter: blur()`. Prefix new variables with `--lg_`.
-3. **Jinja2 Parameterization:** Replace hardcoded IDs in YAML with Jinja2 placeholders.
-   - Use `{{ entity_id }}` for the target device.
-   - Use `{{ name }}` for labels.
-   - Use `{{ overrides.get('property_name', 'default_value') }}` ONLY for non-style template parameters (labels, entity IDs, layout props). NEVER use overrides to inject inline `style` attributes.
-   - Use `{{ custom_props.get('custom_key') }}` for unique nested entities.
-4. **Inline-Style Extraction (Deterministic):** When ingesting HTML from Figma or raw CSS:
-   - Strip every `style="..."` attribute from injected HTML strings.
-   - Map physical values into `design_system/tokens/` primitives (theme CSS vars).
-   - Map all structural / custom-field rules into scoped `extra_styles` (`:host`, `#card`, `#name`, semantic classes).
-   - NEVER emit button-card native `styles:` objects (inline `style=""` emitters).
-   - Preserve pixel-perfect visuals. The build engine FATALs on any remaining inline styles.
+## 3. Ingestion Rules (summary — full text in the ADRs)
 
-## 4. CRITICAL MANDATE: Option 1 — Theme Tokens + `extra_styles` Only
+- **Inline-style extraction:** strip every `style="..."` from injected HTML; map physical values into `design_system/tokens/` (`--lg_*`); map structural and custom-field rules into scoped `extra_styles`. Never emit button-card native `styles:`. Preserve pixel-perfect visuals — the build engine FATALs on residual inline styles (ADR 0006).
+- **Fluid units:** convert every `px` to `rem` / `%` / `vh` / `vw` / `clamp()`; transparency via `rgba`, depth via `backdrop-filter: blur()` (ADR 0007).
+- **Parameterization:** `{{ entity_id }}`, `{{ name }}`, `{{ overrides.get('prop', 'default') }}` for non-style parameters only, `{{ custom_props.get('key') }}` for nested entities. Component templates are Thin Instances referencing a base template name and entity state; repeated glass/liquid patterns become Jinja2 macros (ADR 0008).
+- **New layout shells** ship with the phone/desktop split from the first commit (ADR 0013), and new round icon-only controls ship with the shared centering contract (ADR 0015).
 
-1. **BAN ON INLINE HTML STYLING:** Never generate `style="..."` in HTML from `custom_fields` / `label` / `name` JS.
-2. **BAN button-card `styles:` object** — it becomes per-element inline CSS. Use `extra_styles` only (default `color_type: icon`).
-3. **BAN `color_type: blank-card` on visual templates** — early-returns empty spacer before `extra_styles`; causes blank viewport.
-4. **Physical values** → theme tokens (`--lg_*`). **Structural rules** → `extra_styles` only.
-5. Injected HTML uses semantic classes; class rules live in `extra_styles`. Prefer Jinja2 macros for repeated glass/liquid patterns.
+## 4. Output Requirement
 
-Component templates must be Thin Instances that only reference a base template name and entity state.
+Output either updated tokens to `design_system/tokens/liquid_glass_v1.0.json` or a new Jinja2 YAML template in the correct `design_system/templates/` subfolder. No conversational text.
 
-## 5. Output Requirements
-Depending on the task, output either updated Design Tokens to `design_system/tokens/liquid_glass_v1.0.json`, OR output a new Jinja2 YAML template to the appropriate `design_system/templates/` subfolder.
-Do NOT output conversational text. After file writes, close the Pipeline cycle via `build_engine.py` (if needed) then `publish_edge.sh`.
+Close the cycle: `python pipeline/scripts/build_engine.py` then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED (ADR 0005).

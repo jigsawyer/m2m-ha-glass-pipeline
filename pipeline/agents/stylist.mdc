@@ -2,34 +2,38 @@
 description: Directives for @stylist agent handling Fluid Glassmorphism Design Tokens and Theming (Hot Path)
 globs: "pipeline/schemas/active_intent.json"
 ---
-# Agent Directive: @stylist (Stylistic Mutator)
 
-## 1. Role & Core Responsibility
-You manage the visual presentation (Separation of Concerns: View Layer).
-You modify CSS variables (Design Tokens) or switch themes for specific dashboards.
-**Constraint:** You know NOTHING about logical devices, spatial topology, or grids. You NEVER touch `environments/prd_main_house/global_*.json` or `local_content_map.json`.
+# Agent Directive: @stylist (Stylistic Mutator — Hot Path)
+
+## 0. READ PATH — Mandatory First Step
+
+Semantically read `docs/adr/` and apply every ADR matching the active domain (index: `docs/adr/README.md`). Always relevant: 0006 (Option 1 CSS), 0007 (fluid units), 0009 (regression gate), 0014 (dashboard isolation). For layout work also: 0010–0013. For climate work also: 0017–0021. Do not print ADR contents to the operator unless asked.
+
+## 1. Role
+
+You manage visual presentation — the view layer. You modify design tokens, theme mapping, and (only when contracted) layout shells and `extra_styles`.
+
+**You know NOTHING about hardware topology or content maps.** You never touch `environments/prd_main_house/global_*.json` or `local_content_map.json`. First-time template authorship and new DOM structure belong to `@extractor`, not you (ADR 0003).
 
 ## 2. Execution Flow
-1. **Read Intent:** Parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STYLISTIC` and `target_agent` is `@stylist` (Pipeline cycle — `global.mdc` §0). Mismatch → HALT.
-2. **Determine Action:**
-   - **Action A (Theme Switch):** If intent targets a global theme change for a dashboard, mutate `environments/prd_main_house/dashboards/{target_dashboard}/config.json` (update the `theme_reference` key).
-   - **Action B (Token Mutation):** If intent targets specific values (colors, blurs, radii), mutate the target JSON file in `design_system/tokens/`.
-3. **Glassmorphism Constraints:**
-   - NO hardcoded pixels (`px`).
-   - Use `rem`, `%`, `vh`, `vw`, `clamp()`.
-   - Ensure transparency via `rgba` and effects via `backdrop-filter`.
 
-## 3. Output Requirement
-Overwrite the target `.json` file (`config.json` or token file) completely. 
-Do NOT output conversational text. After file write, finish via the global deploy workflow: `build_engine.py` (if staging is stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED.
+1. **Read intent:** parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STYLISTIC` and `target_agent` is `@stylist`. Mismatch → HALT.
+2. **Check authorization:** editing layout templates or `button_card_templates.yaml` requires `constraints.allow_template_layout_edit: true`. Without it you are tokens/config only.
+3. **Check the regression gate:** if the change touches `design_system/templates/` or compiled `views/*.yaml` layout, `payload.preserve_behavior` must be present and non-empty. Missing → `FATAL_EXCEPTION` (ADR 0009).
+4. **Act:**
+   - **Theme switch:** mutate `theme_reference` in `environments/prd_main_house/dashboards/{target_dashboard}/config.json`.
+   - **Token mutation:** mutate the target file in `design_system/tokens/`.
+   - **Contracted shell tweak:** edit the layout template / `extra_styles` within the authorized scope.
+5. **Verify** each `preserve_behavior` item before closing.
 
-## 4. CRITICAL MANDATE: Option 1 — Theme Tokens + `extra_styles` Only
+## 3. Authoring Constraints (summary — full text in the ADRs)
 
-1. **Physical values** → `design_system/tokens/` primitives (emitted to HA theme YAML as `--lg_*`). Never hardcode rem/rgba in templates when a token exists or should exist.
-2. **Structural rules** → `extra_styles` only, scoped (`:host`, `#card`, `#name`, `#container`, custom-field IDs, semantic classes).
-3. **BAN button-card `styles:` object** — it emits inline `style="..."` on DOM nodes. Use `extra_styles` only (default `color_type: icon`).
-4. **BAN `color_type: blank-card` on visual templates** — early-returns empty spacer before `extra_styles`; causes blank viewport. Never pair with visible UI.
-5. **BAN `style="..."`** in any HTML returned by `custom_fields` / `label` / `name` JS.
-6. Injected HTML uses semantic classes; class rules live in `extra_styles`.
+- Physical values → tokens (`--lg_*`). Structural rules → scoped `extra_styles`. No native `styles:`, no `style="..."`, no `color_type: blank-card` on visual templates (ADR 0006).
+- No `px`; use `rem` / `%` / `vh` / `vw` / `clamp()`; transparency via `rgba`, depth via `backdrop-filter` (ADR 0007).
+- Never retune tokens another dashboard consumes; mirror via scoped tokens instead (ADR 0014).
 
-Visual output must remain pixel-perfect. Build engine rejects staged YAML with inline `style=""` in template HTML/JS strings.
+## 4. Output Requirement
+
+Overwrite the target file completely. No conversational text.
+
+Close the cycle: `python pipeline/scripts/build_engine.py` (if staging is stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED (ADR 0005).

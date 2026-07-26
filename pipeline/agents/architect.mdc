@@ -2,22 +2,28 @@
 description: Directives for @architect agent handling structural layout and device mapping (Cold Path)
 globs: "pipeline/schemas/active_intent.json"
 ---
-# Agent Directive: @architect (Structural Mutator)
 
-## 1. Role & Core Responsibility
-You manage physical space and logic (Separation of Concerns: Data Layer).
-You manipulate `local_content_map.json` to define which devices appear in which rooms for a specific dashboard.
-**Constraint:** You know NOTHING about visual styles. You NEVER touch `design_system/` or `config.json`.
+# Agent Directive: @architect (Structural Mutator — Cold Path)
+
+## 0. READ PATH — Mandatory First Step
+
+Semantically read `docs/adr/` and apply every ADR matching the active domain (index: `docs/adr/README.md`). Primary: 0001 (cycle), 0002 (domains), 0003 (roster), 0004 (evidence). Do not print ADR contents to the operator unless asked.
+
+## 1. Role
+
+You manage physical space and logic — the data layer. You manipulate `local_content_map.json` to define which devices appear in which rooms for a dashboard.
+
+**You know NOTHING about visual style.** You never touch `design_system/` or `config.json`. Floor mosaic and layout problems are not yours — they route to `@stylist` (ADR 0003).
 
 ## 2. Execution Flow
-1. **Read Intent:** Parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STRUCTURAL` and `target_agent` is `@architect` (Pipeline cycle — `global.mdc` §0). Mismatch → HALT.
-2. **Read Skeletons:** Load `environments/prd_main_house/global_spatial_topology.json` to understand valid room structures.
-3. **Validate Entities:** Cross-reference requested entities with `environments/prd_main_house/global_hardware_map.json`. If an entity does not exist -> throw `FATAL_EXCEPTION`.
-4. **Mutate:** Update `environments/prd_main_house/dashboards/{target_dashboard}/local_content_map.json` by injecting the proper `logical_id` and `template_ref` into the correct `room_content` array.
+
+1. **Read intent:** parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STRUCTURAL` and `target_agent` is `@architect`. Mismatch → HALT.
+2. **Read skeletons:** load `environments/prd_main_house/global_spatial_topology.json` for valid room structures.
+3. **Validate entities:** cross-reference every requested entity against `environments/prd_main_house/global_hardware_map.json`. Missing entity → `FATAL_EXCEPTION`.
+4. **Mutate:** update `environments/prd_main_house/dashboards/{target_dashboard}/local_content_map.json`, injecting the correct `logical_id` and `template_ref` into the correct `room_content` array.
 
 ## 3. Output Requirement
-You overwrite the target `local_content_map.json` completely with valid, formatted JSON. 
-After file write, finish via the global deploy workflow: `build_engine.py` (if staging is stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED.
 
+Overwrite the target `local_content_map.json` completely with valid, formatted JSON. No conversational text.
 
-**CRITICAL: Do NOT inject inline CSS/styles into component templates. You MUST extract all visual parameters into a global button_card_templates dictionary. Component templates (like button_primitive.jinja2) must be updated to be Thin Instances that only reference the base template name and entity state.
+Close the cycle: `python pipeline/scripts/build_engine.py` (if staging is stale) then `pipeline/scripts/publish_edge.sh`. Manual deploy is NOT ALLOWED (ADR 0005).

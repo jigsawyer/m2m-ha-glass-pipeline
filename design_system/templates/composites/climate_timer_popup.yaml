@@ -1,7 +1,7 @@
 {#- Klimat AC timer Bubble pop-up (duration + clock).
    View Independence: phone Force Native wheels; desktop dual HACS sliders.
    Docs: Clooos/Bubble-Card#pop-up; HA conditional screen; mattieha/slider-button-card.
-   analyzer.mdc §2.8: centered + hug-content + symmetric inset + floor_container glass CSS.
+   analyzer.mdc §8: centered + hug-content + symmetric inset + panel glass + global focus backdrop.
    Phone width: Bubble styles.css centered uses calc(100vw - 32px); token = calc(100vw - 2rem).
    layout-card grid.ts ignores width/max-width/box-sizing — only grid*/margin/padding/height. -#}
 {%- set props = custom_props | default({}) -%}
@@ -27,11 +27,20 @@ styles: |
     --bubble-pop-up-background-color: var(--lg_color_glass_fill);
     --bubble-pop-up-main-background-color: var(--lg_color_glass_fill);
     --bubble-pop-up-border-radius: var(--lg_radius_room);
+    --bubble-backdrop-background-color: var(--lg_color_focus_viewport_fill);
     --paper-item-icon-color: var(--lg_color_text);
     --paper-item-icon-active-color: var(--lg_color_text);
     --icon-primary-color: var(--lg_color_text);
     --state-icon-color: var(--lg_color_text);
     --primary-color: var(--lg_color_text);
+  }
+  /* Global focus-viewport frost (analyzer.mdc §8) — same recipe as TEMP frost.
+     Do not set performance_mode: performance (Bubble docs: disables backdrop blur). */
+  .bubble-backdrop {
+    background-color: var(--lg_color_focus_viewport_fill) !important;
+    backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport)) !important;
+    -webkit-backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport)) !important;
+    transition: none !important;
   }
   .bubble-pop-up.popup-mode-centered:not(.editor) {
     overflow: visible !important;

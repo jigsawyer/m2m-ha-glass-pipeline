@@ -252,6 +252,40 @@ script:
         target:
           entity_id: input_boolean.kabinet_ac_off_armed
 
+  kabinet_ac_timer_pause_clock:
+    alias: Kabinet AC timer pause from clock
+    mode: single
+    sequence:
+      - variables:
+          rem_hms: >
+            {% set t = states('input_datetime.kabinet_ac_off_at') %}
+            {% set parts = (t ~ '').split(':') %}
+            {% set hh = parts[0] | int(0) %}
+            {% set mm = parts[1] | int(0) if parts | length > 1 else 0 %}
+            {% set ss = parts[2] | int(0) if parts | length > 2 else 0 %}
+            {% set now = now() %}
+            {% set target = now.replace(hour=hh, minute=mm, second=ss, microsecond=0) %}
+            {% if target <= now %}
+              {% set target = target + timedelta(days=1) %}
+            {% endif %}
+            {% set total = (target - now).total_seconds() | int %}
+            {% if total < 1 %}{% set total = 1 %}{% endif %}
+            {% set h = total // 3600 %}
+            {% set m = (total % 3600) // 60 %}
+            {% set s = total % 60 %}
+            {{ '%02d:%02d:%02d' | format(h, m, s) }}
+      - action: timer.start
+        target:
+          entity_id: timer.kabinet_ac_sleep
+        data:
+          duration: "{{ rem_hms }}"
+      - action: timer.pause
+        target:
+          entity_id: timer.kabinet_ac_sleep
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.kabinet_ac_off_armed
+
   spalnia_ac_timer_save_duration:
     alias: Spalnia AC timer save duration
     mode: single
@@ -342,6 +376,40 @@ script:
     mode: single
     sequence:
       - action: timer.cancel
+        target:
+          entity_id: timer.spalnia_ac_sleep
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.spalnia_ac_off_armed
+
+  spalnia_ac_timer_pause_clock:
+    alias: Spalnia AC timer pause from clock
+    mode: single
+    sequence:
+      - variables:
+          rem_hms: >
+            {% set t = states('input_datetime.spalnia_ac_off_at') %}
+            {% set parts = (t ~ '').split(':') %}
+            {% set hh = parts[0] | int(0) %}
+            {% set mm = parts[1] | int(0) if parts | length > 1 else 0 %}
+            {% set ss = parts[2] | int(0) if parts | length > 2 else 0 %}
+            {% set now = now() %}
+            {% set target = now.replace(hour=hh, minute=mm, second=ss, microsecond=0) %}
+            {% if target <= now %}
+              {% set target = target + timedelta(days=1) %}
+            {% endif %}
+            {% set total = (target - now).total_seconds() | int %}
+            {% if total < 1 %}{% set total = 1 %}{% endif %}
+            {% set h = total // 3600 %}
+            {% set m = (total % 3600) // 60 %}
+            {% set s = total % 60 %}
+            {{ '%02d:%02d:%02d' | format(h, m, s) }}
+      - action: timer.start
+        target:
+          entity_id: timer.spalnia_ac_sleep
+        data:
+          duration: "{{ rem_hms }}"
+      - action: timer.pause
         target:
           entity_id: timer.spalnia_ac_sleep
       - action: input_boolean.turn_off
