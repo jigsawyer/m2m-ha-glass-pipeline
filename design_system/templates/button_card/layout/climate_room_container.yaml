@@ -1,0 +1,256 @@
+  climate_room_container:
+    template: room_container
+    extra_styles: |
+      [[[
+        this.classList.add('lg-climate-room-host');
+        /* Deep find across nested layout-card / button-card shadow roots.
+           A shallow querySelector misses .lg-thermostat-host and used to
+           force-clear .lg-temp-focus every render (titles flash; frost fails). */
+        const __lgDeepFind = (root, cls, depth) => {
+          if (!root || depth > 12) return null;
+          if (root.querySelector) {
+            const hit = root.querySelector('.' + cls);
+            if (hit) return hit;
+          }
+          const kids = root.querySelectorAll ? root.querySelectorAll('*') : [];
+          for (const el of kids) {
+            if (el.shadowRoot) {
+              const found = __lgDeepFind(el.shadowRoot, cls, depth + 1);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        const __lgThermo = __lgDeepFind(this.shadowRoot, 'lg-thermostat-host', 0);
+        /* Wheel host is SoT for TEMP open — clear stale .lg-temp-focus when
+           the wheel is not open (avoids hidden title/power after render races). */
+        const __lgWheel = __lgThermo
+          ? (__lgDeepFind(__lgThermo.shadowRoot, 'lg-wheel-host', 0)
+            || (__lgThermo.shadowRoot && __lgThermo.shadowRoot.querySelector('.lg-wheel-host')))
+          : null;
+        const __lgOpen = !!(__lgWheel && __lgWheel.classList.contains('lg-wheel-temp-open'));
+        if (__lgThermo) __lgThermo.classList.toggle('lg-temp-focus', __lgOpen);
+        this.classList.toggle('lg-temp-focus', __lgOpen);
+        if (!__lgOpen && this.classList.contains('lg-temp-sibling-hidden')) {
+          this.classList.remove('lg-temp-sibling-hidden');
+          this.style.removeProperty('opacity');
+          this.style.removeProperty('visibility');
+          this.style.removeProperty('pointer-events');
+        }
+        {{ lg_climate_blur_cold_kick_js() }}
+        return `
+      :host {
+        display: block !important;
+        width: min(100%, var(--lg_size_climate_container_w)) !important;
+        max-width: min(
+          100%,
+          var(--lg_size_climate_container_w),
+          calc(100% - var(--lg_space_floor_inset))
+        ) !important;
+        margin-left: calc(var(--lg_space_floor_inset) / 2) !important;
+        margin-right: calc(var(--lg_space_floor_inset) / 2) !important;
+        justify-self: center !important;
+        box-sizing: border-box !important;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        box-sizing: border-box !important;
+      }
+      #card {
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      {{ lg_room_folder_shell_extra_styles('--lg_size_climate_container_w') }}
+      /* Child extra_styles replace room_container's — restate name typography
+         so #name stays readable (color/font) after the override. */
+      {{ lg_name_label_extra_styles('--lg_font_room_label_size', '--lg_font_title_weight', '--lg_font_room_tracking', '--lg_line_height_room') }}
+      /* Centered room title above panel; room-off sits INSIDE room_panel
+         (top-end overlay on glass), not in an external header corner. */
+      #container {
+        grid-template-areas:
+          "room_title"
+          "room_panel" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        align-items: center !important;
+        justify-items: center !important;
+      }
+      #name {
+        grid-area: room_title !important;
+        justify-self: center !important;
+        align-self: center !important;
+        text-align: center !important;
+        width: auto !important;
+        max-width: 100% !important;
+        margin-bottom: var(--lg_space_room_title_gap);
+        overflow: visible;
+        visibility: visible;
+        opacity: 1;
+      }
+      /* Restate room glass stack structure (child extra_styles replaces parent
+         room_container's), then climate-scoped light frame fills (1C). */
+      {{ lg_room_glass_stack_extra_styles('--lg_radius_room') }}
+      .lg-glass-stack__fill {
+        background: var(--lg_color_climate_room_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_climate_room_glass)) saturate(var(--lg_saturate_climate_room_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_room_glass)) saturate(var(--lg_saturate_climate_room_glass));
+      }
+      .lg-glass-stack__frost {
+        background: var(--lg_color_climate_room_glass_frost);
+      }
+      .lg-glass-stack__luminosity {
+        background: var(--lg_color_climate_room_glass_luminosity);
+      }
+      #content {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        box-sizing: border-box !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        border-color: var(--lg_color_climate_room_glass_rim) !important;
+        /* Klimat-scoped override of the shared folder-shell #content
+           overflow:hidden (lg_room_folder_shell_extra_styles): the mode Arc
+           Speed Dials (climate_hvac_arc_dial / climate_fan_arc_dial) fan their
+           option pills OUTWARD by lg_size_climate_arc_radius via transform;
+           overflow:hidden clipped them so tapping the mode icon showed nothing.
+           Visible here lets the arc escape the room panel. Climate-scoped only
+           (not the shared room_container macro) => svitlo/light rooms untouched
+           (global.mdc dashboard isolation). The glass panel visual is provided
+           by the separate #glass_layers (own clip-path), so the rounded panel
+           chrome is preserved; only the transient expanded arc spills out. */
+        overflow: visible !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      #content layout-card,
+      #content grid-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: grid !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        place-content: start center !important;
+        box-sizing: border-box;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      #content button-card,
+      #content hui-card {
+        justify-self: center !important;
+        align-self: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          /* True symmetric centering — phone masonry track has headroom over
+             this width (see climate_floor_container.yaml phone conditional
+             block), so the room no longer needs a left-align offset hack to
+             compensate for a too-narrow/shared track. */
+          width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          justify-self: center !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          box-sizing: border-box !important;
+        }
+        ha-card {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          box-sizing: border-box !important;
+        }
+        #card {
+          width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          box-sizing: border-box !important;
+        }
+        #name {
+          text-align: center !important;
+          justify-self: center !important;
+          width: auto !important;
+        }
+        #content {
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          min-height: 100%;
+          box-sizing: border-box !important;
+        }
+      }
+      /* Room-off INSIDE glass panel cell (room_panel), top-end.
+         Debug 972285 corner-pre: position:absolute used #card as CB (title+panel),
+         so top:inset sat in the title row (corner.y 223 < content.y 248,
+         insetFromContentBorder.top -25.2, insideContentBorderBox false).
+         Fix: participate as grid item in room_panel (no absolute) — same cell as
+         #content/#glass_layers, justify/align pin to top-end + margin inset. */
+      #corner {
+        grid-area: room_panel !important;
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        left: auto !important;
+        bottom: auto !important;
+        justify-self: end !important;
+        align-self: start !important;
+        z-index: 5 !important;
+        pointer-events: auto !important;
+        width: max-content !important;
+        height: max-content !important;
+        margin-top: var(--lg_space_climate_room_corner_inset) !important;
+        margin-right: var(--lg_space_climate_room_corner_inset) !important;
+        margin-bottom: 0 !important;
+        margin-left: 0 !important;
+      }
+      /* TEMP red-box: promote the whole room host's stacking order so its
+         viewport-fixed frost overlay paints above SIBLING room cards in the
+         floor mosaic (masonry-layout siblings, not just this room's own
+         subtree — z-index only resolves within a shared stacking context). */
+      :host(.lg-temp-focus) {
+        position: relative !important;
+        z-index: var(--lg_z_climate_room_temp_focus) !important;
+      }
+      /* TEMP: hide title but keep Power corner visible — morphs to Cancel (X)
+         (ADR 0029). Reserve header track; do not display:none (masonry jump). */
+      :host(.lg-temp-focus) #name {
+        visibility: hidden !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+      }
+      :host(.lg-temp-focus) #corner {
+        visibility: visible !important;
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        z-index: 50 !important;
+        position: relative !important;
+      }
+      /* Keep #glass_layers + #content rim painted during TEMP focus — frost
+         obscures siblings; hiding room glass caused a white snap-back blink
+         on set_temperature commit (operator evidence). Header stays
+         room_title / room_panel (no collapse). */
+      :host(.lg-temp-focus) #content {
+        justify-content: flex-start !important;
+      }
+      /* TEMP open/close compositor kick — forces backdrop-filter resample
+         without hiding #glass_layers (white snap-back) or opacity fade. */
+      :host(.lg-blur-kick) .lg-glass-stack__fill {
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+      }
+        `;
+      ]]]

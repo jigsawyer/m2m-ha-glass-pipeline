@@ -1,0 +1,130 @@
+  room_container:
+    show_icon: false
+    show_name: true
+    show_state: false
+    # Shell only — same as floor_container; nested switches keep tap_action toggle.
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      /* Cap room glass at switch-driven lg_size_container_w — never stretch to
+         masonry track (width:100% bloated cards). Floor/shell carry free space.
+         Plugin .column > * { margin: card_margin } keeps H/V mosaic gaps.
+         iOS folder: title above panel; glass only on #content row. */
+      :host {
+        width: min(100%, var(--lg_size_container_w)) !important;
+        max-width: min(100%, var(--lg_size_container_w)) !important;
+        min-width: 0 !important;
+        flex: 0 0 auto;
+        display: block;
+        box-sizing: border-box;
+        align-self: start;
+        height: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        justify-self: center;
+        overflow: visible !important;
+        --ha-card-border-radius: 0 !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          margin-bottom: var(--lg_space_room_stack_gap);
+        }
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_container_w)) !important;
+        max-width: min(100%, var(--lg_size_container_w)) !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        --ha-card-border-radius: 0 !important;
+        display: block !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      {{ lg_room_folder_shell_extra_styles('--lg_size_container_w') }}
+      {{ lg_name_label_extra_styles('--lg_font_room_label_size', '--lg_font_title_weight', '--lg_font_room_tracking', '--lg_line_height_room') }}
+      /* Title + room-off on one header axis; panel spans below (corner via
+         room_corner_actions / build_engine corner_card). */
+      #container {
+        grid-template-areas:
+          "room_title room_corner"
+          "room_panel room_panel" !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        grid-template-rows: min-content min-content !important;
+        align-items: center !important;
+      }
+      #name {
+        grid-area: room_title !important;
+        justify-self: center !important;
+        align-self: center !important;
+        text-align: center !important;
+        width: auto !important;
+        max-width: 100% !important;
+        overflow: visible;
+      }
+      #corner {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        grid-area: room_corner !important;
+        justify-self: end !important;
+        align-self: center !important;
+        z-index: 5 !important;
+        pointer-events: auto !important;
+        margin-bottom: var(--lg_space_room_title_gap);
+      }
+      #content {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        justify-self: stretch !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      #content layout-card,
+      #content grid-layout,
+      #content HuiGridLayout,
+      #content .card {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: grid !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        align-items: start !important;
+        align-content: start !important;
+        place-content: start center !important;
+        gap: var(--lg_space_gap_sm) !important;
+        box-sizing: border-box;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      #content button-card,
+      #content hui-card {
+        justify-self: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      {{ lg_room_glass_stack_extra_styles('--lg_radius_room') }}
+    custom_fields:
+      glass_layers: >
+        {{ lg_glass_stack_html() }}
+
+  # Klimat floor: full floor shell + phone shared centered track (header + AICs).
+  # Own extra_styles replaces template merge for this field — restate floor SoT.

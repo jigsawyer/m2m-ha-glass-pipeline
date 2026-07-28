@@ -1,0 +1,7 @@
+  climate_quiet_btn:
+    template: climate_satellite_chip
+    icon: mdi:volume-off
+    tap_action:
+      action: toggle
+
+  # Half-size ± setpoint steppers — heat/cool only (parent #temp_steps gates visibility).

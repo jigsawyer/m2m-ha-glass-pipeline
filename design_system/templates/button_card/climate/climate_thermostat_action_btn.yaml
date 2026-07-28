@@ -1,0 +1,138 @@
+  climate_thermostat_action_btn:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action: |
+      [[[
+        /* Approve = the ONLY commit point (analyzer.mdc §6 deferred commit).
+           Walk up to the ring panel host (.lg-ring-host) for the pending
+           setpoint, and further to the outer trigger host
+           (.lg-ring-trigger-host, climate_setpoint_trigger) to collapse the
+           overlay after commit. Dragging the ring never calls a service —
+           this does, exactly once. */
+        const composedParent = (el) => {
+          if (!el) return null;
+          if (el.parentElement) return el.parentElement;
+          const rn = el.getRootNode && el.getRootNode();
+          return (rn && rn.host) || null;
+        };
+        let host = null;
+        let triggerHost = null;
+        let scope = this;
+        for (let i = 0; i < 16 && scope; i++) {
+          if (!host && scope.classList && scope.classList.contains('lg-ring-host')) host = scope;
+          if (scope.classList && scope.classList.contains('lg-ring-trigger-host')) { triggerHost = scope; break; }
+          scope = composedParent(scope);
+        }
+        const pending = (host && typeof host.__lgRingPending === 'number' && Number.isFinite(host.__lgRingPending))
+          ? host.__lgRingPending : null;
+        const id = (entity && entity.entity_id) || '';
+        const cur = (entity && entity.attributes) ? Number(entity.attributes.temperature) : NaN;
+        if (pending !== null && id && (!Number.isFinite(cur) || Math.abs(pending - cur) >= 0.05)) {
+          try { hass.callService('climate', 'set_temperature', { entity_id: id, temperature: pending }); } catch (e) {}
+          if (host) host.__lgRingPending = undefined;
+        }
+        if (triggerHost) {
+          triggerHost.classList.remove('lg-ring-trigger-expanded');
+          triggerHost.__lgTempStickyOpen = false;
+          let wheelHost = null;
+          let wscope = composedParent(triggerHost);
+          for (let i = 0; i < 16 && wscope; i++) {
+            if (wscope.classList && wscope.classList.contains('lg-wheel-host')) {
+              wheelHost = wscope;
+              break;
+            }
+            wscope = composedParent(wscope);
+          }
+          if (wheelHost) {
+            wheelHost.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+            wheelHost.__lgTempOpenedAt = 0;
+            if (wheelHost.__lgTempArmTimer) {
+              try { clearTimeout(wheelHost.__lgTempArmTimer); } catch (e) {}
+              wheelHost.__lgTempArmTimer = 0;
+            }
+          }
+          {{ lg_climate_temp_focus_set_js('false') }}
+          {{ lg_climate_blur_kick_js() }}
+        }
+        return { action: 'none' };
+      ]]]
+    extra_styles: |
+      {{ lg_climate_round_btn_shell_extra_styles('--lg_size_climate_thermostat_action_w', '--lg_size_climate_thermostat_action_w_phone', '--lg_size_climate_chip_icon', '--lg_size_climate_chip_icon') }}
+      :host {
+        position: relative;
+      }
+      #card {
+        box-shadow: var(--lg_climate_action_shadow, var(--lg_shadow_liquid));
+        transition: var(--lg_transition_climate_thermostat_action_pulse);
+      }
+      #liquid_clip {
+        background: var(--lg_gradient_climate_thermostat_action), var(--lg_color_climate_arc_glass_fill);
+      }
+      #action_label {
+        position: absolute !important;
+        inset: 0 !important;
+        z-index: 1;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        place-items: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+        color: var(--lg_climate_action_color, var(--lg_color_text));
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_thermostat_action_size);
+        font-weight: var(--lg_font_title_weight);
+        text-shadow: 0 0.0625rem 0.25rem rgba(0, 0, 0, 0.45);
+        pointer-events: none !important;
+      }
+      @media (max-width: 48rem) {
+        #action_label { font-size: var(--lg_font_climate_thermostat_action_size_phone); }
+      }
+      #action_label::after {
+        content: var(--lg_climate_pending_label, none);
+      }
+    custom_fields:
+      liquid_clip: ""
+      action_label: ""
+
+  # LiquidThermostatControl "ControlArc" ring panel — AUTHORIZED custom radial
+  # control (analyzer.mdc §6, revised: in-place, no popup — nested as a
+  # ring_overlay custom_field directly inside climate_setpoint_trigger, which
+  # owns the expand/collapse toggle): a compact "horseshoe" SVG arc (gap
+  # centered at the bottom, sweep from lg_size_climate_ring_sweep_deg) around a
+  # central approve button, with a draggable circular thumb riding the fill's
+  # leading edge. DEFERRED COMMIT — pointer drag on #ring updates a client-side pending
+  # value (host.__lgRingPending), the ring fill (--lg_ring_t), the thumb
+  # position (--lg_ring_thumb_x/_y) and the pending label ONLY.
+  # climate.set_temperature is called exactly once, from the central
+  # climate_thermostat_action_btn (#action_btn) on approve-click. min_temp /
+  # max_temp / target_temp_step / temperature are read LIVE from the entity — no
+  # proxy input_number helper, no guessed hardware bounds. Pointer listeners are
+  # pointerdown/move/up/cancel only (never touchstart) + touch-action:none on
+  # #ring, so the passive-listener console noise from the retired
+  # slider-button-card dome cannot recur.
+  #
+  # Arc geometry (SoT — do not re-derive by guesswork, see the math below):
+  # the SVG is CSS-rotated -90deg so path-percent p=0 renders at 12 o'clock,
+  # increasing clockwise (p=25 -> 3 o'clock, p=50 -> 6 o'clock, p=75 -> 9
+  # o'clock). Gap is centered at p=50 (6 o'clock). For sweepDeg degrees of
+  # visible arc: gapPct = (360-sweepDeg)/360*100; onLen = 100-gapPct;
+  # onStart = 50 + gapPct/2 (the p-value where the visible arc/fill begins,
+  # i.e. the MIN-temp edge, bottom-left of the gap). Both track and fill use a
+  # 2-value stroke-dasharray [on, off] summing to exactly 100 (one pathLength
+  # cycle == one revolution) with a constant stroke-dashoffset of
+  # (100 - onStart), which places the "on" run's start exactly at onStart.
+  # Track's "on" length is the constant onLen (full horseshoe). Fill's "on"
+  # length is the live var(--lg_ring_t) * onLen (grows from onStart through
+  # 12 o'clock toward the MAX-temp edge at p = (onStart+onLen) mod 100,
+  # bottom-right of the gap) — dragging clockwise raises the temperature.
+  # Thumb position mirrors the fill's leading edge via
+  # x% = 50 + 44*sin(theta), y% = 50 - 44*cos(theta), theta = p/100*2*PI
+  # (exact inverse of the -90deg CSS rotation applied to the ring SVG).

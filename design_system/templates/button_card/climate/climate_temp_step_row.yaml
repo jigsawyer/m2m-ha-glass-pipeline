@@ -1,0 +1,81 @@
+  climate_temp_step_row:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      :host {
+        width: var(--lg_size_climate_step_row_w) !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        min-height: var(--lg_size_climate_step_btn) !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        margin: 0 auto !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      ha-card, #card {
+        width: 100% !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "minus plus" !important;
+        grid-template-columns: var(--lg_size_climate_step_btn) var(--lg_size_climate_step_btn) !important;
+        column-gap: var(--lg_space_climate_step_gap) !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        align-items: center !important;
+        width: var(--lg_size_climate_step_row_w) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #temp_minus, #temp_plus {
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        justify-self: center !important;
+        align-self: center !important;
+        overflow: visible !important;
+      }
+      #temp_minus { grid-area: minus !important; }
+      #temp_plus { grid-area: plus !important; }
+      #temp_minus > *, #temp_plus > * {
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        display: block !important;
+        margin: 0 auto !important;
+      }
+    custom_fields:
+      temp_minus:
+        card:
+          type: custom:button-card
+          template: climate_temp_step_btn
+          entity: "[[[[ return (entity && entity.entity_id) || '' ]]]]"
+          icon: mdi:minus
+          variables:
+            direction: -1
+      temp_plus:
+        card:
+          type: custom:button-card
+          template: climate_temp_step_btn
+          entity: "[[[[ return (entity && entity.entity_id) || '' ]]]]"
+          icon: mdi:plus
+          variables:
+            direction: 1
+
+  # 2×2 HVAC mode cluster (left stack group1)
+  # 1×6 left flank (modes/fan/actions left halves) — dial sits between left_col and right_col
+  # 1×6 left flank (HVAC modes + power)
+  # Fullscreen dismiss backdrop for an Arc Speed Dial — separate custom_field
+  # button-card (own tap_action, no service call) so the parent dial's own
+  # tap_action can stay a plain expand/collapse toggle. Walks up via the
+  # proven composedParent chain to find the ancestor .lg-arc-host and collapse it.

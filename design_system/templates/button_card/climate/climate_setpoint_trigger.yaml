@@ -1,0 +1,395 @@
+  climate_setpoint_trigger:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_haptic_press_js() }}
+          /* CLICK ONLY — side effects must not live in a tap_action [[[]]] that
+             returns {action}: button-card re-evals that template on render. */
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const findWheelHost = (from) => {
+            let scope = composedParent(from);
+            for (let i = 0; i < 16 && scope; i++) {
+              if (scope.classList && scope.classList.contains('lg-wheel-host')) return scope;
+              scope = composedParent(scope);
+            }
+            return null;
+          };
+          const findRingHost = (triggerHost) => {
+            if (triggerHost && triggerHost.shadowRoot) {
+              const rh = triggerHost.shadowRoot.querySelector('.lg-ring-host');
+              if (rh) return rh;
+            }
+            let scope = composedParent(this);
+            for (let i = 0; i < 16 && scope; i++) {
+              if (scope.classList && scope.classList.contains('lg-ring-host')) return scope;
+              scope = composedParent(scope);
+            }
+            return null;
+          };
+          const id = (entity && entity.entity_id) || '';
+          const modeNow = entity ? entity.state : 'off';
+          /* ADR 0029 FSM: OFF → hub tap → climate.turn_on → DEFAULT_ON (no EDIT). */
+          if (!(this.classList.contains('lg-ring-trigger-expanded') || this.__lgTempStickyOpen)
+              && modeNow === 'off' && id) {
+            try { hass.callService('climate', 'turn_on', { entity_id: id }); } catch (e) {}
+            return;
+          }
+          if (this.classList.contains('lg-ring-trigger-expanded') || this.__lgTempStickyOpen) {
+            const ringHost = findRingHost(this);
+            const pending = (ringHost && typeof ringHost.__lgRingPending === 'number'
+              && Number.isFinite(ringHost.__lgRingPending))
+              ? ringHost.__lgRingPending : null;
+            const cur = (entity && entity.attributes) ? Number(entity.attributes.temperature) : NaN;
+            if (pending !== null && id && (!Number.isFinite(cur) || Math.abs(pending - cur) >= 0.05)) {
+              try { hass.callService('climate', 'set_temperature', { entity_id: id, temperature: pending }); } catch (e) {}
+              if (ringHost) ringHost.__lgRingPending = undefined;
+            }
+            this.classList.remove('lg-ring-trigger-expanded');
+            this.__lgTempStickyOpen = false;
+            const wheelHost = findWheelHost(this);
+            if (wheelHost) {
+              wheelHost.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+              wheelHost.__lgTempOpenedAt = 0;
+              if (wheelHost.__lgTempArmTimer) {
+                try { clearTimeout(wheelHost.__lgTempArmTimer); } catch (e) {}
+                wheelHost.__lgTempArmTimer = 0;
+              }
+            }
+            {{ lg_climate_temp_focus_set_js('false') }}
+            {{ lg_climate_blur_kick_js() }}
+            return;
+          }
+          this.classList.add('lg-ring-trigger-expanded');
+          this.__lgTempStickyOpen = true;
+          const wheelHost = findWheelHost(this);
+          if (wheelHost) {
+            /* Mutex with timer radial (ADR 0025). */
+            if (wheelHost.classList.contains('lg-timer-radial-open')) {
+              wheelHost.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+              wheelHost.__lgTimerOpenedAt = 0;
+              wheelHost.__lgTimerStickyOpen = false;
+              if (wheelHost.__lgTimerArmTimer) {
+                try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+                wheelHost.__lgTimerArmTimer = 0;
+              }
+              const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+              if (radial) {
+                radial.__lgTimerPending = undefined;
+                radial.classList.remove('lg-timer-dragging');
+              }
+            }
+            wheelHost.classList.add('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+            wheelHost.__lgTempOpenedAt = Date.now();
+            if (wheelHost.__lgTempArmTimer) {
+              try { clearTimeout(wheelHost.__lgTempArmTimer); } catch (e) {}
+            }
+            wheelHost.__lgTempArmTimer = setTimeout(() => {
+              if (wheelHost && wheelHost.classList) {
+                wheelHost.classList.remove('lg-wheel-temp-arming');
+              }
+              wheelHost.__lgTempArmTimer = 0;
+            }, 300);
+          }
+          {{ lg_climate_temp_focus_set_js('true') }}
+          {{ lg_climate_blur_kick_js() }}
+        ]]]
+    extra_styles: |
+      [[[
+        this.classList.add('lg-ring-trigger-host');
+        /* Persist TEMP open across button-card re-renders: some re-renders of
+           this nested card can wipe its own classList while the ANCESTOR
+           wheel host (climate_global_wheel) — which owns the single
+           lg-wheel-temp-open source of truth — keeps its class. Re-derive
+           the expanded visual state from that ancestor every render so the
+           two never drift apart. Sticky flag on THIS host repairs the inverse
+           race (expanded wiped while open intent is still live). */
+        const __lgComposedParent = (el) => {
+          if (!el) return null;
+          if (el.parentElement) return el.parentElement;
+          const rn = el.getRootNode && el.getRootNode();
+          return (rn && rn.host) || null;
+        };
+        let __lgWheel = null;
+        let __lgScope = __lgComposedParent(this);
+        for (let i = 0; i < 16 && __lgScope; i++) {
+          if (__lgScope.classList && __lgScope.classList.contains('lg-wheel-host')) {
+            __lgWheel = __lgScope;
+            break;
+          }
+          __lgScope = __lgComposedParent(__lgScope);
+        }
+        const __lgWheelOpen = !!(__lgWheel && __lgWheel.classList.contains('lg-wheel-temp-open'));
+        const __lgSticky = !!this.__lgTempStickyOpen;
+        const __lgArming = !!(__lgWheel && (
+          __lgWheel.classList.contains('lg-wheel-temp-arming')
+          || (Date.now() - (Number(__lgWheel.__lgTempOpenedAt) || 0)) < 300
+        ));
+        /* Only clear focus when wheel host is positively found AND closed
+           AND sticky/arming are not holding open. Null wheel (early remount)
+           must NOT wipe .lg-temp-focus. */
+        if (__lgWheelOpen || __lgSticky) {
+          this.classList.add('lg-ring-trigger-expanded');
+          this.__lgTempStickyOpen = true;
+          if (__lgWheel && !__lgWheelOpen) {
+            /* Inverse race: sticky open on trigger but wheel flag wiped —
+               re-assert SoT. Keep arming if still inside the open window. */
+            __lgWheel.classList.add('lg-wheel-temp-open');
+            if (!__lgWheel.__lgTempOpenedAt) __lgWheel.__lgTempOpenedAt = Date.now();
+            if ((Date.now() - (Number(__lgWheel.__lgTempOpenedAt) || 0)) < 300) {
+              __lgWheel.classList.add('lg-wheel-temp-arming');
+            }
+          }
+          {{ lg_climate_temp_focus_set_js('true') }}
+        } else if (__lgWheel && !__lgArming) {
+          this.classList.remove('lg-ring-trigger-expanded');
+          this.__lgTempStickyOpen = false;
+          {{ lg_climate_temp_focus_set_js('false') }}
+        }
+        const mode = entity ? entity.state : 'off';
+        const __lgHubActive = mode === 'cool' || mode === 'heat';
+        const __lgHubDisabled = !entity || mode === 'unavailable' || mode === 'unknown';
+        const color = mode === 'cool'
+          ? 'var(--lg_color_climate_cool)'
+          : mode === 'heat'
+            ? 'var(--lg_color_climate_heat)'
+            : 'var(--lg_color_text)';
+        const glow = mode === 'cool'
+          ? 'var(--lg_glow_climate_cool)'
+          : mode === 'heat'
+            ? 'var(--lg_glow_climate_heat)'
+            : 'none';
+        const hubDepth = __lgHubActive
+          ? 'var(--lg_shadow_climate_hub_active_sunken)'
+          : 'var(--lg_shadow_climate_hub_idle)';
+        /* Seed mid target label from entity; ring drag overwrites via
+           --lg_climate_mid_target on this host during pending. */
+        const __lgAttrs = (entity && entity.attributes) || {};
+        const __lgEntT = Number(__lgAttrs.temperature);
+        let __lgRingHost = (this && this.shadowRoot)
+          ? this.shadowRoot.querySelector('.lg-ring-host') : null;
+        const __lgPending = (__lgRingHost && typeof __lgRingHost.__lgRingPending === 'number'
+          && Number.isFinite(__lgRingHost.__lgRingPending))
+          ? __lgRingHost.__lgRingPending : null;
+        const __lgMidNum = __lgPending !== null ? __lgPending
+          : ((Number.isFinite(__lgEntT) || __lgEntT === 0) ? __lgEntT : null);
+        const __lgMidTargetCss = __lgMidNum !== null ? `"${__lgMidNum}\u00b0"` : '"--\u00b0"';
+        return `
+      :host {
+        --lg_ring_expand_t: 0;
+        --lg_ring_expand_pointer: none;
+        --lg_ring_expand_transition: var(--lg_transition_climate_arc_collapse);
+        --lg_climate_mid_target: ${__lgMidTargetCss};
+        position: relative;
+        z-index: 1;
+      }
+      :host(.lg-ring-trigger-expanded) {
+        --lg_ring_expand_t: 1;
+        --lg_ring_expand_pointer: auto;
+        --lg_ring_expand_transition: var(--lg_transition_climate_arc_expand);
+        z-index: 46;
+      }
+      @media (min-width: 48.0625rem) {
+        :host(.lg-ring-trigger-expanded) {
+          --lg_ring_expand_transition: var(--lg_transition_climate_arc_expand_desktop);
+        }
+      }
+      {{ lg_climate_round_btn_shell_extra_styles('--lg_size_climate_setpoint_trigger_w', '--lg_size_climate_setpoint_trigger_w_phone', '--lg_size_climate_chip_icon', '--lg_size_climate_chip_icon') }}
+      /* Compose mode glow ON TOP of glass rim — Active hub sinks (ADR 0028). */
+      #card {
+        box-shadow: ${glow === 'none' ? hubDepth : hubDepth + ', ' + glow};
+        transition: var(--lg_transition_climate_node_state), var(--lg_transition_climate_node_press);
+        filter: ${__lgHubDisabled ? 'var(--lg_filter_climate_node_disabled)' : 'none'};
+        opacity: ${__lgHubDisabled ? 'var(--lg_opacity_climate_node_disabled)' : '1'};
+        pointer-events: ${__lgHubDisabled ? 'none' : 'auto'};
+      }
+      /* Convex Lens idle / sunken Active fill — soft highlight only when Idle. */
+      #liquid_clip {
+        background:
+          ${__lgHubActive
+            ? 'var(--lg_color_climate_arc_glass_fill)'
+            : 'var(--lg_gradient_climate_setpoint_sphere_highlight), var(--lg_color_climate_arc_glass_fill)'};
+        transition: var(--lg_transition_climate_node_state);
+      }
+      /* CRITICAL FIX: never fade #container — #ring_overlay is a button-card
+         custom_field INSIDE #container; parent opacity would multiply with
+         the ring's own opacity and hide the open ring.
+         Mid status stack STAYS visible while open (live pending on target). */
+      #liquid_clip {
+        opacity: 1;
+      }
+      /* Pin status HTML inside the circle. pointer-events:none so taps hit
+         the host (mid commit / open). */
+      #status_stack {
+        position: absolute;
+        inset: 0;
+        display: grid !important;
+        place-items: center !important;
+        place-content: center !important;
+        align-items: center !important;
+        justify-items: center !important;
+        z-index: 1;
+        pointer-events: none !important;
+        box-sizing: border-box;
+        opacity: 1 !important;
+      }
+      :host(.lg-ring-trigger-expanded) #status_stack {
+        z-index: 4 !important;
+      }
+      :host(.lg-ring-trigger-expanded) #ring_overlay {
+        z-index: 3 !important;
+        /* Wrapper must NOT steal mid center taps (mid = commit). Nested
+           horseshoe strokes re-enable pointer-events for drag only. */
+        pointer-events: none !important;
+      }
+      /* Merged central status: ambient (small) / target setpoint (huge,
+         mode-colored) / mode name (small, mode-colored) — everything that
+         used to live in climate_thermostat's now-retired external #caption
+         row lives INSIDE the circle instead (user directive: "merge
+         everything into the circle"). All 3 lines wrap instead of clipping
+         (global no-crop rule) — the circle is sized generously enough
+         (lg_size_climate_setpoint_trigger_w, ~2.3-2.5x the old trigger) that
+         wrapping is a rare fallback, not the common case. */
+      .lg-setpoint-stack {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_setpoint_stack_gap);
+        width: var(--lg_size_climate_setpoint_text_w);
+        max-width: var(--lg_size_climate_setpoint_text_w);
+        text-align: center;
+        font-family: var(--lg_font_label_family);
+        line-height: 1.15;
+        filter: var(--lg_filter_climate_setpoint_readout);
+      }
+      @media (max-width: 48rem) {
+        .lg-setpoint-stack {
+          gap: var(--lg_space_climate_setpoint_stack_gap_phone);
+          width: var(--lg_size_climate_setpoint_text_w_phone);
+          max-width: var(--lg_size_climate_setpoint_text_w_phone);
+        }
+      }
+      .lg-setpoint-stack__ambient {
+        color: var(--lg_color_text);
+        opacity: 0.88;
+        font-size: var(--lg_font_climate_setpoint_ambient_size);
+        font-weight: var(--lg_font_label_weight);
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .lg-setpoint-stack__target {
+        color: ${color} !important;
+        font-weight: var(--lg_font_title_weight);
+        white-space: nowrap;
+        /* Live pending: ring drag writes --lg_climate_mid_target on this host. */
+        font-size: 0 !important;
+      }
+      .lg-setpoint-stack__target::after {
+        content: var(--lg_climate_mid_target, '--\u00b0');
+        font-size: var(--lg_font_climate_setpoint_target_size);
+        font-weight: var(--lg_font_title_weight);
+        color: inherit;
+        white-space: nowrap;
+      }
+      .lg-setpoint-stack__mode {
+        color: ${color} !important;
+        opacity: 0.88;
+        font-size: var(--lg_font_climate_setpoint_mode_size);
+        font-weight: var(--lg_font_title_weight);
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      @media (max-width: 48rem) {
+        .lg-setpoint-stack__ambient { font-size: var(--lg_font_climate_setpoint_ambient_size_phone); }
+        .lg-setpoint-stack__target::after { font-size: var(--lg_font_climate_setpoint_target_size_phone); }
+        .lg-setpoint-stack__mode { font-size: var(--lg_font_climate_setpoint_mode_size_phone); }
+      }
+      /* Ring overlay — absolutely centered on the trigger via the SAME
+         --lg_size_climate_ring_w token the ring panel sizes itself with (no
+         separate offset token, so centering can never drift out of sync with
+         the ring's own width). Same escape technique already proven by
+         climate_arc_option_btn (position:absolute + transform inside a
+         #card with overflow:hidden — the room-level #content overflow:visible
+         is what actually lets it spill past the room panel, see
+         climate_room_container). */
+      #ring_overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: var(--lg_size_climate_ring_w);
+        height: var(--lg_size_climate_ring_w);
+        margin-top: calc(var(--lg_size_climate_ring_w) / -2);
+        margin-left: calc(var(--lg_size_climate_ring_w) / -2);
+        box-sizing: border-box;
+        transform-origin: center;
+        transform: scale(var(--lg_ring_expand_t, 0));
+        opacity: var(--lg_ring_expand_t, 0);
+        filter: blur(calc((1 - var(--lg_ring_expand_t, 0)) * var(--lg_climate_arc_emerge_blur)));
+        transition: var(--lg_ring_expand_transition), opacity var(--lg_transition_climate_arc_collapse);
+        pointer-events: none !important;
+        z-index: 2;
+      }
+      @media (max-width: 48rem) {
+        #ring_overlay {
+          width: var(--lg_size_climate_ring_w_phone);
+          height: var(--lg_size_climate_ring_w_phone);
+          margin-top: calc(var(--lg_size_climate_ring_w_phone) / -2);
+          margin-left: calc(var(--lg_size_climate_ring_w_phone) / -2);
+        }
+      }
+      /* Same wrapper-pointer-events precedence gap as climate_arc_dial (see
+         its FIX comment): !important is required or button-card's own
+         inline style on this wrapper <div> silently wins. */
+      #ring_close_overlay {
+        pointer-events: var(--lg_ring_expand_pointer, none) !important;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: ""
+      status_stack: |
+        [[[
+          const modeLabels = {
+            off: 'Вимк',
+            cool: 'Холод',
+            heat: 'Тепло',
+            dry: 'Сухе',
+            fan_only: 'Вентилятор',
+            auto: 'Авто',
+          };
+          const attrs = (entity && entity.attributes) || {};
+          const cur = attrs.current_temperature;
+          const target = attrs.temperature;
+          const mode = entity ? entity.state : 'off';
+          const ambient = (cur === 0 || cur) ? `${cur}° зараз` : '—';
+          const targetLabel = (target === 0 || target) ? `${target}°` : '--°';
+          const modeLabel = modeLabels[mode] || mode;
+          return `<div class="lg-setpoint-stack"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__target">${targetLabel}</div><div class="lg-setpoint-stack__mode">${modeLabel}</div></div>`;
+        ]]]
+      ring_overlay:
+        card:
+          type: custom:button-card
+          template: climate_thermostat_ring_panel
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+
+  # LiquidThermostatControl "ApproveButton" — shows the live pending
+  # (Adjusting, green pulse) or synced setpoint. Reads --lg_climate_pending_label /
+  # --lg_climate_action_shadow / --lg_climate_action_color INHERITED from the
+  # ancestor climate_thermostat_ring_panel (cross-shadow-boundary custom
+  # property inheritance). Tap = the ONLY commit: calls climate.set_temperature
+  # with the ring's pending value (analyzer.mdc §6), then collapses the outer
+  # climate_setpoint_trigger overlay back in place (no popup/navigate anymore
+  # — the ring lives in-place inside the trigger, see climate_setpoint_trigger).

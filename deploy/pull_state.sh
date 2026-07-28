@@ -70,12 +70,25 @@ TH=$(curl -X POST -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: Bearer ${HA_TOKEN}" \
     -H "Content-Type: application/json" \
     "${HA_URL}/api/services/frontend/reload_themes" || echo fail)
-# YAML dashboard path for this host (configuration.yaml → liquid-glass-main)
+# lovelace.reload returns 400 on HA 2026.x for YAML dashboards; fire update event instead.
 LV=$(curl -X POST -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: Bearer ${HA_TOKEN}" \
     -H "Content-Type: application/json" \
-    "${HA_URL}/api/services/lovelace/reload" \
-    -d '{"url_path":"liquid-glass-main"}' || echo fail)
+    "${HA_URL}/api/events/lovelace_updated" \
+    -d '{}' || echo fail)
 
-echo "[$(date -Iseconds)] reload_themes=${TH} lovelace.reload=${LV}"
+# Guard: refuse silent success if dashboard includes missing views (critical UI break).
+missing=0
+for rel in $(grep -E '^\s*-\s*!include\s+views/' "${STATE_DIR}/dashboard.yaml" | sed -E 's/.*!include[[:space:]]+//' || true); do
+  if [ ! -f "${STATE_DIR}/${rel}" ]; then
+    echo "[$(date -Iseconds)] FATAL: dashboard includes ${rel} but file missing."
+    missing=1
+  fi
+done
+VIEW_COUNT=$(find "${STATE_DIR}/views" -maxdepth 1 -name '*.yaml' 2>/dev/null | wc -l | tr -d ' ')
+echo "[$(date -Iseconds)] reload_themes=${TH} lovelace_updated=${LV} views=${VIEW_COUNT} missing_includes=${missing}"
+if [ "${missing}" -ne 0 ] || [ "${VIEW_COUNT}" -lt 1 ]; then
+  echo "[$(date -Iseconds)] FATAL: edge-state views incomplete — UI will break."
+  exit 1
+fi
 echo "[$(date -Iseconds)] SUCCESS: Deployment pipeline executed."

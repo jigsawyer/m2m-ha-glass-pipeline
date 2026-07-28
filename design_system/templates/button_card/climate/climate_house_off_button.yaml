@@ -1,0 +1,45 @@
+  climate_house_off_button:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:power
+    variables:
+      ha_entity_ids: []
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: climate.turn_off
+      target: |
+        [[[
+          const ids = variables.ha_entity_ids;
+          if (Array.isArray(ids) && ids.length) return { entity_id: ids };
+          return {};
+        ]]]
+    extra_styles: |
+      {{ lg_tab_side_btn_layout_extra_styles(disabled=false) }}
+      /* Klimat-only idle rim — shared tab-side shell keeps transparent border
+         for light dashboard isolation; climate house-off needs a readable
+         hitbox outline matching arc glass stroke. */
+      #card {
+        border-width: var(--lg_stroke_climate_tab_side) !important;
+        border-color: var(--lg_color_climate_tab_side_rim) !important;
+      }
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_side_btn);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab_side_btn));
+        pointer-events: none;
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+    state: []
+
+  # Per-room AC off — round icon-only (no liquid chrome) inside room panel.
+  # Room-level tap-to-off (ADR 0016); floor/house stay hold. Climate-scoped
+  # glow/color tokens only (ADR 0014). Round icon centering (ADR 0015).

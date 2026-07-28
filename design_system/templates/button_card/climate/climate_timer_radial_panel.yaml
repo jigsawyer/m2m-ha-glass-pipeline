@@ -1,0 +1,296 @@
+  climate_timer_radial_panel:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      save_duration_script_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      seed_minutes: 0
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const maxMin = (() => {
+          let m = 720;
+          if (this) {
+            const raw = parseFloat(getComputedStyle(this).getPropertyValue('--lg_size_climate_timer_max_minutes'));
+            if (Number.isFinite(raw) && raw > 0) m = raw;
+          }
+          return m;
+        })();
+        const fmtLabel = (mins) => {
+          const n = Math.max(0, Math.round(mins));
+          if (n < 60) return `"${n} хв"`;
+          const h = Math.floor(n / 60);
+          const mm = n % 60;
+          if (mm === 0) return `"${h} год"`;
+          return `"${h} год ${mm} хв"`;
+        };
+        const R = 44, CX = 50, CY = 50;
+        const r4 = (n) => Math.round(n * 10000) / 10000;
+        const posForProgress = (p) => {
+          const theta = p * Math.PI * 2;
+          return { x: r4(CX + R * Math.sin(theta)), y: r4(CY - R * Math.cos(theta)) };
+        };
+        const seedFromVars = () => {
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          let mins = Number(variables && variables.seed_minutes) || 0;
+          if (hoursId && states[hoursId]) mins = (parseInt(states[hoursId].state, 10) || 0) * 60;
+          if (minutesId && states[minutesId]) mins += (parseInt(states[minutesId].state, 10) || 0);
+          if (!(mins > 0) && this && typeof this.__lgTimerSeedMinutes === 'number') {
+            mins = this.__lgTimerSeedMinutes;
+          }
+          return Math.max(0, Math.min(maxMin, mins));
+        };
+        if (this) {
+          this.classList.add('lg-timer-radial-host');
+          this.__lgTimerMaxMin = maxMin;
+        }
+        const pendingNow = (this && typeof this.__lgTimerPending === 'number' && Number.isFinite(this.__lgTimerPending))
+          ? this.__lgTimerPending : null;
+        const seedMins = seedFromVars();
+        const displayMins = pendingNow !== null ? pendingNow : seedMins;
+        const timerT = maxMin > 0 ? Math.max(0, Math.min(1, displayMins / maxMin)) : 0;
+        const knobPos = posForProgress(timerT);
+        const labelCss = fmtLabel(displayMins);
+        const dragging = !!(this && this.__lgTimerDragging);
+        if (this && this.updateComplete) {
+          const card = this;
+          const setVar = (n, v) => {
+            const cur = card.style.getPropertyValue(n);
+            if (v === null || v === undefined || v === '') { if (cur) card.style.removeProperty(n); return; }
+            if (cur !== v) card.style.setProperty(n, v);
+          };
+          const applyProgress = (raw, fromDrag) => {
+            let p = Math.max(0, Math.min(1, raw));
+            if (fromDrag && typeof card.__lgTimerLastProgress === 'number') {
+              const prev = card.__lgTimerLastProgress;
+              if (prev > 0.75 && p < 0.25) p = 1;
+              else if (prev < 0.25 && p > 0.75) p = 0;
+            }
+            card.__lgTimerLastProgress = p;
+            const mins = Math.round(p * (card.__lgTimerMaxMin || maxMin));
+            const prevMins = typeof card.__lgTimerPending === 'number' ? card.__lgTimerPending : null;
+            card.__lgTimerPending = mins;
+            const pos = posForProgress(p);
+            setVar('--lg_timer_t', String(p));
+            setVar('--lg_timer_knob_x', `${pos.x}%`);
+            setVar('--lg_timer_knob_y', `${pos.y}%`);
+            setVar('--lg_timer_label', fmtLabel(mins));
+            try {
+              const conf = card.shadowRoot && card.shadowRoot.querySelector('#timer_confirm');
+              const host = conf && (conf.shadowRoot ? conf : conf);
+              const labelEl = host && host.shadowRoot && host.shadowRoot.querySelector('#label');
+              if (labelEl) {
+                const raw = fmtLabel(mins).replace(/^"/, '').replace(/"$/, '');
+                labelEl.textContent = raw;
+              }
+            } catch (e) {}
+            if (fromDrag && prevMins !== null && mins !== prevMins) {
+              const crossed5 = Math.floor(prevMins / 5) !== Math.floor(mins / 5);
+              const crossed10 = Math.floor(prevMins / 10) !== Math.floor(mins / 10);
+              if ((crossed5 || crossed10) && typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate(8); } catch (e) {}
+              }
+            }
+          };
+          const progressFromEvent = (ev, ringEl) => {
+            const rect = ringEl.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            let a = Math.atan2(ev.clientX - cx, -(ev.clientY - cy));
+            if (a < 0) a += Math.PI * 2;
+            return a / (Math.PI * 2);
+          };
+          if (!card.__lgTimerBound) {
+            const bind = () => {
+              const ring = card.shadowRoot && card.shadowRoot.querySelector('#timer_ring');
+              if (!ring || card.__lgTimerBound) return;
+              card.__lgTimerBound = true;
+              const down = (ev) => {
+                /* Ignore taps that start on the confirm glass — confirm owns commit. */
+                const path = (ev.composedPath && ev.composedPath()) || [];
+                if (path.some((n) => n && n.id === 'timer_confirm')) return;
+                card.__lgTimerDragging = true;
+                card.classList.add('lg-timer-dragging');
+                if (ring.setPointerCapture && ev.pointerId !== undefined) {
+                  try { ring.setPointerCapture(ev.pointerId); } catch (e) {}
+                }
+                applyProgress(progressFromEvent(ev, ring), true);
+                ev.preventDefault();
+                ev.stopPropagation();
+              };
+              const move = (ev) => {
+                if (!card.__lgTimerDragging) return;
+                applyProgress(progressFromEvent(ev, ring), true);
+                ev.preventDefault();
+              };
+              const up = () => {
+                card.__lgTimerDragging = false;
+                card.classList.remove('lg-timer-dragging');
+              };
+              ring.addEventListener('pointerdown', down);
+              ring.addEventListener('pointermove', move);
+              ring.addEventListener('pointerup', up);
+              ring.addEventListener('pointercancel', up);
+            };
+            card.updateComplete.then(() => { bind(); setTimeout(bind, 60); setTimeout(bind, 240); });
+          }
+          /* Seed pending when overlay opens without prior drag. */
+          if (pendingNow === null && seedMins > 0) {
+            card.__lgTimerPending = seedMins;
+            card.__lgTimerLastProgress = timerT;
+          }
+        }
+        const fillStroke = dragging
+          ? 'url(#lgTimerGrad)'
+          : 'url(#lgTimerGrad)';
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        pointer-events: auto !important;
+        --lg_timer_t: ${timerT};
+        --lg_timer_knob_x: ${knobPos.x}%;
+        --lg_timer_knob_y: ${knobPos.y}%;
+        --lg_timer_label: ${labelCss};
+        --lg_size_climate_timer_max_minutes: ${maxMin};
+      }
+      ha-card, #card {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: var(--lg_size_climate_timer_radial_w) !important;
+        height: var(--lg_size_climate_timer_radial_w) !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #timer_ring {
+        grid-area: 1 / 1 !important;
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+        display: block !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+        border-radius: 50% !important;
+        pointer-events: auto !important;
+        touch-action: none !important;
+        z-index: 1 !important;
+      }
+      #timer_ring .lg-timer-radial__svg {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        overflow: visible !important;
+        pointer-events: none !important;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+      }
+      #timer_ring .lg-timer-radial__track {
+        fill: none;
+        stroke: var(--lg_color_climate_timer_track);
+        stroke-width: var(--lg_size_climate_timer_radial_stroke_u);
+        stroke-linecap: round;
+        pointer-events: stroke !important;
+      }
+      #timer_ring .lg-timer-radial__fill {
+        fill: none;
+        stroke: ${fillStroke};
+        stroke-width: var(--lg_size_climate_timer_radial_stroke_u);
+        stroke-linecap: round;
+        stroke-dasharray: calc(var(--lg_timer_t, 0) * 100) calc(100 - (var(--lg_timer_t, 0) * 100));
+        stroke-dashoffset: 0;
+        pointer-events: stroke !important;
+      }
+      #timer_confirm {
+        grid-area: 1 / 1 !important;
+        z-index: 4 !important;
+        justify-self: center !important;
+        align-self: center !important;
+        width: var(--lg_size_climate_timer_radial_glass_pct) !important;
+        height: var(--lg_size_climate_timer_radial_glass_pct) !important;
+        border-radius: 50% !important;
+        position: relative !important;
+        pointer-events: auto !important;
+      }
+      #knob {
+        grid-area: 1 / 1 !important;
+        z-index: 5 !important;
+        position: absolute !important;
+        left: var(--lg_timer_knob_x) !important;
+        top: var(--lg_timer_knob_y) !important;
+        width: var(--lg_size_climate_timer_knob_d) !important;
+        height: var(--lg_size_climate_timer_knob_d) !important;
+        border-radius: 50% !important;
+        background: var(--lg_color_climate_timer_knob) !important;
+        box-shadow: var(--lg_shadow_climate_timer_knob) !important;
+        pointer-events: none !important;
+        transform: var(--lg_transform_climate_timer_knob) !important;
+        transition: var(--lg_transition_climate_timer_knob);
+      }
+      :host(.lg-timer-dragging) #knob {
+        transform: var(--lg_transform_climate_timer_knob_drag) !important;
+        box-shadow: var(--lg_shadow_climate_timer_knob_drag) !important;
+      }
+      @media (max-width: 48rem) {
+        #container {
+          width: var(--lg_size_climate_timer_radial_w_phone) !important;
+          height: var(--lg_size_climate_timer_radial_w_phone) !important;
+        }
+        #timer_ring .lg-timer-radial__track,
+        #timer_ring .lg-timer-radial__fill {
+          stroke-width: var(--lg_size_climate_timer_radial_stroke_u_phone);
+        }
+        #knob {
+          width: var(--lg_size_climate_timer_knob_d_phone) !important;
+          height: var(--lg_size_climate_timer_knob_d_phone) !important;
+        }
+      }
+        `;
+      ]]]
+    custom_fields:
+      timer_ring: >
+        <svg class="lg-timer-radial__svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="lgTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(100, 210, 255, 0.95)"/>
+              <stop offset="55%" stop-color="rgba(255, 176, 90, 0.95)"/>
+              <stop offset="100%" stop-color="rgba(255, 90, 70, 0.95)"/>
+            </linearGradient>
+          </defs>
+          <circle class="lg-timer-radial__track" cx="50" cy="50" r="44" pathLength="100"></circle>
+          <circle class="lg-timer-radial__fill" cx="50" cy="50" r="44" pathLength="100"></circle>
+        </svg>
+      knob: ""
+      timer_confirm:
+        card:
+          type: custom:button-card
+          template: climate_timer_radial_confirm
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            save_duration_script_id: "[[[ return (variables && variables.save_duration_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"

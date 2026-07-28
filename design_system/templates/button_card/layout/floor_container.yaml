@@ -1,0 +1,80 @@
+  floor_container:
+    show_icon: false
+    show_name: true
+    show_state: false
+    # Shell only — no entity/action. Explicit none removes hand cursor + hover ripple
+    # (button-card defaults + #1038). Nested custom_fields cards keep their own actions.
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      /* Floor fills shell (uncapped). Do NOT use max-content on masonry —
+         layout-card col count = floor(hostWidth/width); shrink-wrap locks to 1 col.
+         Free width packs up to lg_masonry_floor_cols compact rooms; rooms stay capped.
+         iOS folder: floor title above panel; glass only on #content row (tab switch
+         stays a sibling above this host — title sits between tab and glass). */
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: 0 !important;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        --ha-card-border-radius: 0 !important;
+        display: block !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      {{ lg_floor_folder_shell_extra_styles() }}
+      {{ lg_name_label_extra_styles('--lg_font_label_size', '--lg_font_title_weight', '--lg_font_label_tracking', '--lg_line_height_label') }}
+      #name {
+        white-space: nowrap;
+        overflow: visible;
+      }
+      #content {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        justify-self: stretch !important;
+        place-self: stretch;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        display: block !important;
+      }
+      #content > layout-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+      }
+      #content masonry-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+    custom_fields:
+      glass_layers: >
+        {{ lg_glass_stack_html() }}

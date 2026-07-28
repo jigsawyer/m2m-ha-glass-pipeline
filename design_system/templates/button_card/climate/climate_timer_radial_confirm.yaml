@@ -1,0 +1,160 @@
+  climate_timer_radial_confirm:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: true
+    show_ripple: false
+    variables:
+      save_duration_script_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+    label: " "
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          let radial = null;
+          let wheelHost = null;
+          let scope = composedParent(this);
+          for (let i = 0; i < 16 && scope; i++) {
+            if (scope.classList && scope.classList.contains('lg-timer-radial-host')) radial = scope;
+            if (scope.classList && scope.classList.contains('lg-wheel-host')) {
+              wheelHost = scope;
+              break;
+            }
+            scope = composedParent(scope);
+          }
+          if (!radial) {
+            scope = composedParent(this);
+            for (let i = 0; i < 16 && scope; i++) {
+              if (scope.classList && scope.classList.contains('lg-timer-radial-host')) {
+                radial = scope;
+                break;
+              }
+              scope = composedParent(scope);
+            }
+          }
+          const maxMin = (radial && radial.__lgTimerMaxMin) || 720;
+          let mins = (radial && typeof radial.__lgTimerPending === 'number')
+            ? radial.__lgTimerPending : 0;
+          mins = Math.max(0, Math.min(maxMin, Math.round(mins)));
+          if (mins < 1) return;
+          const hh = Math.floor(mins / 60);
+          const mm = mins % 60;
+          const duration = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`;
+          const scriptId = (variables && variables.save_duration_script_id) || '';
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          try {
+            if (hoursId) hass.callService('input_number', 'set_value', { entity_id: hoursId, value: hh });
+            if (minutesId) hass.callService('input_number', 'set_value', { entity_id: minutesId, value: mm });
+            if (scriptId) {
+              const svc = String(scriptId).replace(/^script\./, '');
+              hass.callService('script', svc, { duration });
+            }
+          } catch (e) {}
+          if (radial) {
+            radial.__lgTimerPending = undefined;
+            radial.__lgTimerDragging = false;
+            radial.classList.remove('lg-timer-dragging');
+          }
+          if (wheelHost) {
+            wheelHost.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+            wheelHost.__lgTimerOpenedAt = 0;
+            wheelHost.__lgTimerStickyOpen = false;
+            if (wheelHost.__lgTimerArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+              wheelHost.__lgTimerArmTimer = 0;
+            }
+          }
+          {{ lg_climate_temp_focus_set_js('false') }}
+          {{ lg_climate_blur_kick_js() }}
+        ]]]
+    extra_styles: |
+      [[[
+        return `
+      :host {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      ha-card, #card {
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #card {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: var(--lg_stroke_climate_timer_radial_glass) solid var(--lg_color_climate_timer_radial_glass_stroke);
+        box-shadow: var(--lg_shadow_climate_arc_sphere);
+        cursor: pointer;
+        transition: var(--lg_transition_press);
+      }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: 100%;
+        height: 100%;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        background: var(--lg_color_climate_timer_radial_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_climate_timer_radial_glass)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_timer_radial_glass)) saturate(var(--lg_saturate_glass));
+        box-shadow: inset 0 0 0 0.0625rem rgba(255, 255, 255, 0.35), inset 0 0.25rem 0.75rem rgba(255, 255, 255, 0.12);
+        pointer-events: none;
+        z-index: 0;
+      }
+      #label {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_radial_size);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        text-align: center;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      #label::after {
+        content: var(--lg_timer_label, "0 хв");
+      }
+      #icon, #name, #state { display: none !important; }
+      @media (max-width: 48rem) {
+        #label { font-size: var(--lg_font_climate_timer_radial_size_phone); }
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Dual-state Klimat timer control:
+  # idle → round timer icon (opens in-place radial, ADR 0025);
+  # active|paused → liquid countdown bar + pause/play + edit (cancel via wheel segment);
+  # clock-armed → remaining HH:MM:SS + moving progress + pause (pause-clock script).
+  # HA timer docs: idle|active|paused; pause/start/cancel actions.
+  # Live countdown: finishes_at client tick (remaining not ticked by core).

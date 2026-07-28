@@ -1,0 +1,333 @@
+{# Figma Master_design_system 1:1090 — global button_card_templates dictionary
+   Option 1: physical values = theme CSS vars; structural rules = extra_styles only.
+   No native styles: objects (those become inline style="" on DOM).
+   BAN color_type: blank-card on visual templates — button-card early-returns
+   empty spacer before extra_styles (blank viewport). Default color_type: icon. #}
+{% macro lg_glass_stack_extra_styles(radius_token) -%}
+      .lg-glass-stack {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+        overflow: hidden;
+        clip-path: inset(0 round var({{ radius_token }}));
+        isolation: isolate;
+        pointer-events: none;
+      }
+      .lg-glass-stack__fill,
+      .lg-glass-stack__frost,
+      .lg-glass-stack__luminosity {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+      }
+      .lg-glass-stack__fill {
+        background: var(--lg_color_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_container)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_container)) saturate(var(--lg_saturate_glass));
+      }
+      .lg-glass-stack__frost {
+        background: var(--lg_color_glass_frost);
+        mix-blend-mode: plus-lighter;
+      }
+      .lg-glass-stack__luminosity {
+        background: var(--lg_color_glass_luminosity);
+        mix-blend-mode: soft-light;
+      }
+{%- endmacro %}
+{% macro lg_room_glass_stack_extra_styles(radius_token) -%}
+      .lg-glass-stack {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+        overflow: hidden;
+        clip-path: inset(0 round var({{ radius_token }}));
+        isolation: isolate;
+        pointer-events: none;
+      }
+      .lg-glass-stack__fill,
+      .lg-glass-stack__frost,
+      .lg-glass-stack__luminosity {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+      }
+      .lg-glass-stack__fill {
+        background: var(--lg_color_room_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_room_glass)) saturate(var(--lg_saturate_room_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_room_glass)) saturate(var(--lg_saturate_room_glass));
+      }
+      .lg-glass-stack__frost {
+        background: var(--lg_color_room_glass_frost);
+        mix-blend-mode: plus-lighter;
+      }
+      .lg-glass-stack__luminosity {
+        background: var(--lg_color_room_glass_luminosity);
+        mix-blend-mode: soft-light;
+      }
+{%- endmacro %}
+{% macro lg_glass_stack_html() -%}
+<div class="lg-glass-stack"><div class="lg-glass-stack__fill"></div><div class="lg-glass-stack__frost"></div><div class="lg-glass-stack__luminosity"></div></div>
+{%- endmacro %}
+{% macro lg_liquid_clip_shell_extra_styles() -%}
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        pointer-events: none;
+      }
+{%- endmacro %}
+{% macro lg_liquid_clip_shell_html() -%}
+<div class="lg-liquid-clip-shell"></div>
+{%- endmacro %}
+{% macro lg_distort_shell_extra_styles() -%}
+      .lg-distort-shell {
+        border-radius: var(--lg_radius_liquid);
+        width: 100%;
+        height: 100%;
+      }
+{%- endmacro %}
+{% macro lg_distort_shell_html() -%}
+<div class="lg-distort-shell"></div>
+{%- endmacro %}
+{% macro lg_container_grid_extra_styles() -%}
+      {# !important required: button-card default styles.grid become inline and beat extra_styles #}
+      #container {
+        display: grid !important;
+        grid-template-areas: "n" "content" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        justify-items: center !important;
+        justify-content: center !important;
+        align-content: start !important;
+      }
+{%- endmacro %}
+{% macro lg_glass_card_shell_extra_styles(radius_token, width_token, height_value) -%}
+      #card {
+        position: relative;
+        overflow: visible;
+        box-sizing: border-box;
+        width: min(100%, var({{ width_token }}));
+        max-width: min(100%, var({{ width_token }}));
+        min-width: 0;
+        min-height: 0;
+        height: {{ height_value }};
+        border-radius: var({{ radius_token }});
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        background: transparent;
+        box-shadow: var(--lg_shadow_container);
+        transition: var(--lg_transition_smooth);
+        padding: var(--lg_space_label_top) var(--lg_space_gap_md) var(--lg_space_gap_md);
+      }
+      #glass_layers {
+        position: absolute;
+        inset: 0;
+        border-radius: var({{ radius_token }});
+        overflow: hidden;
+        clip-path: inset(0 round var({{ radius_token }}));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+      }
+{%- endmacro %}
+{% macro lg_room_folder_shell_extra_styles(width_token) -%}
+      {# iOS folder: #container grid — title row 1; #content + #glass_layers share panel row 2.
+         button-card grid host is #container (not #card); custom fields use inline grid-area. #}
+      #card {
+        position: relative;
+        overflow: visible;
+        box-sizing: border-box;
+        width: min(100%, var({{ width_token }}));
+        max-width: min(100%, var({{ width_token }}));
+        min-width: 0;
+        min-height: 0;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        transition: var(--lg_transition_smooth);
+        /* Layout shell — not a control; docs: tap_action none removes pointer (#1038) */
+        cursor: default;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "room_title" "room_panel" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        justify-items: center !important;
+        align-content: start !important;
+        width: 100% !important;
+      }
+      #name {
+        grid-area: room_title !important;
+        margin-bottom: var(--lg_space_room_title_gap);
+      }
+      #content,
+      #glass_layers {
+        grid-area: room_panel !important;
+      }
+      #content {
+        position: relative;
+        z-index: 2;
+        padding: var(--lg_space_gap_md);
+        border-radius: var(--lg_radius_room);
+        border: var(--lg_stroke_glass) solid var(--lg_color_room_glass_rim);
+        box-shadow: var(--lg_shadow_room_container);
+        overflow: hidden;
+        margin-top: 0;
+        box-sizing: border-box;
+      }
+      #glass_layers {
+        z-index: 1;
+        align-self: stretch !important;
+        justify-self: stretch !important;
+        position: relative;
+        width: 100%;
+        min-height: 0;
+        border-radius: var(--lg_radius_room);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_room));
+        isolation: isolate;
+        pointer-events: none;
+      }
+{%- endmacro %}
+{% macro lg_floor_folder_shell_extra_styles() -%}
+      {# iOS folder: floor title above panel; glass only on #content row.
+         Same #container grid-area pattern as room folder (button-card SoT). #}
+      #card {
+        position: relative;
+        overflow: visible;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        min-height: 0;
+        height: auto;
+        padding: 0;
+        margin: 0 auto;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        transition: var(--lg_transition_smooth);
+        /* Layout shell — not a control; docs: tap_action none removes pointer (#1038) */
+        cursor: default;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "floor_title" "floor_panel" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        justify-items: center !important;
+        align-content: start !important;
+        width: 100% !important;
+      }
+      #name {
+        grid-area: floor_title !important;
+        margin-bottom: var(--lg_space_floor_title_gap);
+      }
+      #content,
+      #glass_layers {
+        grid-area: floor_panel !important;
+      }
+      #content {
+        position: relative;
+        z-index: 2;
+        padding: var(--lg_space_floor_inset);
+        border-radius: var(--lg_radius_container);
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        box-shadow: var(--lg_shadow_container);
+        overflow: hidden;
+        margin-top: 0;
+        box-sizing: border-box;
+      }
+      #glass_layers {
+        z-index: 1;
+        align-self: stretch !important;
+        justify-self: stretch !important;
+        position: relative;
+        width: 100%;
+        min-height: 0;
+        border-radius: var(--lg_radius_container);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_container));
+        isolation: isolate;
+        pointer-events: none;
+      }
+{%- endmacro %}
+{% macro lg_name_label_extra_styles(size_token, weight_token, tracking_token, line_height_token) -%}
+      #name {
+        position: relative;
+        z-index: 2;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var({{ size_token }});
+        font-weight: var({{ weight_token }});
+        letter-spacing: var({{ tracking_token }});
+        -webkit-font-smoothing: var(--lg_font_smoothing);
+        -moz-osx-font-smoothing: var(--lg_font_smoothing_moz);
+        line-height: var({{ line_height_token }});
+        justify-self: center !important;
+        align-self: start !important;
+        text-align: center !important;
+        width: 100% !important;
+      }
+{%- endmacro %}
+{% macro lg_icon_vertical_center_extra_styles(include_name=true) -%}
+      #icon,
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 0 !important;
+        margin: 0 !important;
+      }
+      #icon {
+        transform: translateY(var(--lg_space_icon_optical_nudge));
+      }
+{%- if include_name %}
+      #name {
+        display: flex !important;
+        align-items: center !important;
+        line-height: var(--lg_line_height_label) !important;
+      }
+{%- endif %}
+{%- endmacro %}
+{# GLOBAL (analyzer.mdc §0e / global.mdc): icons inside round buttons WITHOUT
+   text MUST be centered H+V. Call from every round icon-only shell (or bake
+   into a shared round-shell macro). #img-cell fills the circle when the
+   caller does not size it; icon + ha-icon + ha-svg-icon flex-center; MD
+   optical nudge is part of centering, not a substitute for flex. #}
+{% macro lg_round_icon_only_center_extra_styles() -%}
+      #img-cell {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        place-self: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      }
+      #icon,
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        place-content: center !important;
+        place-items: center !important;
+        line-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #icon {
+        transform: translateY(var(--lg_space_icon_optical_nudge));
+      }
+      #icon ha-svg-icon svg {
+        display: block !important;
+        margin: 0 auto !important;
+      }
+{%- endmacro %}

@@ -1,0 +1,20 @@
+  climate_timer_action_chip:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      {{ lg_climate_round_btn_shell_extra_styles('--lg_size_climate_timer_action_chip_w', '--lg_size_climate_timer_action_chip_w_phone', '--lg_size_climate_timer_action_chip_icon', '--lg_size_climate_timer_action_chip_icon_phone') }}
+      :host {
+        flex: 0 0 auto !important;
+      }
+      #icon {
+        color: var(--lg_color_text) !important;
+        opacity: 0.92;
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

@@ -1,0 +1,142 @@
+  climate_wheel_swing_btn:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    variables:
+      axis: vertical
+      seg_index: 4
+      seg_total: 6
+      seg_slot: swing_h
+    tap_action:
+      action: call-service
+      service: |
+        [[[
+          const axis = variables.axis || 'vertical';
+          const a = (entity && entity.attributes) || {};
+          const hModes = a.swing_horizontal_modes;
+          if (axis === 'horizontal' && Array.isArray(hModes) && hModes.length) {
+            return 'climate.set_swing_horizontal_mode';
+          }
+          return 'climate.set_swing_mode';
+        ]]]
+      target:
+        entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      data: |
+        [[[
+          const axis = variables.axis || 'vertical';
+          const a = (entity && entity.attributes) || {};
+          const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
+          const hModes = Array.isArray(a.swing_horizontal_modes)
+            ? a.swing_horizontal_modes
+            : null;
+          const pick = (list, cands) => {
+            const lower = (list || []).map((m) => String(m).toLowerCase());
+            for (const c of cands) {
+              const i = lower.indexOf(String(c).toLowerCase());
+              if (i >= 0) return list[i];
+            }
+            return null;
+          };
+          const axisOn = (mode, ax) => {
+            const m = String(mode || '').toLowerCase();
+            if (ax === 'vertical') {
+              return m === 'vertical' || m === 'both' || m === 'on';
+            }
+            return m === 'horizontal' || m === 'both';
+          };
+          if (axis === 'horizontal' && hModes && hModes.length) {
+            const curH = a.swing_horizontal_mode;
+            const on = String(curH || '').toLowerCase() !== 'off' && !!curH;
+            const next = on
+              ? pick(hModes, ['off'])
+              : pick(hModes, ['on', 'horizontal']);
+            if (!next) return { swing_horizontal_mode: curH };
+            return { swing_horizontal_mode: next };
+          }
+          if (axis === 'vertical' && hModes && hModes.length) {
+            const cur = a.swing_mode;
+            const on = axisOn(cur, 'vertical');
+            const next = on
+              ? pick(modes, ['off'])
+              : pick(modes, ['vertical', 'on']);
+            if (!next) return { swing_mode: cur };
+            return { swing_mode: next };
+          }
+          const cur = a.swing_mode;
+          let wantVert = axisOn(cur, 'vertical');
+          let wantHoriz = axisOn(cur, 'horizontal');
+          if (axis === 'vertical') wantVert = !wantVert;
+          else wantHoriz = !wantHoriz;
+          let target = null;
+          if (!wantVert && !wantHoriz) target = pick(modes, ['off']);
+          else if (wantVert && !wantHoriz) target = pick(modes, ['vertical', 'on']);
+          else if (!wantVert && wantHoriz) target = pick(modes, ['horizontal']);
+          else target = pick(modes, ['both']);
+          if (!target) return { swing_mode: cur };
+          return { swing_mode: target };
+        ]]]
+    icon: |
+      [[[
+        return (variables.axis === 'horizontal') ? 'mdi:arrow-left-right' : 'mdi:arrow-up-down';
+      ]]]
+    extra_styles: |
+      [[[
+        {{ lg_climate_wheel_seg_math_js() }}
+        const axis = variables.axis || 'vertical';
+        const a = (entity && entity.attributes) || {};
+        const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
+        const hModes = Array.isArray(a.swing_horizontal_modes)
+          ? a.swing_horizontal_modes
+          : null;
+        const axisOn = (mode, ax) => {
+          const m = String(mode || '').toLowerCase();
+          if (ax === 'vertical') {
+            return m === 'vertical' || m === 'both' || m === 'on';
+          }
+          return m === 'horizontal' || m === 'both';
+        };
+        let supported = true;
+        if (axis === 'horizontal') {
+          supported = !!(hModes && hModes.length)
+            || modes.some((m) => /^(horizontal|both)$/i.test(String(m)));
+        } else {
+          supported = modes.some((m) => /^(vertical|both|on|off)$/i.test(String(m)))
+            || modes.length === 0;
+        }
+        let active = false;
+        if (axis === 'horizontal' && hModes && hModes.length) {
+          const curH = a.swing_horizontal_mode;
+          active = String(curH || '').toLowerCase() !== 'off' && !!curH;
+        } else {
+          active = axisOn(a.swing_mode, axis);
+        }
+        const frost = active
+          ? 'var(--lg_color_climate_frost_other)'
+          : 'var(--lg_color_climate_wheel_seg_frost)';
+        return `
+      {{ lg_climate_wheel_slot_position_css() }}
+      /* Visibility owned by climate_global_wheel (.lg-wheel-swing-h-on) so
+         sibling sectors can recompute N=count(visible) without a hole. */
+      #card {
+        pointer-events: ${supported && __lgSegVisible ? 'auto' : 'none'} !important;
+      }
+      #liquid_clip {
+        background: ${frost} !important;
+        /* Active State Illumination (hyper-glass refresh): see quiet_btn for
+           the overflow:hidden / mask-image rationale for inset-only glow. */
+        box-shadow: ${active
+          ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_wheel_seg_on_inset)'
+          : 'var(--lg_shadow_climate_wheel_seg)'} !important;
+        filter: ${active ? 'var(--lg_filter_climate_wheel_seg_on)' : 'none'};
+      }
+      #icon {
+        color: var(--lg_color_text) !important;
+        filter: ${active ? 'var(--lg_filter_climate_other)' : 'none'};
+        opacity: ${active ? '1' : '0.72'};
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

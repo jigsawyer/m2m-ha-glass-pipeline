@@ -1,0 +1,200 @@
+  climate_thermostat:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      timer_entity_id: ""
+      clock_entity_id: ""
+      armed_entity_id: ""
+      popup_hash: ""
+      mode_entity_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_hour_entity_id: ""
+      clock_minute_entity_id: ""
+      remove_script_id: ""
+      save_duration_script_id: ""
+      pause_clock_script_id: ""
+      turbo_entity_id: ""
+      quiet_entity_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const mode = entity ? entity.state : 'off';
+        const attrs = (entity && entity.attributes) || {};
+        const action = attrs.hvac_action || '';
+        const glow =
+          action === 'heating' ? 'var(--lg_glow_climate_heat)' :
+          action === 'cooling' ? 'var(--lg_glow_climate_cool)' :
+          action === 'idle' && mode !== 'off' ? 'var(--lg_glow_climate_idle)' :
+          mode === 'heat' ? 'var(--lg_glow_climate_heat)' :
+          mode === 'cool' ? 'var(--lg_glow_climate_cool)' :
+          mode !== 'off' ? 'var(--lg_glow_climate_other)' :
+          'none';
+        const timerId = variables && variables.timer_entity_id;
+        const armedId = variables && variables.armed_entity_id;
+        const tEnt = timerId ? states[timerId] : null;
+        const running = tEnt && (tEnt.state === 'active' || tEnt.state === 'paused');
+        const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+        this.classList.toggle('lg-timer-active', !!(running || armed));
+        this.classList.add('lg-thermostat-host');
+        const __lgWheelEl = this.shadowRoot && this.shadowRoot.querySelector('.lg-wheel-host');
+        const __lgTempOpen = !!(__lgWheelEl && __lgWheelEl.classList.contains('lg-wheel-temp-open'));
+        const __lgTimerOpen = !!(__lgWheelEl && __lgWheelEl.classList.contains('lg-timer-radial-open'));
+        this.classList.toggle('lg-temp-focus', __lgTempOpen || __lgTimerOpen);
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+        box-sizing: border-box;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas:
+          "wheel"
+          "timer" !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-rows: auto auto !important;
+        justify-items: center !important;
+        align-items: center !important;
+        justify-content: center !important;
+        place-content: start center !important;
+        row-gap: var(--lg_space_climate_gap) !important;
+        column-gap: 0 !important;
+        padding: var(--lg_space_climate_pad) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        position: relative !important;
+      }
+      #card {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid);
+        background: transparent;
+        box-shadow: ${glow};
+        overflow: visible;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #wheel {
+        grid-area: wheel !important;
+        justify-self: center !important;
+        align-self: center !important;
+        position: relative;
+        z-index: 1;
+        width: 100% !important;
+        max-width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+      }
+      #timer_bar {
+        grid-area: timer !important;
+        width: min(100%, var(--lg_size_climate_timer_bar_w)) !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: var(--lg_size_climate_timer_idle_w) !important;
+        justify-self: center !important;
+        align-self: center !important;
+        overflow: visible !important;
+        z-index: 1;
+        position: relative;
+        margin-top: 0 !important;
+        display: none !important;
+        justify-content: center !important;
+        align-items: center !important;
+      }
+      :host(.lg-timer-active) #timer_bar {
+        display: flex !important;
+      }
+      #timer_bar > * {
+        width: auto !important;
+        max-width: 100% !important;
+        height: auto !important;
+        display: block !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+      }
+      @media (max-width: 48rem) {
+        #timer_bar {
+          width: min(100%, var(--lg_size_climate_timer_bar_w_phone)) !important;
+          min-height: var(--lg_size_climate_timer_bar_h) !important;
+        }
+      }
+      /* TEMP / timer radial: hide under-wheel timer entirely (not merely dim). */
+      :host(.lg-temp-focus) #timer_bar,
+      #container:has(.lg-ring-trigger-expanded) #timer_bar,
+      #container:has(.lg-timer-radial-open) #timer_bar {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        filter: none !important;
+        transition: none !important;
+      }
+        `;
+      ]]]
+    custom_fields:
+      wheel:
+        card:
+          type: custom:button-card
+          template: climate_global_wheel
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            turbo_entity_id: "[[[ return (variables && variables.turbo_entity_id) || '' ]]]"
+            quiet_entity_id: "[[[ return (variables && variables.quiet_entity_id) || '' ]]]"
+            timer_entity_id: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
+            popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            save_duration_script_id: "[[[ return (variables && variables.save_duration_script_id) || '' ]]]"
+            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"
+      timer_bar:
+        card:
+          type: custom:button-card
+          template: climate_timer_active_bar
+          entity: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
+          variables:
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            clock_hour_entity_id: "[[[ return (variables && variables.clock_hour_entity_id) || '' ]]]"
+            clock_minute_entity_id: "[[[ return (variables && variables.clock_minute_entity_id) || '' ]]]"
+            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
+            pause_clock_script_id: "[[[ return (variables && variables.pause_clock_script_id) || '' ]]]"

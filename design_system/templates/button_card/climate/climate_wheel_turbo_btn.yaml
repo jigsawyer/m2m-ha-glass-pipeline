@@ -1,0 +1,69 @@
+  climate_wheel_turbo_btn:
+    template: climate_turbo_btn
+    variables:
+      seg_index: 2
+      seg_total: 6
+      seg_slot: turbo
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_haptic_press_js() }}
+          const st = entity ? entity.state : '';
+          if (!entity || st === 'unavailable' || st === 'unknown') return;
+          const gateId = variables && variables.gate_entity_id;
+          const gateStates = (variables && variables.gate_states) || [];
+          if (gateId && gateStates.length) {
+            const gEnt = states[gateId];
+            const gState = gEnt && gEnt.state;
+            if (!gateStates.includes(gState)) return;
+          }
+          const id = entity.entity_id;
+          if (!id) return;
+          try { hass.callService('homeassistant', 'toggle', { entity_id: id }); } catch (e) {}
+        ]]]
+    extra_styles: |
+      [[[
+        {{ lg_climate_wheel_seg_math_js() }}
+        const on = entity && entity.state === 'on';
+        const gateId = variables && variables.gate_entity_id;
+        const gateStates = (variables && variables.gate_states) || [];
+        let gated = false;
+        if (gateId && gateStates.length) {
+          const gEnt = states[gateId];
+          const gState = gEnt && gEnt.state;
+          gated = !gateStates.includes(gState);
+        }
+        const frost = on
+          ? 'var(--lg_color_climate_frost_other)'
+          : 'var(--lg_color_climate_wheel_seg_frost)';
+        const hostOpacity = !__lgSegVisible
+          ? '0'
+          : (gated ? 'var(--lg_opacity_tab_side_disabled)' : '1');
+        return `
+      {{ lg_climate_wheel_slot_position_css() }}
+      :host {
+        opacity: ${hostOpacity} !important;
+        visibility: ${__lgSegVisible ? 'visible' : 'hidden'} !important;
+      }
+      #card {
+        pointer-events: ${gated || !__lgSegVisible ? 'none' : 'auto'} !important;
+      }
+      #liquid_clip {
+        background: ${frost} !important;
+        /* Active State Illumination (hyper-glass refresh): see quiet_btn for
+           the overflow:hidden / mask-image rationale for inset-only glow. */
+        box-shadow: ${on
+          ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_wheel_seg_on_inset)'
+          : 'var(--lg_shadow_climate_wheel_seg)'} !important;
+        filter: ${on ? 'var(--lg_filter_climate_wheel_seg_on)' : 'none'};
+      }
+      #icon {
+        color: ${on ? 'var(--lg_color_climate_other)' : 'var(--lg_color_text)'} !important;
+        opacity: ${on ? '1' : '0.72'};
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

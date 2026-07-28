@@ -1,0 +1,171 @@
+  climate_floor_container:
+    template: floor_container
+    extra_styles: |
+      [[[
+        this.classList.add('lg-climate-floor-host');
+        {{ lg_climate_blur_cold_kick_js() }}
+        return `
+      /* Floor fills shell (uncapped). Do NOT use max-content on masonry —
+         layout-card col count = floor(hostWidth/width); shrink-wrap locks to 1 col.
+         --masonry-view-card-margin:0 — grid-layout #root > * defaults to 4px 4px 8px
+         (layout-card grid.ts); zero so header+mosaic share the phone centered track. */
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: 0 !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        --ha-card-border-radius: 0 !important;
+        display: block !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      {{ lg_floor_folder_shell_extra_styles() }}
+      {{ lg_name_label_extra_styles('--lg_font_label_size', '--lg_font_title_weight', '--lg_font_label_tracking', '--lg_line_height_label') }}
+      #name {
+        white-space: nowrap;
+        overflow: visible;
+      }
+      #content {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        justify-self: stretch !important;
+        place-self: stretch;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        /* Klimat-scoped override of lg_floor_folder_shell_extra_styles
+           #content overflow:hidden: a room near the floor-panel top edge fans
+           its Arc Speed Dial options above the room, past the floor #content
+           box. Visible here lets those escape the floor panel too. Climate
+           floor shell only (not the shared floor_container macro) => other
+           dashboards' floors untouched. Floor glass chrome lives on the
+           separate #glass_layers (own clip-path), so the panel look is kept. */
+        overflow: visible !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        display: block !important;
+      }
+      #content > layout-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+      }
+      #content masonry-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+      /* 1C: Klimat floor = primary always-on Apple window frost (climate tokens). */
+      .lg-glass-stack__fill {
+        background: var(--lg_color_climate_floor_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_climate_floor_glass)) saturate(var(--lg_saturate_climate_floor_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_floor_glass)) saturate(var(--lg_saturate_climate_floor_glass));
+      }
+      .lg-glass-stack__frost {
+        background: var(--lg_color_climate_floor_glass_frost);
+      }
+      .lg-glass-stack__luminosity {
+        background: var(--lg_color_climate_floor_glass_luminosity);
+      }
+      :host(.lg-blur-kick) .lg-glass-stack__fill {
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+      }
+      @media (max-width: 48rem) {
+        /* Probe (climate_iphone_center_probe.js): masonry phone track must fit
+           inset-free content box. Phone-only: drop L/R floor pad so content box
+           ≥ masonry phone width, then margin:auto the masonry track.
+           Desktop keeps full inset padding (View Independence). */
+        #content {
+          align-items: center !important;
+          justify-content: center !important;
+          padding-top: var(--lg_space_floor_inset) !important;
+          padding-bottom: var(--lg_space_floor_inset) !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        /* Outer grid: full floor width — nested header + mosaic shells share one
+           phone track. */
+        #content > layout-card,
+        #content > * {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          box-sizing: border-box !important;
+          justify-self: stretch !important;
+        }
+        /* Header row (mic+disable flankers) nested layout-card lives in outer
+           layout-card light DOM — styleable from here (not shadow-piercing).
+           H-center it to phone room width so the AIC pair matches room midX.
+           View Independence (analyzer.mdc §0d): climate_floor_container.yaml
+           now renders [optional header, phone-track conditional, desktop-track
+           conditional] — the header (when present) is always exactly the 3rd
+           child from the end; when absent there are only 2 children and
+           :nth-last-child(3) matches nothing. This scopes the rule to the
+           header ONLY and never touches the masonry track entries — each
+           masonry variant (phone/desktop) is self-sized via its own dedicated
+           lg_masonry_climate_*_phone / _desktop literal; forcing this
+           unrelated external width onto that box would re-create the very
+           shared-constraint coupling bug this rule exists to prevent.
+           Two selector forms hedge whether the plugin wraps each cards:
+           entry in an extra light-DOM element or not (case-agnostic). */
+        #content > layout-card > layout-card:nth-last-child(3),
+        #content > layout-card > *:nth-last-child(3) layout-card {
+          width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_climate_container_w_phone)) !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          box-sizing: border-box !important;
+          justify-self: center !important;
+        }
+        /* Masonry tracks = last two children (phone + desktop conditionals).
+           Only one is visible; margin:auto centers the phone track in
+           the unpadded floor content box. Do not rewrite masonry width literal. */
+        #content > layout-card > *:nth-last-child(1),
+        #content > layout-card > *:nth-last-child(2) {
+          margin-left: auto !important;
+          margin-right: auto !important;
+          justify-self: center !important;
+          box-sizing: border-box !important;
+        }
+      }
+        `;
+      ]]]
+
+  # Klimat rooms: desktop gap — layout-card zeros .column > * side margins when
+  # the card hits column_max_width. Reserve lg_space_floor_inset (= floor L/R/B
+  # pad = room bottom→parent distance) via half-inset L/R margins + max-width
+  # cap so width+margins fit the column (seam gap = floor_inset).
+  # View Independence (analyzer.mdc §0d): phone track is climate_floor_container's
+  # dedicated lg_masonry_climate_*_phone track (headroom over
+  # lg_size_climate_container_w_phone), sized independently of the desktop
+  # track — so true centering (not a left-align offset hack tied to a shared
+  # literal) is correct here. A prior left-align hack existed only because
+  # phone/desktop shared one masonry literal; that coupling is now removed.

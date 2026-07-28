@@ -1,0 +1,97 @@
+  laundry_params_grid:
+    show_name: false
+    show_icon: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    triggers_update: all
+    tap_action:
+      action: none
+    variables:
+      option_spin_entity_id: ""
+      option_water_entity_id: ""
+      option_rinse_entity_id: ""
+      option_wrinkle_entity_id: ""
+      option_bubble_entity_id: ""
+      armed_entity_id: ""
+    extra_styles: |
+      :host { width: 100% !important; display: block !important; }
+      #card {
+        position: relative !important;
+        width: 100% !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas:
+          "spin"
+          "water"
+          "rinse"
+          "soak"
+          "wrinkle" !important;
+        grid-template-columns: 1fr !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        width: 100% !important;
+        position: relative !important;
+      }
+      #spin, #water, #rinse, #soak, #wrinkle {
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+      #spin { grid-area: spin !important; }
+      #water { grid-area: water !important; }
+      #rinse { grid-area: rinse !important; }
+      #soak { grid-area: soak !important; }
+      #wrinkle { grid-area: wrinkle !important; }
+      #spin:has(.lg-laundry-param-empty),
+      #water:has(.lg-laundry-param-empty),
+      #rinse:has(.lg-laundry-param-empty),
+      #soak:has(.lg-laundry-param-empty),
+      #wrinkle:has(.lg-laundry-param-empty) {
+        display: none !important;
+      }
+    custom_fields:
+      spin:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_select
+          variables:
+            param_entity_id: '[[[ return variables.option_spin_entity_id || ""; ]]]'
+            mushroom_name: Віджим
+            mushroom_icon: mdi:rotate-right
+      water:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_select
+          variables:
+            param_entity_id: '[[[ return variables.option_water_entity_id || ""; ]]]'
+            mushroom_name: Температура
+            mushroom_icon: mdi:thermometer-water
+      rinse:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_number
+          variables:
+            param_entity_id: '[[[ return variables.option_rinse_entity_id || ""; ]]]'
+            mushroom_name: Полоскання
+            mushroom_icon: mdi:water
+      soak:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_switch
+          variables:
+            param_entity_id: '[[[ return variables.option_bubble_entity_id || ""; ]]]'
+            mushroom_name: Замочування
+            mushroom_icon: mdi:waves
+      wrinkle:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_switch
+          variables:
+            param_entity_id: '[[[ return variables.option_wrinkle_entity_id || ""; ]]]'
+            mushroom_name: Антизминання
+            mushroom_icon: mdi:tumble-dryer

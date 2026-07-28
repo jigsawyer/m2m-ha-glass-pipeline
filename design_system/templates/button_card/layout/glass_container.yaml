@@ -1,0 +1,37 @@
+  glass_container:
+    show_icon: false
+    show_name: true
+    show_state: false
+    extra_styles: |
+      :host {
+        width: min(100%, var(--lg_size_container_w)) !important;
+        max-width: min(100%, var(--lg_size_container_w));
+        min-width: 0;
+        display: block;
+        box-sizing: border-box;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_container) !important;
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_container_w)) !important;
+        max-width: min(100%, var(--lg_size_container_w)) !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_container) !important;
+        --ha-card-border-radius: var(--lg_radius_container) !important;
+      }
+      {{ lg_container_grid_extra_styles() }}
+      {{ lg_glass_card_shell_extra_styles('--lg_radius_container', '--lg_size_container_w', 'var(--lg_size_container_h)') }}
+      {{ lg_name_label_extra_styles('--lg_font_label_size', '--lg_font_title_weight', '--lg_font_label_tracking', '--lg_line_height_label') }}
+      #content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        margin-top: var(--lg_space_gap_md);
+        box-sizing: border-box;
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+    custom_fields:
+      glass_layers: >
+        {{ lg_glass_stack_html() }}

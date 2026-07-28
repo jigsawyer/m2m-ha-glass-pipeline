@@ -1,0 +1,32 @@
+  climate_timer_pause_btn:
+    template: climate_timer_action_chip
+    variables:
+      armed_entity_id: ""
+      pause_clock_script_id: ""
+    icon: |
+      [[[
+        return (entity && entity.state === 'paused') ? 'mdi:play' : 'mdi:pause';
+      ]]]
+    tap_action: |
+      [[[
+        const id = (entity && entity.entity_id) || '';
+        const armedId = (variables && variables.armed_entity_id) || '';
+        const pauseClockId = (variables && variables.pause_clock_script_id) || '';
+        const armed = armedId && states[armedId] && states[armedId].state === 'on';
+        const running = entity && (entity.state === 'active' || entity.state === 'paused');
+        if (!running && armed && pauseClockId) {
+          return {
+            action: 'call-service',
+            service: 'script.turn_on',
+            target: { entity_id: pauseClockId },
+          };
+        }
+        if (!id) return { action: 'none' };
+        if (entity.state === 'paused') {
+          return { action: 'call-service', service: 'timer.start', target: { entity_id: id } };
+        }
+        if (entity.state === 'active') {
+          return { action: 'call-service', service: 'timer.pause', target: { entity_id: id } };
+        }
+        return { action: 'none' };
+      ]]]

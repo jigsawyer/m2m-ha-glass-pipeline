@@ -1,0 +1,93 @@
+  laundry_action_chip:
+    show_name: true
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    size: 60%
+    triggers_update: all
+    variables:
+      chip_role: ""
+      armed_entity_id: ""
+    icon: |
+      [[[
+        const role = variables.chip_role || '';
+        const p = window.__lgLaundryActionPending;
+        if (p && entity && p.id === entity.entity_id && (Date.now() - p.t) < 12000) {
+          if (entity.state === p.want) {
+            window.__lgLaundryActionPending = null;
+          } else if (
+            (role === 'start' && p.want === 'run') ||
+            (role === 'pause' && p.want === 'pause') ||
+            (role === 'stop' && p.want === 'stop')
+          ) {
+            return 'mdi:loading';
+          }
+        }
+        if (role === 'start') return 'mdi:play';
+        if (role === 'pause') return 'mdi:pause';
+        if (role === 'stop') return 'mdi:stop';
+        return 'mdi:circle-outline';
+      ]]]
+    extra_styles: |
+      :host {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        height: var(--lg_size_laundry_action_h) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      :host:has(.lg-laundry-chip-gate.is-disabled) {
+        opacity: var(--lg_opacity_laundry_chip_disabled) !important;
+      }
+      :host:has(.lg-laundry-chip-gate.is-loading) #img {
+        animation: lg-laundry-spin 0.9s linear infinite;
+      }
+      @keyframes lg-laundry-spin {
+        to { transform: rotate(360deg); }
+      }
+      ha-card,
+      #card {
+        height: var(--lg_size_laundry_action_h) !important;
+        border-radius: var(--lg_radius_laundry_control) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      #card:active {
+        transform: var(--lg_transform_laundry_press_scale);
+        box-shadow: var(--lg_glow_laundry_press);
+        backdrop-filter: blur(var(--lg_blur_laundry_press));
+        -webkit-backdrop-filter: blur(var(--lg_blur_laundry_press));
+      }
+      #chip_gate {
+        position: absolute !important;
+        inset: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        pointer-events: none !important;
+        grid-area: unset !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      chip_gate: |
+        [[[
+          const role = variables.chip_role || '';
+          const armedId = variables.armed_entity_id || '';
+          const armed = armedId && states[armedId] && states[armedId].state === 'on';
+          const sel = entity ? entity.state : '';
+          let disabled = !!armed;
+          if (role === 'start') disabled = disabled || sel === 'run';
+          if (role === 'pause' || role === 'stop') disabled = disabled || sel !== 'run';
+          const p = window.__lgLaundryActionPending;
+          const loading = !!(p && entity && p.id === entity.entity_id && (Date.now() - p.t) < 12000 && entity.state !== p.want && (
+            (role === 'start' && p.want === 'run') ||
+            (role === 'pause' && p.want === 'pause') ||
+            (role === 'stop' && p.want === 'stop')
+          ));
+          const cls = ['lg-laundry-chip-gate'];
+          if (disabled) cls.push('is-disabled');
+          if (loading) cls.push('is-loading');
+          return `<div class="${cls.join(' ')}"></div>`;
+        ]]]

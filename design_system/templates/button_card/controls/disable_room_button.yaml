@@ -1,0 +1,60 @@
+  disable_room_button:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:power
+    variables:
+      ha_area_id: ""
+      ha_entity_ids: []
+    tap_action:
+      action: call-service
+      service: switch.turn_off
+      target: |
+        [[[
+          const ids = variables.ha_entity_ids;
+          if (Array.isArray(ids) && ids.length) return { entity_id: ids };
+          if (variables.ha_area_id) return { area_id: variables.ha_area_id };
+          return {};
+        ]]]
+    hold_action:
+      action: none
+    extra_styles: |
+      :host {
+        width: var(--lg_size_disable_room_w) !important;
+        max-width: var(--lg_size_disable_room_w);
+        min-width: var(--lg_size_disable_room_w);
+        height: var(--lg_size_disable_room_h);
+        max-height: var(--lg_size_disable_room_h);
+        display: block;
+        box-sizing: border-box;
+        justify-self: center;
+        align-self: start;
+        margin: 0 auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_disable_room) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: var(--lg_size_disable_room_w) !important;
+        max-width: var(--lg_size_disable_room_w) !important;
+        min-width: var(--lg_size_disable_room_w) !important;
+        height: var(--lg_size_disable_room_h) !important;
+        max-height: var(--lg_size_disable_room_h) !important;
+        min-height: var(--lg_size_disable_room_h) !important;
+        aspect-ratio: 1 !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_disable_room) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_disable_room) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_disable_room_layout_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+    state: []

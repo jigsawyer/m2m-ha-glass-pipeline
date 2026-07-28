@@ -1,0 +1,407 @@
+  climate_timer_active_bar:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      clock_entity_id: ""
+      armed_entity_id: ""
+      popup_hash: ""
+      mode_entity_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_hour_entity_id: ""
+      clock_minute_entity_id: ""
+      remove_script_id: ""
+      pause_clock_script_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const parseDur = (raw) => {
+          const parts = String(raw || '').split(':').map((p) => parseInt(p, 10) || 0);
+          if (parts.length >= 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+          if (parts.length === 2) return parts[0] * 60 + parts[1];
+          return 0;
+        };
+        const remSec = (ent) => {
+          if (!ent) return 0;
+          if (ent.state === 'paused') return parseDur(ent.attributes && ent.attributes.remaining);
+          if (ent.state === 'active') {
+            const fin = ent.attributes && ent.attributes.finishes_at;
+            if (!fin) return 0;
+            const ms = new Date(fin).getTime() - Date.now();
+            return Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
+          }
+          return 0;
+        };
+        const fmtHMS = (sec) => {
+          const h = Math.floor(sec / 3600);
+          const m = Math.floor((sec % 3600) / 60);
+          const s = sec % 60;
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        };
+        const fmtOffAt = (dateOrMs) => {
+          const d = (dateOrMs instanceof Date) ? dateOrMs : new Date(dateOrMs);
+          if (!Number.isFinite(d.getTime())) return '';
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          return `Вимкнеться о ${hh}:${mm}`;
+        };
+        const offAtFromRemSec = (sec) => {
+          if (!(sec > 0)) return '';
+          return fmtOffAt(Date.now() + sec * 1000);
+        };
+        const clockRemSec = (clockState) => {
+          const parts = String(clockState || '').split(':').map((p) => parseInt(p, 10) || 0);
+          const hh = parts[0] || 0;
+          const mm = parts[1] || 0;
+          const ss = parts[2] || 0;
+          const now = new Date();
+          const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss, 0);
+          if (target.getTime() <= now.getTime()) {
+            target.setDate(target.getDate() + 1);
+          }
+          return Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
+        };
+        const clockOffLabel = (clockState) => {
+          const parts = String(clockState || '').split(':');
+          const hh = String(parseInt(parts[0], 10) || 0).padStart(2, '0');
+          const mm = String(parseInt(parts[1], 10) || 0).padStart(2, '0');
+          return `Вимкнеться о ${hh}:${mm}`;
+        };
+        const running = entity && (entity.state === 'active' || entity.state === 'paused');
+        const armedId = variables && variables.armed_entity_id;
+        const clockId = variables && variables.clock_entity_id;
+        const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+        const showActions = !!(running || armed);
+        let label = '…';
+        let offLabel = '';
+        let progress = 0;
+        let clockState = '';
+        if (running) {
+          const dur = parseDur(entity.attributes && entity.attributes.duration);
+          const rem = remSec(entity);
+          label = fmtHMS(rem);
+          if (entity.state === 'active' && entity.attributes && entity.attributes.finishes_at) {
+            offLabel = fmtOffAt(entity.attributes.finishes_at);
+          } else {
+            offLabel = offAtFromRemSec(rem);
+          }
+          progress = dur > 0 ? Math.max(0, Math.min(1, 1 - (rem / dur))) : 0;
+        } else if (armed && clockId && states[clockId] && states[clockId].state) {
+          clockState = states[clockId].state;
+          const rem = clockRemSec(clockState);
+          label = fmtHMS(rem);
+          offLabel = clockOffLabel(clockState);
+          const cardProbe = this;
+          let initial = cardProbe.__lgTimerClockInitialRem;
+          if (!initial || rem > initial) {
+            initial = Math.max(rem, 1);
+            cardProbe.__lgTimerClockInitialRem = initial;
+          }
+          progress = Math.max(0, Math.min(1, 1 - (rem / initial)));
+        }
+        const card = this;
+        card.__lgTimerFinishesAt = (entity && entity.attributes && entity.attributes.finishes_at) || null;
+        card.__lgTimerDurationSec = running ? parseDur(entity.attributes && entity.attributes.duration) : 0;
+        card.__lgTimerPaused = entity && entity.state === 'paused';
+        card.__lgTimerPausedRemaining = (entity && entity.state === 'paused')
+          ? parseDur(entity.attributes && entity.attributes.remaining) : 0;
+        card.__lgTimerArmed = !!(armed && clockState);
+        card.__lgTimerClockState = clockState || '';
+        if (!armed) {
+          card.__lgTimerClockInitialRem = 0;
+        }
+        const syncLabels = (countdown, offAt) => {
+          const root = card.shadowRoot;
+          if (!root) return;
+          const labelEl = root.querySelector('.lg-climate-timer-active__label');
+          const offEl = root.querySelector('.lg-climate-timer-active__off');
+          if (labelEl) labelEl.textContent = countdown;
+          if (offEl) {
+            offEl.textContent = offAt || '';
+            offEl.style.display = offAt ? '' : 'none';
+          }
+        };
+        const tick = () => {
+          const root = card.shadowRoot;
+          if (!root) return;
+          if (card.__lgTimerArmed) {
+            const rem = clockRemSec(card.__lgTimerClockState);
+            syncLabels(fmtHMS(rem), clockOffLabel(card.__lgTimerClockState));
+            let initial = card.__lgTimerClockInitialRem || Math.max(rem, 1);
+            if (rem > initial) {
+              initial = rem;
+              card.__lgTimerClockInitialRem = initial;
+            }
+            const p = Math.max(0, Math.min(1, 1 - (rem / initial)));
+            card.style.setProperty('--lg_climate_timer_progress', String(p));
+            return;
+          }
+          if (card.__lgTimerPaused) {
+            const rem = card.__lgTimerPausedRemaining || 0;
+            syncLabels(fmtHMS(rem), offAtFromRemSec(rem));
+            const dur = card.__lgTimerDurationSec || 0;
+            const p = dur > 0 ? Math.max(0, Math.min(1, 1 - (rem / dur))) : 0;
+            card.style.setProperty('--lg_climate_timer_progress', String(p));
+            return;
+          }
+          const fin = card.__lgTimerFinishesAt;
+          if (!fin) return;
+          const ms = new Date(fin).getTime() - Date.now();
+          const rem = Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
+          syncLabels(fmtHMS(rem), fmtOffAt(fin));
+          const dur = card.__lgTimerDurationSec || 0;
+          const p = dur > 0 ? Math.max(0, Math.min(1, 1 - (rem / dur))) : 0;
+          card.style.setProperty('--lg_climate_timer_progress', String(p));
+        };
+        if (card.__lgTimerTick) {
+          clearInterval(card.__lgTimerTick);
+          card.__lgTimerTick = null;
+        }
+        card.style.setProperty('--lg_climate_timer_progress', String(progress));
+        setTimeout(() => {
+          const root = card.shadowRoot;
+          if (!root) return;
+          const slot = root.querySelector('#countdown');
+          if (!slot) return;
+          let live = root.querySelector('.lg-climate-timer-active');
+          if (!live || !live.isConnected) {
+            live = document.createElement('div');
+            live.className = 'lg-climate-timer-active';
+            const text = document.createElement('span');
+            text.className = 'lg-climate-timer-active__label';
+            text.textContent = label;
+            const off = document.createElement('span');
+            off.className = 'lg-climate-timer-active__off';
+            off.textContent = offLabel || '';
+            if (!offLabel) off.style.display = 'none';
+            live.appendChild(text);
+            live.appendChild(off);
+            slot.appendChild(live);
+          } else {
+            syncLabels(label, offLabel);
+            let off = live.querySelector('.lg-climate-timer-active__off');
+            if (!off) {
+              off = document.createElement('span');
+              off.className = 'lg-climate-timer-active__off';
+              live.appendChild(off);
+              syncLabels(label, offLabel);
+            }
+          }
+          tick();
+          if ((running && entity.state === 'active') || card.__lgTimerArmed) {
+            card.__lgTimerTick = setInterval(tick, 1000);
+          }
+        }, 0);
+        return `
+      :host {
+        width: fit-content !important;
+        max-width: min(100%, var(--lg_size_climate_timer_active_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+        --lg_climate_timer_progress: ${progress};
+      }
+      ha-card {
+        width: fit-content !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      #container {
+        display: grid !important;
+        grid-template-areas: "countdown pause edit" !important;
+        grid-template-columns: var(--lg_size_climate_timer_liquid_w_active) auto auto !important;
+        grid-template-rows: var(--lg_size_climate_timer_bar_h) !important;
+        align-items: center !important;
+        justify-content: start !important;
+        column-gap: var(--lg_space_climate_timer_actions_gap) !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      #card {
+        position: relative;
+        width: fit-content !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        border-radius: var(--lg_radius_liquid);
+        border: none;
+        background: transparent;
+        overflow: visible;
+        box-shadow: none;
+      }
+      #liquid_clip {
+        grid-area: countdown !important;
+        position: relative !important;
+        inset: auto !important;
+        width: var(--lg_size_climate_timer_liquid_w_active) !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base), var(--lg_color_liquid_burn_soft);
+        background-blend-mode: normal, plus-lighter, color-burn;
+        backdrop-filter: blur(var(--lg_blur_room_btn));
+        -webkit-backdrop-filter: blur(var(--lg_blur_room_btn));
+        box-shadow: var(--lg_shadow_room_btn);
+      }
+      #liquid_clip .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        pointer-events: none;
+      }
+      #liquid_clip::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: calc(var(--lg_climate_timer_progress, 0) * 100%);
+        background: var(--lg_color_climate_timer_liquid_fill);
+        pointer-events: none;
+        transition: width 0.25s linear;
+        z-index: 1;
+      }
+      #countdown {
+        grid-area: countdown !important;
+        position: relative;
+        z-index: 1;
+        width: var(--lg_size_climate_timer_liquid_w_active) !important;
+        min-width: var(--lg_size_climate_timer_liquid_w_active) !important;
+        max-width: var(--lg_size_climate_timer_liquid_w_active) !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+      .lg-climate-timer-active {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.0625rem;
+        overflow: hidden;
+        padding: 0 var(--lg_space_climate_timer_bar_pad_x);
+        box-sizing: border-box;
+      }
+      .lg-climate-timer-active__label {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_size);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: 1.1;
+        white-space: nowrap;
+        text-align: center;
+      }
+      .lg-climate-timer-active__off {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text);
+        opacity: 0.78;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_off_at_size);
+        font-weight: var(--lg_font_body_weight, 400);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: 1.1;
+        white-space: nowrap;
+        text-align: center;
+      }
+      #pause_btn {
+        grid-area: pause !important;
+        display: ${showActions ? 'block' : 'none'} !important;
+        width: var(--lg_size_climate_timer_action_chip_w) !important;
+        height: var(--lg_size_climate_timer_action_chip_w) !important;
+        position: relative;
+        z-index: 2;
+        align-self: center !important;
+      }
+      #edit_btn {
+        grid-area: edit !important;
+        display: block !important;
+        width: var(--lg_size_climate_timer_action_chip_w) !important;
+        height: var(--lg_size_climate_timer_action_chip_w) !important;
+        position: relative;
+        z-index: 2;
+        align-self: center !important;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+      @media (max-width: 48rem) {
+        :host {
+          max-width: min(100%, var(--lg_size_climate_timer_active_w_phone)) !important;
+        }
+        #container {
+          grid-template-columns: var(--lg_size_climate_timer_liquid_w_active_phone) auto auto !important;
+        }
+        #liquid_clip, #countdown {
+          width: var(--lg_size_climate_timer_liquid_w_active_phone) !important;
+          min-width: var(--lg_size_climate_timer_liquid_w_active_phone) !important;
+          max-width: var(--lg_size_climate_timer_liquid_w_active_phone) !important;
+        }
+        #pause_btn, #edit_btn {
+          width: var(--lg_size_climate_timer_action_chip_w_phone) !important;
+          height: var(--lg_size_climate_timer_action_chip_w_phone) !important;
+        }
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      countdown: ""
+      pause_btn:
+        card:
+          type: custom:button-card
+          template: climate_timer_pause_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            pause_clock_script_id: "[[[ return (variables && variables.pause_clock_script_id) || '' ]]]"
+      edit_btn:
+        card:
+          type: custom:button-card
+          template: climate_timer_edit_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+            clock_hour_entity_id: "[[[ return (variables && variables.clock_hour_entity_id) || '' ]]]"
+            clock_minute_entity_id: "[[[ return (variables && variables.clock_minute_entity_id) || '' ]]]"
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+
+  # Dual-state host: idle round | active/armed liquid bar.

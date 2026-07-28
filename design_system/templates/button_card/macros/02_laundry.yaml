@@ -1,0 +1,11 @@
+{% macro lg_laundry_mushroom_card_mod() -%}
+ha-card {
+  background: var(--lg_color_laundry_mushroom_fill) !important;
+  border: var(--lg_stroke_glass, 0.0625rem) solid var(--lg_color_laundry_mushroom_rim) !important;
+  border-radius: var(--lg_radius_laundry_control) !important;
+  box-shadow: var(--lg_shadow_laundry_card) !important;
+  backdrop-filter: blur(var(--lg_blur_laundry_glass)) !important;
+  -webkit-backdrop-filter: blur(var(--lg_blur_laundry_glass)) !important;
+  overflow: hidden !important;
+}
+{%- endmacro %}

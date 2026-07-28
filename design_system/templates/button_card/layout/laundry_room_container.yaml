@@ -1,0 +1,41 @@
+  laundry_room_container:
+    template: room_container
+    extra_styles: |
+      :host {
+        width: min(100%, var(--lg_size_laundry_room_w)) !important;
+        max-width: min(100%, var(--lg_size_laundry_room_w)) !important;
+        min-width: 0 !important;
+        justify-self: center !important;
+        box-sizing: border-box !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: min(100%, var(--lg_size_laundry_room_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_laundry_room_w_phone)) !important;
+        }
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      {{ lg_room_folder_shell_extra_styles('--lg_size_laundry_room_w') }}
+      {{ lg_name_label_extra_styles('--lg_font_room_label_size', '--lg_font_title_weight', '--lg_font_room_tracking', '--lg_line_height_room') }}
+      #container {
+        grid-template-areas:
+          "room_title"
+          "room_panel" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        align-items: stretch !important;
+        justify-items: stretch !important;
+      }
+      #name {
+        grid-area: room_title !important;
+        justify-self: center !important;
+        text-align: center !important;
+      }
+      #content {
+        width: 100% !important;
+        max-width: 100% !important;
+      }

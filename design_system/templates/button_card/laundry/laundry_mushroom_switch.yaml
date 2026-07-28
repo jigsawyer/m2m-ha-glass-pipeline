@@ -1,0 +1,43 @@
+  laundry_mushroom_switch:
+    show_name: false
+    show_icon: false
+    show_state: false
+    show_ripple: false
+    triggers_update: all
+    tap_action:
+      action: none
+    variables:
+      param_entity_id: ""
+      mushroom_name: ""
+      mushroom_icon: mdi:circle-outline
+    extra_styles: |
+      :host { width: 100% !important; display: block !important; }
+      :host:has(.lg-laundry-param-empty) { display: none !important; }
+      #card { padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+      #container { display: grid !important; grid-template-areas: "body" !important; width: 100% !important; position: relative !important; }
+      #body { grid-area: body !important; position: relative !important; width: 100% !important; }
+      #gate { position: absolute !important; inset: 0 !important; pointer-events: none !important; }
+    custom_fields:
+      gate: |
+        [[[
+          const id = variables.param_entity_id || '';
+          const resolved = id || 'sun.sun';
+          // #region agent log
+          fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'f1e5af'},body:JSON.stringify({sessionId:'f1e5af',runId:'pre-fix',hypothesisId:'E',location:'laundry_mushroom_switch:gate',message:'switch_gate',data:{id:id,resolved:resolved,isSunFallback:!id,name:variables.mushroom_name||''},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+          return id ? '<div class="lg-laundry-param-ok"></div>' : '<div class="lg-laundry-param-empty"></div>';
+        ]]]
+      body:
+        card:
+          type: custom:mushroom-entity-card
+          entity: |
+            [[[ return variables.param_entity_id || 'sun.sun'; ]]]
+          name: |
+            [[[ return variables.mushroom_name || ''; ]]]
+          icon: |
+            [[[ return variables.mushroom_icon || 'mdi:circle-outline'; ]]]
+          tap_action:
+            action: toggle
+          card_mod:
+            style: |
+{{ lg_laundry_mushroom_card_mod() | indent(14, first=True) }}

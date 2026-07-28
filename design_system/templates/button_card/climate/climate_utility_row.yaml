@@ -1,0 +1,141 @@
+  climate_utility_row:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      turbo_entity_id: ""
+      quiet_entity_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        /* Collapse unsupported swing parent slots so display:none child hosts
+           do not leave empty flex width (centers visible satellites under trigger).
+           Support checks match climate_swing_axis_chip. */
+        const a = (entity && entity.attributes) || {};
+        const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
+        const hModes = Array.isArray(a.swing_horizontal_modes)
+          ? a.swing_horizontal_modes
+          : null;
+        const hSupported = !!(hModes && hModes.length)
+          || modes.some((m) => /^(horizontal|both)$/i.test(String(m)));
+        const vSupported = modes.some((m) => /^(vertical|both|on|off)$/i.test(String(m)))
+          || modes.length === 0;
+        const slot = (on) => on
+          ? `position: relative; width: var(--lg_size_climate_satellite_w) !important; height: var(--lg_size_climate_satellite_w) !important; flex: 0 0 auto !important; overflow: visible !important; display: block !important; margin: 0 !important; padding: 0 !important; min-width: var(--lg_size_climate_satellite_w) !important;`
+          : `display: none !important; width: 0 !important; min-width: 0 !important; height: 0 !important; flex: 0 0 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important;`;
+        const slotPhone = (on) => on
+          ? `width: var(--lg_size_climate_satellite_w_phone) !important; height: var(--lg_size_climate_satellite_w_phone) !important; min-width: var(--lg_size_climate_satellite_w_phone) !important;`
+          : `display: none !important; width: 0 !important; min-width: 0 !important; height: 0 !important;`;
+        return `
+      :host {
+        width: fit-content !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_satellite_w) !important;
+        display: block;
+        box-sizing: border-box;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      ha-card, #card {
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+      #container {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: var(--lg_space_climate_gap) !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+        height: var(--lg_size_climate_satellite_w) !important;
+        box-sizing: border-box !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        overflow: visible !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #swing_horizontal { ${slot(hSupported)} }
+      #swing_vertical { ${slot(vSupported)} }
+      #turbo, #quiet {
+        position: relative;
+        width: var(--lg_size_climate_satellite_w) !important;
+        height: var(--lg_size_climate_satellite_w) !important;
+        flex: 0 0 auto !important;
+        overflow: visible !important;
+      }
+      @media (max-width: 48rem) {
+        :host, #container {
+          height: var(--lg_size_climate_satellite_w_phone) !important;
+        }
+        #swing_horizontal { ${slotPhone(hSupported)} }
+        #swing_vertical { ${slotPhone(vSupported)} }
+        #turbo, #quiet {
+          width: var(--lg_size_climate_satellite_w_phone) !important;
+          height: var(--lg_size_climate_satellite_w_phone) !important;
+        }
+      }
+        `;
+      ]]]
+    custom_fields:
+      swing_horizontal:
+        card:
+          type: custom:button-card
+          template: climate_swing_axis_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: ph:arrows-left-right
+          name: Горіз.
+          variables:
+            axis: horizontal
+      swing_vertical:
+        card:
+          type: custom:button-card
+          template: climate_swing_axis_chip
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: ph:arrows-down-up
+          name: Верт.
+          variables:
+            axis: vertical
+      turbo:
+        card:
+          type: custom:button-card
+          template: climate_turbo_btn
+          entity: "[[[ return (variables && variables.turbo_entity_id) || '' ]]]"
+          variables:
+            gate_entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      quiet:
+        card:
+          type: custom:button-card
+          template: climate_quiet_btn
+          entity: "[[[ return (variables && variables.quiet_entity_id) || '' ]]]"
+
+  # Round setpoint display / ActionCenterButton — tap toggles the in-place
+  # Ring ControlArc overlay (climate_thermostat_ring_panel + its nested
+  # climate_thermostat_action_btn) directly around itself: no popup, no
+  # navigate. Same expand/collapse state-machine climate_arc_dial already
+  # proved (.lg-arc-host / .lg-arc-expanded / --lg_arc_t), renamed here to
+  # .lg-ring-trigger-host / .lg-ring-trigger-expanded / --lg_ring_expand_t so
+  # it is never confused with the ring panel's OWN --lg_ring_t (the 0..1
+  # fill-fraction of the temperature itself) or its OWN .lg-ring-host marker
+  # (analyzer.mdc §6, revised — deferred commit / live entity bounds / TEMP
+  # gate are unchanged, only the shell moved in-place).
+  # Fullscreen tap-outside-to-close catcher for the temperature ring — the
+  # "empty space" half of the ring's 2 allowed close paths (the other half,
+  # "select", is climate_thermostat_action_btn's approve tap, which already
+  # collapses .lg-ring-trigger-expanded on commit). Mirrors
+  # climate_arc_overlay_btn's structure exactly but targets the ring
+  # trigger's OWN host class + --lg_ring_expand_pointer gate (the ring uses a
+  # separate class/property namespace from the HVAC/fan arc dials so the two
+  # families can never cross-toggle each other).

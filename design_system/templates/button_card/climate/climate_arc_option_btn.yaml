@@ -1,0 +1,196 @@
+  climate_arc_option_btn:
+    show_name: true
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    variables:
+      check: state
+      attrib: ""
+      value: ""
+      service: climate.set_hvac_mode
+      data_key: hvac_mode
+      arc_index: 0
+      arc_total: 1
+      arc_side: ""
+    tap_action: |
+      [[[
+        /* Collapse the ancestor arc dial (climate_arc_dial :host carries
+           .lg-arc-host + toggled .lg-arc-expanded) before the service call —
+           SelectOption per spec: apply + close. Same composedParent walk
+           already proven in climate_thermostat's slider binder. */
+        const composedParent = (el) => {
+          if (!el) return null;
+          if (el.parentElement) return el.parentElement;
+          const rn = el.getRootNode && el.getRootNode();
+          return (rn && rn.host) || null;
+        };
+        let scope = composedParent(this);
+        for (let i = 0; i < 12 && scope; i++) {
+          if (scope.classList && scope.classList.contains('lg-arc-host')) {
+            scope.classList.remove('lg-arc-expanded');
+            break;
+          }
+          scope = composedParent(scope);
+        }
+        const key = variables.data_key || 'hvac_mode';
+        return {
+          action: 'call-service',
+          service: variables.service || 'climate.set_hvac_mode',
+          target: { entity_id: (entity && entity.entity_id) || '' },
+          data: { [key]: variables.value },
+        };
+      ]]]
+    extra_styles: |
+      [[[
+        const a = (entity && entity.attributes) || {};
+        const active = variables.check === 'attrib'
+          ? a[variables.attrib] === variables.value
+          : entity && entity.state === variables.value;
+        const mode = variables.value;
+        const color = mode === 'cool'
+          ? 'var(--lg_color_climate_cool)'
+          : mode === 'heat'
+            ? 'var(--lg_color_climate_heat)'
+            : 'var(--lg_color_text)';
+        const glow = !active
+          ? 'none'
+          : mode === 'cool'
+            ? 'var(--lg_glow_climate_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_glow_climate_heat)'
+              : 'var(--lg_glow_climate_other)';
+        const iconFilter = !active
+          ? 'none'
+          : mode === 'cool'
+            ? 'var(--lg_filter_climate_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_filter_climate_heat)'
+              : 'var(--lg_filter_climate_other)';
+        /* Arc placement — sweep angle from the inherited theme tokens (read via
+           getComputedStyle so the JS stays in sync with the CSS token SoT,
+           no hardcoded/guessed degrees). Side-specific pair (arc_side =
+           'left' for the HVAC dial, 'right' for the fan dial) tilts the fan-out
+           toward whichever side of the central setpoint circle the dial sits
+           on; unset/unknown arc_side falls back to the original centered pair. */
+        const idx = Number(variables.arc_index) || 0;
+        const total = Math.max(1, Number(variables.arc_total) || 1);
+        const cs = getComputedStyle(this);
+        const side = variables.arc_side === 'left' || variables.arc_side === 'right' ? variables.arc_side : '';
+        const startVar = side ? `--lg_climate_arc_sweep_start_deg_${side}` : '--lg_climate_arc_sweep_start_deg';
+        const endVar = side ? `--lg_climate_arc_sweep_end_deg_${side}` : '--lg_climate_arc_sweep_end_deg';
+        const startDeg = parseFloat(cs.getPropertyValue(startVar)) || -30;
+        const endDeg = parseFloat(cs.getPropertyValue(endVar)) || -150;
+        const angleDeg = total > 1 ? startDeg + (endDeg - startDeg) * (idx / (total - 1)) : startDeg;
+        const rad = angleDeg * Math.PI / 180;
+        const cosV = Math.cos(rad).toFixed(4);
+        const sinV = Math.sin(rad).toFixed(4);
+        const delay = `calc(${idx} * var(--lg_climate_arc_stagger_step))`;
+        return `
+      :host {
+        position: absolute;
+        width: var(--lg_size_climate_arc_option_w);
+        height: var(--lg_size_climate_arc_option_w);
+        aspect-ratio: 1;
+        display: block;
+        box-sizing: border-box;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible;
+        cursor: pointer;
+        pointer-events: auto;
+        transform:
+          translate(
+            calc(var(--lg_arc_t, 0) * ${cosV} * var(--lg_size_climate_arc_radius)),
+            calc(var(--lg_arc_t, 0) * ${sinV} * var(--lg_size_climate_arc_radius))
+          )
+          scale(var(--lg_arc_t, 0));
+        opacity: var(--lg_arc_t, 0);
+        /* Liquid-Glass "emerge from one drop": each pill arrives frosted and
+           sharpens as it settles (t: 0 -> 1). Pairs with the bounce+stagger. */
+        filter: blur(calc((1 - var(--lg_arc_t, 0)) * var(--lg_climate_arc_emerge_blur)));
+        transition: var(--lg_arc_transition, var(--lg_transition_climate_arc_collapse)), opacity var(--lg_transition_climate_arc_collapse);
+        transition-delay: ${delay};
+        z-index: 42;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: var(--lg_size_climate_arc_option_w_phone);
+          height: var(--lg_size_climate_arc_option_w_phone);
+          transform:
+            translate(
+              calc(var(--lg_arc_t, 0) * ${cosV} * var(--lg_size_climate_arc_radius_phone)),
+              calc(var(--lg_arc_t, 0) * ${sinV} * var(--lg_size_climate_arc_radius_phone))
+            )
+            scale(var(--lg_arc_t, 0));
+        }
+      }
+      ha-card, #card {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      #card {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 1;
+        box-sizing: border-box;
+        border-radius: 50%;
+        overflow: hidden;
+        border: var(--lg_stroke_climate_arc_glass) solid var(--lg_color_climate_arc_glass_stroke);
+        box-shadow: ${active ? glow : 'var(--lg_shadow_climate_arc_sphere)'};
+        transition: var(--lg_transition_press);
+        cursor: pointer;
+      }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: 100%;
+        height: 100%;
+      }
+      #liquid_clip {
+        /* Per-option sphere glass — #arc_backdrop removed; each atom owns its
+           own frost so options read as independent balls on the viewport scrim. */
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        background: var(--lg_color_climate_arc_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_climate_arc_glass)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_arc_glass)) saturate(var(--lg_saturate_glass));
+        pointer-events: none;
+        z-index: 0;
+      }
+      #img-cell {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        overflow: visible !important;
+      }
+      #icon {
+        position: relative;
+        z-index: 1;
+        color: ${active ? color : 'var(--lg_color_text)'} !important;
+        filter: ${iconFilter};
+        /* Icons stay fully visible whenever the ring is open — active/inactive
+           is communicated by color + glow only, never by dimming opacity. */
+        opacity: 1;
+        width: var(--lg_size_climate_chip_icon);
+        height: var(--lg_size_climate_chip_icon);
+        --mdc-icon-size: var(--lg_size_climate_chip_icon);
+      }
+      {{ lg_round_icon_only_center_extra_styles() }}
+      #name, #label, #state { display: none !important; }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: ""
+
+  # Swing axis toggle (vertical | horizontal). HA climate.set_swing_mode is set-not-toggle;
+  # UI computes next mode. Independent swing_horizontal_modes → set_swing_horizontal_mode.
+  # Fan/HVAC chips must NOT use this template.

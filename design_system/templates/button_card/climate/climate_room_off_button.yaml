@@ -1,0 +1,152 @@
+  climate_room_off_button:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: |
+      [[[
+        const composedParent = (el) => {
+          if (!el) return null;
+          if (el.parentElement) return el.parentElement;
+          const rn = el.getRootNode && el.getRootNode();
+          return (rn && rn.host) || null;
+        };
+        const deepFind = (root, cls, depth) => {
+          if (!root || depth > 12) return null;
+          if (root.querySelector) {
+            const hit = root.querySelector('.' + cls);
+            if (hit) return hit;
+          }
+          const kids = root.querySelectorAll ? root.querySelectorAll('*') : [];
+          for (const el of kids) {
+            if (el.shadowRoot) {
+              const found = deepFind(el.shadowRoot, cls, depth + 1);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        let roomHost = null;
+        let scope = composedParent(this);
+        for (let i = 0; i < 24 && scope; i++) {
+          if (scope.classList && scope.classList.contains('lg-climate-room-host')) {
+            roomHost = scope;
+            break;
+          }
+          scope = composedParent(scope);
+        }
+        const wheel = roomHost
+          ? (deepFind(roomHost.shadowRoot, 'lg-wheel-host', 0)
+            || (roomHost.shadowRoot && roomHost.shadowRoot.querySelector('.lg-wheel-host')))
+          : null;
+        if (wheel && wheel.classList.contains('lg-wheel-temp-open')) return 'mdi:close';
+        return 'mdi:power';
+      ]]]
+    variables:
+      ha_entity_ids: []
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_haptic_press_js() }}
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const deepFind = (root, cls, depth) => {
+            if (!root || depth > 12) return null;
+            if (root.querySelector) {
+              const hit = root.querySelector('.' + cls);
+              if (hit) return hit;
+            }
+            const kids = root.querySelectorAll ? root.querySelectorAll('*') : [];
+            for (const el of kids) {
+              if (el.shadowRoot) {
+                const found = deepFind(el.shadowRoot, cls, depth + 1);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+          let roomHost = null;
+          let scope = composedParent(this);
+          for (let i = 0; i < 24 && scope; i++) {
+            if (scope.classList && scope.classList.contains('lg-climate-room-host')) {
+              roomHost = scope;
+              break;
+            }
+            scope = composedParent(scope);
+          }
+          const wheelHost = roomHost
+            ? (deepFind(roomHost.shadowRoot, 'lg-wheel-host', 0)
+              || (roomHost.shadowRoot && roomHost.shadowRoot.querySelector('.lg-wheel-host')))
+            : null;
+          const editTemp = !!(wheelHost && wheelHost.classList.contains('lg-wheel-temp-open'));
+          if (editTemp) {
+            /* ADR 0029: Cancel (X) aborts EDIT_TEMP — revert pending, no set_temperature. */
+            let triggerHost = wheelHost && wheelHost.shadowRoot
+              ? (wheelHost.shadowRoot.querySelector('.lg-ring-trigger-host.lg-ring-trigger-expanded')
+                || wheelHost.shadowRoot.querySelector('.lg-ring-trigger-expanded')
+                || wheelHost.shadowRoot.querySelector('.lg-ring-trigger-host'))
+              : null;
+            if (!triggerHost && wheelHost) {
+              triggerHost = deepFind(wheelHost.shadowRoot, 'lg-ring-trigger-host', 0);
+            }
+            if (triggerHost) {
+              triggerHost.classList.remove('lg-ring-trigger-expanded');
+              triggerHost.__lgTempStickyOpen = false;
+            }
+            if (wheelHost) {
+              wheelHost.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+              wheelHost.__lgTempOpenedAt = 0;
+              if (wheelHost.__lgTempArmTimer) {
+                try { clearTimeout(wheelHost.__lgTempArmTimer); } catch (e) {}
+                wheelHost.__lgTempArmTimer = 0;
+              }
+            }
+            {{ lg_climate_temp_focus_set_js('false') }}
+            {{ lg_climate_blur_kick_js() }}
+            const ringHost = triggerHost && triggerHost.shadowRoot
+              && triggerHost.shadowRoot.querySelector('.lg-ring-host');
+            if (ringHost) {
+              const r = ringHost.__lgRingRange || {};
+              const geo = ringHost.__lgRingGeo || { onStart: 0, onLen: 100 };
+              const snap = (Number.isFinite(r.setT) && r.span > 0)
+                ? Math.max(0, Math.min(1, (r.setT - r.min) / r.span)) : 0;
+              const pathR = Number(ringHost.__lgRingPathR) || 37.5;
+              const theta = ((geo.onStart + snap * geo.onLen) / 100) * Math.PI * 2;
+              const round4 = (n) => Math.round(n * 10000) / 10000;
+              ringHost.__lgRingPending = undefined;
+              ringHost.style.setProperty('--lg_ring_t', String(snap));
+              ringHost.style.setProperty('--lg_ring_thumb_x', `${round4(50 + pathR * Math.sin(theta))}%`);
+              ringHost.style.setProperty('--lg_ring_thumb_y', `${round4(50 - pathR * Math.cos(theta))}%`);
+              ringHost.style.setProperty(
+                '--lg_climate_pending_label',
+                Number.isFinite(r.setT) ? `"${r.setT}\u00b0"` : '"\u2014"'
+              );
+              if (triggerHost && triggerHost.style) {
+                triggerHost.style.setProperty(
+                  '--lg_climate_mid_target',
+                  Number.isFinite(r.setT) ? `"${r.setT}\u00b0"` : '"--\u00b0"'
+                );
+              }
+            }
+            return;
+          }
+          /* DEFAULT_ON: room tap-off (ADR 0016). */
+          const ids = variables.ha_entity_ids;
+          if (Array.isArray(ids) && ids.length) {
+            try { hass.callService('climate', 'turn_off', { entity_id: ids }); } catch (e) {}
+          }
+        ]]]
+    hold_action:
+      action: none
+    extra_styles: |
+      {{ lg_climate_room_off_layout_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # --- Laundry (ADR 0026) — rework glass UI (spec laundry_glass_rework_ui) ---

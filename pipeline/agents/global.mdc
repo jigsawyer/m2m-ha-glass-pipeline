@@ -68,8 +68,8 @@ Bypass → `FATAL_EXCEPTION`.
 | Plugins | 0010 |
 | Layout, mosaic, spacing, responsive | 0011, 0012, 0013 |
 | Cross-dashboard scoping | 0014 |
-| Components and interaction | 0015, 0016 |
-| Climate (Klimat) | 0017, 0018, 0019, 0021 |
+| Components and interaction | 0015, 0016, 0028 |
+| Climate (Klimat) | 0017, 0018, 0019, 0021, 0025, 0028 |
 | Pop-ups | 0018, 0020 |
 | Operator communication | 0023 |
 

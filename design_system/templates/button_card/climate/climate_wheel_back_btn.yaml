@@ -1,0 +1,28 @@
+  climate_wheel_back_btn:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    icon: mdi:arrow-left
+    variables:
+      seg_index: 0
+      seg_total: 6
+      seg_slot: back_fan
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_climate_wheel_set_layer_js("'main'") }}
+        ]]]
+    extra_styles: |
+      [[[
+        {{ lg_climate_wheel_seg_math_js() }}
+        return `
+      {{ lg_climate_wheel_slot_position_css() }}
+      #icon { color: var(--lg_color_text) !important; opacity: 0.92; }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

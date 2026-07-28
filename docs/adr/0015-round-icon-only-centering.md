@@ -16,7 +16,7 @@ Material icons are not optically centered by default inside button-card's `#cont
 
 **Implementation:**
 
-1. Use the shared macro `lg_round_icon_only_center_extra_styles` in `button_card_templates.yaml`, or a round-shell macro that bakes it in.
+1. Use the shared macro `lg_round_icon_only_center_extra_styles` in `button_card/macros/` (assembled into staged `button_card_templates.yaml`), or a round-shell macro that bakes it in.
 2. Required structure: `#container` / `#img-cell` flex or grid `place-items: center`; `#icon`, `#icon ha-icon`, `#icon ha-svg-icon` → `display: flex` + `align-items: center` + `justify-content: center`; SVG `display: block` + auto margin.
 3. `lg_space_icon_optical_nudge` is allowed as part of centering (proven MD-icon balance) — never a substitute for the flex rules.
 4. Sizes stay on `lg_*` tokens; no `style="..."`, no native `styles:` (ADR 0006).

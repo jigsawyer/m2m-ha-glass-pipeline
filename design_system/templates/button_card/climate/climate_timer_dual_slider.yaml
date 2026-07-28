@@ -1,0 +1,239 @@
+  climate_timer_dual_slider:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      minutes_entity_id: ""
+      hours_label: "Години"
+      minutes_label: "Хвилини"
+      seed_clock_entity_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+        const card = this;
+        const ha = card.hass;
+        const hourEid = card.config && card.config.entity;
+        const minuteEid = variables.minutes_entity_id;
+        const seedEid = variables.seed_clock_entity_id;
+        const fillColor = 'var(--lg_color_climate_cc_fill)';
+        if (ha && seedEid && hourEid && minuteEid && !card.__lgDualSeeded) {
+          const st = ha.states[seedEid];
+          const hs = ha.states[hourEid];
+          const ms = ha.states[minuteEid];
+          if (st && st.state && st.state !== 'unknown' && st.state !== 'unavailable') {
+            const parts = String(st.state).split(':');
+            const ch = clampInt(parseInt(parts[0], 10) || 0, 0, 23);
+            const cm = clampInt(parseInt(parts[1], 10) || 0, 0, 59);
+            const curH = clampInt(parseInt(hs && hs.state, 10) || 0, 0, 23);
+            const curM = clampInt(parseInt(ms && ms.state, 10) || 0, 0, 59);
+            if (curH === 0 && curM === 0 && (ch !== 0 || cm !== 0)) {
+              ha.callService('input_number', 'set_value', { entity_id: hourEid, value: ch });
+              ha.callService('input_number', 'set_value', { entity_id: minuteEid, value: cm });
+            }
+          }
+          card.__lgDualSeeded = true;
+        }
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_dual_h_desktop) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_dual_h_desktop) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_climate_cc_shell_extra_styles() }}
+      /* Two-column vertical TEMP pills: labels above, H | M */
+      #container {
+        position: relative;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: auto var(--lg_size_climate_timer_pill_h_desktop) !important;
+        grid-template-areas: "hl ml" "hs ms" !important;
+        justify-items: center !important;
+        align-content: center !important;
+        column-gap: var(--lg_space_climate_timer_slider_col_gap_desktop) !important;
+        row-gap: var(--lg_space_climate_timer_slider_gap_desktop) !important;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_dual_h_desktop) !important;
+        box-sizing: border-box !important;
+        padding: 0 var(--lg_space_climate_timer_clock_pad_x) !important;
+        pointer-events: auto !important;
+      }
+      ha-card, #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_dual_h_desktop) !important;
+        border-radius: var(--lg_radius_liquid);
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_liquid_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort { display: none; }
+      #hours_label, #minutes_label {
+        position: relative;
+        z-index: 2;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_slider_label_desktop);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        text-align: center;
+        opacity: 0.85;
+        pointer-events: none;
+        justify-self: center !important;
+      }
+      #hours_label { grid-area: hl !important; }
+      #minutes_label { grid-area: ml !important; }
+      #hours_slider, #minutes_slider {
+        position: relative;
+        z-index: 2;
+        width: var(--lg_size_climate_timer_pill_w_desktop) !important;
+        min-width: var(--lg_size_climate_timer_pill_w_desktop) !important;
+        max-width: var(--lg_size_climate_timer_pill_w_desktop) !important;
+        height: var(--lg_size_climate_timer_pill_h_desktop) !important;
+        min-height: var(--lg_size_climate_timer_pill_h_desktop) !important;
+        border-radius: var(--lg_radius_climate_timer_pill_desktop);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_climate_timer_pill_desktop));
+        pointer-events: auto !important;
+        touch-action: none !important;
+        justify-self: center !important;
+        background: var(--lg_color_climate_cc_track) !important;
+        --ha-card-background: var(--lg_color_climate_cc_track);
+        --card-background-color: var(--lg_color_climate_cc_track);
+        --btn-bg-color-on: var(--lg_color_climate_cc_track);
+        --btn-bg-color-off: var(--lg_color_climate_cc_track);
+        --slider-track-color: var(--lg_color_climate_cc_track);
+        --slider-color: ${fillColor};
+        --slider-bg-color: ${fillColor};
+        --slider-transition-duration: 0s;
+        --state-color-on: var(--lg_color_climate_timer_slider_value);
+        --state-color-off: var(--lg_color_climate_timer_slider_value);
+        box-shadow: var(--lg_shadow_climate_cc_inset);
+      }
+      #hours_slider { grid-area: hs !important; }
+      #minutes_slider { grid-area: ms !important; }
+      #hours_shell { grid-area: hs !important; }
+      #minutes_shell { grid-area: ms !important; }
+      #hours_shell, #minutes_shell {
+        position: relative;
+        z-index: 3;
+        width: var(--lg_size_climate_timer_pill_w_desktop) !important;
+        height: var(--lg_size_climate_timer_pill_h_desktop) !important;
+        justify-self: center !important;
+        pointer-events: none !important;
+      }
+      #hours_shell .lg-climate-cc,
+      #minutes_shell .lg-climate-cc {
+        border-radius: var(--lg_radius_climate_timer_pill_desktop);
+        clip-path: inset(0 round var(--lg_radius_climate_timer_pill_desktop));
+      }
+      #hours_shell .lg-climate-cc__frost,
+      #minutes_shell .lg-climate-cc__frost,
+      #hours_shell .lg-climate-cc__rim,
+      #minutes_shell .lg-climate-cc__rim {
+        border-radius: var(--lg_radius_climate_timer_pill_desktop);
+      }
+      #hours_slider slider-button-card,
+      #minutes_slider slider-button-card {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      hours_label: >
+        [[[
+          return `<span class="lg-climate-timer-slider-label">${variables.hours_label || 'Години'}</span>`;
+        ]]]
+      minutes_label: >
+        [[[
+          return `<span class="lg-climate-timer-slider-label">${variables.minutes_label || 'Хвилини'}</span>`;
+        ]]]
+      hours_shell: >
+        {{ lg_climate_cc_shell_html() }}
+      minutes_shell: >
+        {{ lg_climate_cc_shell_html() }}
+      # Prefer state object; fall back to parent config.entity / variables so
+      # slider-button-card never receives '' when helpers exist but state unbound.
+      hours_slider:
+        card:
+          type: custom:slider-button-card
+          entity: "[[[ return (entity && entity.entity_id) || (this && this.config && this.config.entity) || (this && this._config && this._config.entity) || '' ]]]"
+          show_name: false
+          show_state: true
+          compact: false
+          icon:
+            show: false
+          action_button:
+            show: false
+          slider:
+            direction: bottom-top
+            background: solid
+            use_state_color: false
+            use_percentage_bg_opacity: false
+            show_track: false
+            force_square: false
+      minutes_slider:
+        card:
+          type: custom:slider-button-card
+          entity: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+          show_name: false
+          show_state: true
+          compact: false
+          icon:
+            show: false
+          action_button:
+            show: false
+          slider:
+            direction: bottom-top
+            background: solid
+            use_state_color: false
+            use_percentage_bg_opacity: false
+            show_track: false
+            force_square: false
+
+  # Klimat Arc UI Rebuild (global change — replaces the retired 3-column grid
+  # dock with a freeform stack: caption / controls row (hvac arc | setpoint
+  # trigger | fan arc) / utility row / timer bar). Setpoint drag + pending-temp
+  # binding live in climate_thermostat_ring_panel, nested in-place inside
+  # climate_setpoint_trigger (analyzer.mdc §6, revised — no popup); this card
+  # only owns the accent/glow caption coloring plus the same-room focus scrim.

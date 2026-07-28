@@ -1,0 +1,83 @@
+  climate_fan_arc_dial:
+    template: climate_arc_dial
+    icon: |
+      [[[
+        /* 1:1 with fan option icons (auto/low/medium/high). */
+        const fm = entity && entity.attributes ? String(entity.attributes.fan_mode || '').toLowerCase() : '';
+        if (fm === 'low') return 'ph:wind';
+        if (fm === 'medium') return 'ph:gauge';
+        if (fm === 'high') return 'ph:gauge-fill';
+        return 'ph:fan';
+      ]]]
+    variables:
+      arc_total: 4
+    custom_fields:
+      option_1:
+        card:
+          type: custom:button-card
+          template: climate_arc_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: ph:fan
+          name: Авто
+          variables:
+            check: attrib
+            attrib: fan_mode
+            value: auto
+            service: climate.set_fan_mode
+            data_key: fan_mode
+            arc_side: right
+            arc_index: 0
+            arc_total: 4
+      option_2:
+        card:
+          type: custom:button-card
+          template: climate_arc_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: ph:wind
+          name: Низ.
+          variables:
+            check: attrib
+            attrib: fan_mode
+            value: low
+            service: climate.set_fan_mode
+            data_key: fan_mode
+            arc_side: right
+            arc_index: 1
+            arc_total: 4
+      option_3:
+        card:
+          type: custom:button-card
+          template: climate_arc_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: ph:gauge
+          name: Сер.
+          variables:
+            check: attrib
+            attrib: fan_mode
+            value: medium
+            service: climate.set_fan_mode
+            data_key: fan_mode
+            arc_side: right
+            arc_index: 2
+            arc_total: 4
+      option_4:
+        card:
+          type: custom:button-card
+          template: climate_arc_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: ph:gauge-fill
+          name: Вис.
+          variables:
+            check: attrib
+            attrib: fan_mode
+            value: high
+            service: climate.set_fan_mode
+            data_key: fan_mode
+            arc_side: right
+            arc_index: 3
+            arc_total: 4
+
+  # ── Global liquid-glass game wheel (Klimat mode/fan SoT) ──────────────
+  # Equal-fill annular game wheel around climate_setpoint_trigger.
+  # Main N=6 (quiet/fan/turbo/timer/swingH/mode); fan N=5; mode N=6.
+  # Back sits at the clicked entry index. HA services unchanged.

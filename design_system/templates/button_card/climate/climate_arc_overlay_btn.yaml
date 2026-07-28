@@ -1,0 +1,60 @@
+  climate_arc_overlay_btn:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action: |
+      [[[
+        const composedParent = (el) => {
+          if (!el) return null;
+          if (el.parentElement) return el.parentElement;
+          const rn = el.getRootNode && el.getRootNode();
+          return (rn && rn.host) || null;
+        };
+        let scope = composedParent(this);
+        for (let i = 0; i < 12 && scope; i++) {
+          if (scope.classList && scope.classList.contains('lg-arc-host')) {
+            scope.classList.remove('lg-arc-expanded');
+            break;
+          }
+          scope = composedParent(scope);
+        }
+        return { action: 'none' };
+      ]]]
+    extra_styles: |
+      :host {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        max-height: 100vh;
+        /* Full-viewport Apple frost when arc is open (--lg_arc_t inherited
+           from climate_arc_dial). Idle: invisible + no hit-testing. */
+        background: var(--lg_color_focus_viewport_fill) !important;
+        backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport));
+        -webkit-backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport));
+        opacity: var(--lg_arc_t, 0);
+        transition: none !important;
+        box-shadow: none !important;
+        overflow: hidden;
+        pointer-events: var(--lg_arc_pointer, none) !important;
+        z-index: 40;
+      }
+      ha-card, #card, #container {
+        background: transparent !important;
+        box-shadow: none !important;
+        width: 100%;
+        height: 100%;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+
+  # Arc Speed Dial base (ArcModeSelector): MainButton (shows current value) +
+  # fullscreen Overlay + N ArcOptions (climate_arc_option_btn custom_fields
+  # added by the two thin subclasses below). Expand/collapse = a host-class
+  # toggle (.lg-arc-host permanently tagged; .lg-arc-expanded toggled by tap);
+  # descendants read the inherited --lg_arc_t / --lg_arc_transition /
+  # --lg_arc_pointer custom properties — same cross-shadow-boundary technique
+  # already proven by --lg_climate_temp_fill_color / --slider-color.

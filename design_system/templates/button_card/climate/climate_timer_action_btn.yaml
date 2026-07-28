@@ -1,0 +1,84 @@
+  climate_timer_action_btn:
+    show_icon: false
+    show_name: true
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card {
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      #container {
+        display: grid !important;
+        grid-template-areas: "n" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_climate_timer_action_h) !important;
+        place-content: center !important;
+      }
+      #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_action_h) !important;
+        border-radius: var(--lg_radius_liquid);
+        background: transparent;
+        box-shadow: none;
+        transition: var(--lg_transition_press);
+        cursor: pointer;
+      }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
+      #icon, #label, #state { display: none !important; }
+      #name {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        font-family: var(--lg_font_label_family) !important;
+        font-size: var(--lg_font_climate_timer_action_size) !important;
+        font-weight: var(--lg_font_title_weight) !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_liquid_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort { display: none; }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Climate timer Remove — full-width pill (mirrors disable_room look via climate tokens).

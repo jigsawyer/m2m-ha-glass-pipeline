@@ -9,6 +9,7 @@ Format: **Context** (why the rule exists) → **Decision** (the technical constr
 
 | ADR | Topic | Domain |
 |---|---|---|
+| [0000](0000-strict-component-decoupling.md) | Strict component decoupling — no god objects | templates, build |
 | [0001](0001-intent-only-pipeline-cycle.md) | Intent-only pipeline cycle | pipeline |
 | [0002](0002-domain-boundaries.md) | Directory domain boundaries | pipeline |
 | [0003](0003-agents-classification-and-contract.md) | Agent roster, intent classification, contract schema | pipeline, routing |
@@ -36,3 +37,5 @@ Format: **Context** (why the rule exists) → **Decision** (the technical constr
 | [0025](0025-klimat-timer-radial.md) | Klimat sleep-timer — in-place radial duration picker | climate |
 | [0026](0026-laundry-smartthings-entities.md) | Laundry SmartThings entities + Delayed Start FSM | laundry, delay |
 | [0027](0027-reports-domain-partitioning.md) | Reports domain-driven hierarchical partitioning | build, pipeline |
+| [0028](0028-universal-interactive-node-state-machine.md) | Universal Interactive Node state machine | styling, interaction, climate, switch |
+| [0029](0029-klimat-hub-fsm.md) | Klimat Central Hub FSM — power, Cancel, container frost, 270° arc | climate |

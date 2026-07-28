@@ -1,0 +1,140 @@
+  climate_wheel_timer_btn:
+    template: climate_timer_idle_btn
+    variables:
+      seg_index: 3
+      seg_total: 6
+      seg_slot: timer
+      armed_entity_id: ""
+      remove_script_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_entity_id: ""
+    icon: |
+      [[[
+        const armedId = (variables && variables.armed_entity_id) || '';
+        const running = entity && (entity.state === 'active' || entity.state === 'paused');
+        const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+        return (running || armed) ? 'mdi:close' : 'mdi:timer-outline';
+      ]]]
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_haptic_press_js() }}
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const findWheelHost = (from) => {
+            let scope = composedParent(from);
+            for (let i = 0; i < 16 && scope; i++) {
+              if (scope.classList && scope.classList.contains('lg-wheel-host')) return scope;
+              scope = composedParent(scope);
+            }
+            return null;
+          };
+          const closeTemp = (wheelHost) => {
+            if (!wheelHost || !wheelHost.classList.contains('lg-wheel-temp-open')) return;
+            let triggerHost = null;
+            if (wheelHost.shadowRoot) {
+              triggerHost = wheelHost.shadowRoot.querySelector('.lg-ring-trigger-host.lg-ring-trigger-expanded')
+                || wheelHost.shadowRoot.querySelector('.lg-ring-trigger-expanded');
+            }
+            if (triggerHost) {
+              triggerHost.classList.remove('lg-ring-trigger-expanded');
+              triggerHost.__lgTempStickyOpen = false;
+            }
+            wheelHost.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+            wheelHost.__lgTempOpenedAt = 0;
+            if (wheelHost.__lgTempArmTimer) {
+              try { clearTimeout(wheelHost.__lgTempArmTimer); } catch (e) {}
+              wheelHost.__lgTempArmTimer = 0;
+            }
+          };
+          const openTimer = (wheelHost, seedMinutes) => {
+            closeTemp(wheelHost);
+            const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+            if (radial) {
+              const maxMin = radial.__lgTimerMaxMin || 720;
+              const mins = Math.max(0, Math.min(maxMin, Math.round(seedMinutes || 0)));
+              radial.__lgTimerSeedMinutes = mins;
+              radial.__lgTimerPending = mins > 0 ? mins : undefined;
+              const p = maxMin > 0 ? mins / maxMin : 0;
+              radial.__lgTimerLastProgress = p;
+              const theta = p * Math.PI * 2;
+              const r4 = (n) => Math.round(n * 10000) / 10000;
+              radial.style.setProperty('--lg_timer_t', String(p));
+              radial.style.setProperty('--lg_timer_knob_x', `${r4(50 + 44 * Math.sin(theta))}%`);
+              radial.style.setProperty('--lg_timer_knob_y', `${r4(50 - 44 * Math.cos(theta))}%`);
+              let label;
+              if (mins < 60) label = `"${mins} хв"`;
+              else {
+                const h = Math.floor(mins / 60);
+                const mm = mins % 60;
+                label = mm === 0 ? `"${h} год"` : `"${h} год ${mm} хв"`;
+              }
+              radial.style.setProperty('--lg_timer_label', label);
+            }
+            wheelHost.classList.add('lg-timer-radial-open', 'lg-timer-radial-arming');
+            wheelHost.__lgTimerOpenedAt = Date.now();
+            wheelHost.__lgTimerStickyOpen = true;
+            if (wheelHost.__lgTimerArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+            }
+            wheelHost.__lgTimerArmTimer = setTimeout(() => {
+              if (wheelHost && wheelHost.classList) {
+                wheelHost.classList.remove('lg-timer-radial-arming');
+              }
+              wheelHost.__lgTimerArmTimer = 0;
+            }, 300);
+            {{ lg_climate_temp_focus_set_js('true') }}
+            {{ lg_climate_blur_kick_js() }}
+          };
+          const armedId = (variables && variables.armed_entity_id) || '';
+          const removeId = (variables && variables.remove_script_id) || '';
+          const running = entity && (entity.state === 'active' || entity.state === 'paused');
+          const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+          if (running || armed) {
+            if (removeId) {
+              try { hass.callService('script', 'turn_on', { entity_id: removeId }); } catch (e) {}
+            }
+            return;
+          }
+          const wheelHost = findWheelHost(this);
+          if (!wheelHost) return;
+          if (wheelHost.classList.contains('lg-timer-radial-open')) return;
+          let seed = 30;
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          if (hoursId && states[hoursId]) seed = (parseInt(states[hoursId].state, 10) || 0) * 60;
+          if (minutesId && states[minutesId]) seed += (parseInt(states[minutesId].state, 10) || 0);
+          if (!(seed > 0)) seed = 30;
+          openTimer(wheelHost, seed);
+        ]]]
+    extra_styles: |
+      [[[
+        {{ lg_climate_wheel_seg_math_js() }}
+        const armedId = (variables && variables.armed_entity_id) || '';
+        const running = entity && (entity.state === 'active' || entity.state === 'paused');
+        const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+        const active = !!(running || armed);
+        return `
+      {{ lg_climate_wheel_slot_position_css() }}
+      #icon {
+        color: var(--lg_color_text) !important;
+        opacity: ${active ? '1' : '0.92'};
+        filter: ${active ? 'var(--lg_filter_climate_other)' : 'none'};
+      }
+      #liquid_clip {
+        box-shadow: ${active
+          ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_timer_seg_on)'
+          : 'var(--lg_shadow_climate_wheel_seg)'} !important;
+        filter: ${active ? 'var(--lg_filter_climate_wheel_seg_on)' : 'none'};
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

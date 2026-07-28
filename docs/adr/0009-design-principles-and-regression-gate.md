@@ -10,12 +10,12 @@ Generic principles are useless as a review gate until mapped onto this system's 
 
 | Principle | Pipeline meaning |
 |---|---|
-| **SRP** | `@analyzer` only routes. Layout shells in `design_system/templates/layout/`. Visuals in `button_card_templates`. Content in `environments/`. No mixed owners in one change set without an explicit contract. |
+| **SRP** | `@analyzer` only routes. Layout shells in `design_system/templates/layout/`. Visuals in `button_card/**` (assembled BCT). Content in `environments/`. No mixed owners in one change set without an explicit contract. |
 | **OCP** | Extend or extract without changing observed UI behavior. Refactors altering mosaic, disable-floor, switch stacks, or glass without a `preserve_behavior` checklist are invalid → `FATAL_EXCEPTION`. |
 | **DIP** | Layout depends on tokens (`lg_size_container_w`, `lg_space_gap_mosaic`), not duplicated literals across YAML/CSS/theme. Breakpoint constructs depend on `*_phone` / `*_desktop` tokens (ADR 0013). |
 | **DRY** | One canonical place per fact. Wrong-layer duplicates are deleted, not synchronised. |
 | **KISS / YAGNI** | Prefer the proven path. No new layout plugins without evidence (ADR 0010). |
-| **LoD** | `layout-card` reads card `view_layout` from its `cards` array — do not bury that contract in `button_card_templates` internals, and do not style the `layout-card` host as flex-wrap for mosaic. |
+| **LoD** | `layout-card` reads card `view_layout` from its `cards` array — do not bury that contract in `button_card/**` internals, and do not style the `layout-card` host as flex-wrap for mosaic. |
 
 ### Regression gate
 

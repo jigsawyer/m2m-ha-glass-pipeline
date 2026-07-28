@@ -1,0 +1,61 @@
+  floor_disable_button:
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:close
+    variables:
+      ha_floor_id: ""
+      ha_entity_ids: []
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_floor_btn_h);
+        max-height: var(--lg_size_floor_btn_h);
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        justify-self: stretch !important;
+        box-sizing: border-box;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      ha-card {
+        width: min(100%, var(--lg_size_floor_btn_w)) !important;
+        max-width: min(100%, var(--lg_size_floor_btn_w)) !important;
+        min-width: 0 !important;
+        height: var(--lg_size_floor_btn_h) !important;
+        max-height: var(--lg_size_floor_btn_h) !important;
+        min-height: var(--lg_size_floor_btn_h) !important;
+        aspect-ratio: unset !important;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_distort_shell_extra_styles() }}
+      {{ lg_floor_disable_layout_extra_styles() }}
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: switch.turn_off
+      target: |
+        [[[
+          const ids = variables.ha_entity_ids;
+          if (Array.isArray(ids) && ids.length) return { entity_id: ids };
+          if (variables.ha_floor_id) return { floor_id: variables.ha_floor_id };
+          return {};
+        ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

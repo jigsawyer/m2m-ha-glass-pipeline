@@ -1,0 +1,373 @@
+  climate_thermostat_ring_panel:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const mode = entity ? entity.state : 'off';
+        const attrs = (entity && entity.attributes) || {};
+        const tempEnabled = mode === 'heat' || mode === 'cool';
+        const tempPointer = tempEnabled ? 'stroke' : 'none';
+        const tempOpacity = tempEnabled ? '1' : 'var(--lg_opacity_climate_ring_readonly)';
+        const minT = Number(attrs.min_temp);
+        const maxT = Number(attrs.max_temp);
+        const stepT = Number(attrs.target_temp_step) || 1;
+        const setT = Number(attrs.temperature);
+        const span = (Number.isFinite(minT) && Number.isFinite(maxT) && maxT > minT) ? (maxT - minT) : 0;
+        const tol = (stepT / 2) || 0.05;
+        const fracFromTemp = (t) => (!(span > 0) || !Number.isFinite(t)) ? 0 : Math.max(0, Math.min(1, (t - minT) / span));
+
+        /* Sweep/gap + path radius SoT: ring sweep token + wheel inner/outer pct
+           so stroke/outer match the Radial Menu annulus (ADR 0029). */
+        const CX = 50, CY = 50;
+        let sweepDeg = 270;
+        let pathR = 37.5;
+        if (this) {
+          const cs = getComputedStyle(this);
+          const rawSweep = parseFloat(cs.getPropertyValue('--lg_size_climate_ring_sweep_deg'));
+          if (Number.isFinite(rawSweep) && rawSweep > 0 && rawSweep <= 360) sweepDeg = rawSweep;
+          const rawPathR = parseFloat(cs.getPropertyValue('--lg_size_climate_ring_path_r'));
+          if (Number.isFinite(rawPathR) && rawPathR > 0) {
+            pathR = rawPathR;
+          } else {
+            const outerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_outer_pct')) || 96;
+            const innerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_inner_pct')) || 54;
+            pathR = (outerPct + innerPct) / 4;
+          }
+        }
+        const R = pathR;
+        const r4 = (n) => Math.round(n * 10000) / 10000;
+        const gapPct = r4(Math.max(0, Math.min(100, (360 - sweepDeg) / 360 * 100)));
+        const onLen = r4(100 - gapPct);
+        const onStart = r4(50 + gapPct / 2);
+        const dashOffsetBase = r4(100 - onStart);
+        const posForPercent = (p) => {
+          const theta = (p / 100) * Math.PI * 2;
+          return { x: r4(CX + R * Math.sin(theta)), y: r4(CY - R * Math.cos(theta)) };
+        };
+        const lerpChan = (a, b, t) => Math.round(a + (b - a) * t);
+        const thumbColorAt = (t) => {
+          const x = Math.max(0, Math.min(1, t));
+          const cold = [100, 210, 255];
+          const mid = [255, 176, 90];
+          const hot = [255, 90, 70];
+          let rgb;
+          if (x <= 0.55) {
+            const u = x / 0.55;
+            rgb = [lerpChan(cold[0], mid[0], u), lerpChan(cold[1], mid[1], u), lerpChan(cold[2], mid[2], u)];
+          } else {
+            const u = (x - 0.55) / 0.45;
+            rgb = [lerpChan(mid[0], hot[0], u), lerpChan(mid[1], hot[1], u), lerpChan(mid[2], hot[2], u)];
+          }
+          return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.96)`;
+        };
+
+        /* Clear stale pending once HA has caught up to (or past) it. */
+        if (this && typeof this.__lgRingPending === 'number' && Number.isFinite(setT)
+            && Math.abs(this.__lgRingPending - setT) < tol) {
+          this.__lgRingPending = undefined;
+        }
+        const pendingNow = (this && typeof this.__lgRingPending === 'number' && Number.isFinite(this.__lgRingPending))
+          ? this.__lgRingPending : null;
+        /* Idle (no pending) always resyncs from the entity — this is the "seed
+           on open" + "revert on dismiss" behaviour: nothing is stored server-side
+           until approve, and a fresh render with no pending mirrors HA. */
+        const displayTemp = pendingNow !== null ? pendingNow : (Number.isFinite(setT) ? setT : null);
+        const ringT = pendingNow !== null ? fracFromTemp(pendingNow) : fracFromTemp(setT);
+        const thumbPos = posForPercent(onStart + ringT * onLen);
+        const thumbFill = thumbColorAt(ringT);
+        const pendingLabel = displayTemp !== null ? `"${displayTemp}°"` : '"—"';
+        const isPending = pendingNow !== null && Number.isFinite(setT) && Math.abs(pendingNow - setT) >= tol;
+        const actionShadow = isPending ? 'var(--lg_shadow_climate_thermostat_action_pending)' : 'var(--lg_shadow_liquid)';
+        const actionColor = isPending ? 'var(--lg_color_climate_thermostat_pending_green)' : 'var(--lg_color_text)';
+        if (this) {
+          this.classList.add('lg-ring-host');
+          this.__lgRingRange = { min: minT, max: maxT, step: stepT, span, mode, setT };
+          this.__lgRingGeo = { onStart, onLen };
+          this.__lgRingPathR = R;
+          /* Sync mid label from current display temp on each render. */
+          let __lgTrigSync = null;
+          let __lgSyncScope = this.parentElement || (this.getRootNode && this.getRootNode().host) || null;
+          for (let i = 0; i < 16 && __lgSyncScope; i++) {
+            if (__lgSyncScope.classList && __lgSyncScope.classList.contains('lg-ring-trigger-host')) {
+              __lgTrigSync = __lgSyncScope;
+              break;
+            }
+            __lgSyncScope = __lgSyncScope.parentElement
+              || (__lgSyncScope.getRootNode && __lgSyncScope.getRootNode().host)
+              || null;
+          }
+          if (__lgTrigSync && __lgTrigSync.style && displayTemp !== null) {
+            __lgTrigSync.style.setProperty('--lg_climate_mid_target', `"${displayTemp}°"`);
+          }
+        }
+        if (this && this.updateComplete) {
+          const card = this;
+          const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+          const setVar = (n, v) => {
+            const cur = card.style.getPropertyValue(n);
+            if (v === null || v === undefined || v === '') { if (cur) card.style.removeProperty(n); return; }
+            if (cur !== v) card.style.setProperty(n, v);
+          };
+          const applyFraction = (frac) => {
+            const r = card.__lgRingRange || {};
+            const geo = card.__lgRingGeo || { onStart, onLen };
+            const pathRad = Number(card.__lgRingPathR) || R;
+            if (!(r.span > 0) || !Number.isFinite(r.min)) return;
+            let temp = r.min + frac * r.span;
+            temp = Math.round(temp / r.step) * r.step;
+            temp = clamp(Math.round(temp * 10) / 10, r.min, r.max);
+            const snap = clamp((temp - r.min) / r.span, 0, 1);
+            card.__lgRingPending = temp;
+            const theta = ((geo.onStart + snap * geo.onLen) / 100) * Math.PI * 2;
+            const pos = {
+              x: r4(CX + pathRad * Math.sin(theta)),
+              y: r4(CY - pathRad * Math.cos(theta)),
+            };
+            setVar('--lg_ring_t', String(snap));
+            setVar('--lg_ring_thumb_x', `${pos.x}%`);
+            setVar('--lg_ring_thumb_y', `${pos.y}%`);
+            setVar('--lg_ring_thumb_fill', thumbColorAt(snap));
+            setVar('--lg_climate_pending_label', `"${temp}°"`);
+            const changed = Number.isFinite(r.setT) && Math.abs(temp - r.setT) >= ((r.step / 2) || 0.05);
+            setVar('--lg_climate_action_shadow', changed
+              ? 'var(--lg_shadow_climate_thermostat_action_pending)'
+              : 'var(--lg_shadow_liquid)');
+            setVar('--lg_climate_action_color', changed
+              ? 'var(--lg_color_climate_thermostat_pending_green)'
+              : 'var(--lg_color_text)');
+            /* Live mid label — write on climate_setpoint_trigger host. */
+            let __lgTrig = null;
+            let __lgScope = card.parentElement || (card.getRootNode && card.getRootNode().host) || null;
+            for (let i = 0; i < 16 && __lgScope; i++) {
+              if (__lgScope.classList && __lgScope.classList.contains('lg-ring-trigger-host')) {
+                __lgTrig = __lgScope;
+                break;
+              }
+              __lgScope = __lgScope.parentElement
+                || (__lgScope.getRootNode && __lgScope.getRootNode().host)
+                || null;
+            }
+            if (__lgTrig && __lgTrig.style) {
+              __lgTrig.style.setProperty('--lg_climate_mid_target', `"${temp}°"`);
+            }
+          };
+          const fractionFromEvent = (ev, ringEl) => {
+            const rect = ringEl.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            /* visual angle measured from 12 o'clock, clockwise, normalised to
+               the same 0..100 "p" space as the arc geometry above */
+            let a = Math.atan2(ev.clientX - cx, -(ev.clientY - cy));
+            if (a < 0) a += Math.PI * 2;
+            const p = (a / (Math.PI * 2)) * 100;
+            const geo = card.__lgRingGeo || { onStart, onLen };
+            const rel = ((p - geo.onStart) % 100 + 100) % 100;
+            if (rel <= geo.onLen) return rel / geo.onLen;
+            /* Pointer fell inside the bottom gap (dead zone) — clamp to
+               whichever visible edge (min/max) it is nearer to. */
+            const gapLen = 100 - geo.onLen;
+            const gapMid = geo.onLen + gapLen / 2;
+            return rel <= gapMid ? 1 : 0;
+          };
+          if (!card.__lgRingBound) {
+            const bind = () => {
+              const ring = card.shadowRoot && card.shadowRoot.querySelector('#ring');
+              if (!ring || card.__lgRingBound) return;
+              const track = ring.querySelector('.lg-ring__track');
+              const fill = ring.querySelector('.lg-ring__fill');
+              const targets = [track, fill].filter(Boolean);
+              if (!targets.length) return;
+              card.__lgRingBound = true;
+              const down = (ev) => {
+                const r = card.__lgRingRange || {};
+                if (r.mode !== 'heat' && r.mode !== 'cool') return;
+                card.__lgRingDragging = true;
+                if (ring.setPointerCapture && ev.pointerId !== undefined) {
+                  try { ring.setPointerCapture(ev.pointerId); } catch (e) {}
+                }
+                applyFraction(fractionFromEvent(ev, ring));
+                ev.preventDefault();
+                ev.stopPropagation();
+              };
+              const move = (ev) => {
+                if (!card.__lgRingDragging) return;
+                applyFraction(fractionFromEvent(ev, ring));
+                ev.preventDefault();
+              };
+              const up = () => { card.__lgRingDragging = false; };
+              targets.forEach((el) => {
+                el.addEventListener('pointerdown', down);
+              });
+              ring.addEventListener('pointermove', move);
+              ring.addEventListener('pointerup', up);
+              ring.addEventListener('pointercancel', up);
+            };
+            card.updateComplete.then(() => { bind(); setTimeout(bind, 60); setTimeout(bind, 240); });
+          }
+        }
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        pointer-events: none !important;
+        --lg_ring_t: ${ringT};
+        --lg_ring_thumb_x: ${thumbPos.x}%;
+        --lg_ring_thumb_y: ${thumbPos.y}%;
+        --lg_ring_thumb_fill: ${thumbFill};
+        --lg_climate_ring_fill_color: var(--lg_color_climate_ring_fill);
+        --lg_climate_pending_label: ${pendingLabel};
+        --lg_climate_action_shadow: ${actionShadow};
+        --lg_climate_action_color: ${actionColor};
+      }
+      ha-card {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #card {
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: var(--lg_size_climate_ring_w) !important;
+        height: var(--lg_size_climate_ring_w) !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #ring {
+        grid-area: 1 / 1 !important;
+        width: var(--lg_size_climate_ring_w) !important;
+        height: var(--lg_size_climate_ring_w) !important;
+        aspect-ratio: 1 / 1 !important;
+        display: block !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+        border-radius: 50% !important;
+        pointer-events: none !important;
+        opacity: ${tempOpacity};
+        touch-action: none !important;
+        z-index: 0 !important;
+      }
+      #ring .lg-ring__svg {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        overflow: visible !important;
+        pointer-events: none !important;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+      }
+      #ring .lg-ring__track {
+        fill: none;
+        stroke: var(--lg_color_climate_ring_track);
+        stroke-width: var(--lg_size_climate_ring_stroke_u);
+        stroke-linecap: round;
+        stroke-dasharray: ${onLen} ${gapPct};
+        stroke-dashoffset: ${dashOffsetBase};
+        pointer-events: ${tempPointer} !important;
+      }
+      #ring .lg-ring__fill {
+        fill: none;
+        stroke: url(#lgRingGrad);
+        stroke-width: var(--lg_size_climate_ring_stroke_u);
+        stroke-linecap: round;
+        stroke-dasharray: calc(var(--lg_ring_t, 0) * ${onLen}) calc(100 - (var(--lg_ring_t, 0) * ${onLen}));
+        stroke-dashoffset: ${dashOffsetBase};
+        transition: var(--lg_transition_climate_ring_fill);
+        pointer-events: ${tempPointer} !important;
+      }
+      /* Mid is the commit affordance — hide duplicate approve chrome. */
+      #action_btn {
+        display: none !important;
+        pointer-events: none !important;
+        grid-area: 1 / 1 !important;
+        z-index: 2 !important;
+        justify-self: center !important;
+        align-self: center !important;
+      }
+      #thumb {
+        grid-area: 1 / 1 !important;
+        z-index: 3 !important;
+        position: absolute !important;
+        left: var(--lg_ring_thumb_x) !important;
+        top: var(--lg_ring_thumb_y) !important;
+        width: var(--lg_size_climate_ring_thumb_d) !important;
+        height: var(--lg_size_climate_ring_thumb_d) !important;
+        border-radius: 50% !important;
+        background: var(--lg_ring_thumb_fill, var(--lg_color_climate_ring_thumb)) !important;
+        box-shadow: var(--lg_shadow_climate_ring_thumb) !important;
+        pointer-events: none !important;
+        opacity: ${tempOpacity};
+        transition: var(--lg_transition_climate_ring_thumb);
+        transform: translate(-50%, -50%) !important;
+      }
+      @media (max-width: 48rem) {
+        #container, #ring {
+          width: var(--lg_size_climate_ring_w_phone) !important;
+          height: var(--lg_size_climate_ring_w_phone) !important;
+        }
+        #ring .lg-ring__track, #ring .lg-ring__fill {
+          stroke-width: var(--lg_size_climate_ring_stroke_u_phone);
+        }
+        #thumb {
+          width: var(--lg_size_climate_ring_thumb_d_phone) !important;
+          height: var(--lg_size_climate_ring_thumb_d_phone) !important;
+        }
+      }
+        `;
+      ]]]
+    custom_fields:
+      ring: |
+        [[[
+          let pathR = 37.5;
+          if (this) {
+            const cs = getComputedStyle(this);
+            const raw = parseFloat(cs.getPropertyValue('--lg_size_climate_ring_path_r'));
+            if (Number.isFinite(raw) && raw > 0) pathR = raw;
+            else {
+              const outerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_outer_pct')) || 96;
+              const innerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_inner_pct')) || 54;
+              pathR = (outerPct + innerPct) / 4;
+            }
+          }
+          return `<svg class="lg-ring__svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="lgRingGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="rgba(100, 210, 255, 0.95)"/>
+              <stop offset="55%" stop-color="rgba(255, 176, 90, 0.95)"/>
+              <stop offset="100%" stop-color="rgba(255, 90, 70, 0.95)"/>
+            </linearGradient>
+          </defs>
+          <circle class="lg-ring__track" cx="50" cy="50" r="${pathR}" pathLength="100"></circle>
+          <circle class="lg-ring__fill" cx="50" cy="50" r="${pathR}" pathLength="100"></circle>
+        </svg>`;
+        ]]]
+      thumb: ""
+      action_btn:
+        card:
+          type: custom:button-card
+          template: climate_thermostat_action_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+  # ADR 0025 — in-place radial duration picker frost dismiss (mirrors climate_wheel_temp_frost).

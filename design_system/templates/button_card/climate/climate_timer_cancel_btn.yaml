@@ -1,0 +1,15 @@
+  climate_timer_cancel_btn:
+    template: climate_timer_action_chip
+    icon: mdi:close
+    variables:
+      remove_script_id: ""
+    tap_action: |
+      [[[
+        const id = (variables && variables.remove_script_id) || '';
+        if (!id) return { action: 'none' };
+        return {
+          action: 'call-service',
+          service: 'script.turn_on',
+          target: { entity_id: id },
+        };
+      ]]]

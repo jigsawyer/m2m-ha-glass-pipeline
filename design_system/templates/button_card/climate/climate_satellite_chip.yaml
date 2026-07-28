@@ -1,0 +1,126 @@
+  climate_satellite_chip:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      gate_entity_id: ""
+      gate_states: []
+    extra_styles: |
+      [[[
+        const on = entity && entity.state === 'on';
+        const gateId = variables && variables.gate_entity_id;
+        const gateStates = (variables && variables.gate_states) || [];
+        let gated = false;
+        if (gateId && gateStates.length) {
+          const gEnt = states[gateId];
+          const gState = gEnt && gEnt.state;
+          gated = !gateStates.includes(gState);
+        }
+        const glow = on ? 'var(--lg_glow_climate_other)' : 'none';
+        const frost = on ? 'var(--lg_color_climate_frost_other)' : 'var(--lg_color_liquid_frost)';
+        const clipBg = `${frost}, var(--lg_color_liquid_base)`;
+        const clipShadow = on ? `var(--lg_shadow_liquid), ${glow}` : 'var(--lg_shadow_liquid)';
+        return `
+      :host {
+        width: var(--lg_size_climate_satellite_w) !important;
+        height: var(--lg_size_climate_satellite_w) !important;
+        max-width: var(--lg_size_climate_satellite_w) !important;
+        aspect-ratio: 1 !important;
+        display: block;
+        box-sizing: border-box;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        pointer-events: ${gated ? 'none' : 'auto'} !important;
+        opacity: ${gated ? 'var(--lg_opacity_tab_side_disabled)' : '1'} !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: var(--lg_size_climate_satellite_w_phone) !important;
+          height: var(--lg_size_climate_satellite_w_phone) !important;
+          max-width: var(--lg_size_climate_satellite_w_phone) !important;
+        }
+      }
+      ha-card, #card {
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #card {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        box-sizing: border-box;
+        cursor: pointer;
+        overflow: hidden;
+        border: var(--lg_stroke_climate_arc_glass) solid var(--lg_color_climate_arc_glass_stroke);
+        transition: var(--lg_transition_press);
+      }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: 100%;
+        height: 100%;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        background: ${clipBg};
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: ${clipShadow};
+        pointer-events: none;
+        z-index: 0;
+      }
+      #img-cell {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        overflow: visible !important;
+      }
+      #icon {
+        position: relative;
+        z-index: 1;
+        width: var(--lg_size_climate_satellite_icon);
+        height: var(--lg_size_climate_satellite_icon);
+        max-width: var(--lg_size_climate_satellite_icon);
+        max-height: var(--lg_size_climate_satellite_icon);
+        --mdc-icon-size: var(--lg_size_climate_satellite_icon);
+        color: ${on ? 'var(--lg_color_climate_other)' : 'var(--lg_color_text)'} !important;
+        opacity: ${on ? '1' : '0.72'};
+      }
+      @media (max-width: 48rem) {
+        #icon {
+          width: var(--lg_size_climate_satellite_icon_phone);
+          height: var(--lg_size_climate_satellite_icon_phone);
+          max-width: var(--lg_size_climate_satellite_icon_phone);
+          max-height: var(--lg_size_climate_satellite_icon_phone);
+          --mdc-icon-size: var(--lg_size_climate_satellite_icon_phone);
+        }
+      }
+      {{ lg_round_icon_only_center_extra_styles() }}
+      #name, #label, #state { display: none !important; }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Turbo (fast heating/cooling boost) — HA docs: switch domain turn_on/
+  # turn_off/toggle (https://www.home-assistant.io/integrations/switch/).
+  # Per spec: only interactive while the AC's HVAC mode is heat/cool —
+  # instantiator (climate_utility_row) passes gate_entity_id = the parent
+  # climate.* entity id and this template supplies the gate_states default.

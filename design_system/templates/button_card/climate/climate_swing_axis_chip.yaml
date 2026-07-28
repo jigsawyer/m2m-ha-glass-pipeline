@@ -1,0 +1,223 @@
+  climate_swing_axis_chip:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    variables:
+      axis: vertical
+    tap_action:
+      action: call-service
+      service: |
+        [[[
+          const axis = variables.axis || 'vertical';
+          const a = (entity && entity.attributes) || {};
+          const hModes = a.swing_horizontal_modes;
+          if (axis === 'horizontal' && Array.isArray(hModes) && hModes.length) {
+            return 'climate.set_swing_horizontal_mode';
+          }
+          return 'climate.set_swing_mode';
+        ]]]
+      target:
+        entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      data: |
+        [[[
+          const axis = variables.axis || 'vertical';
+          const a = (entity && entity.attributes) || {};
+          const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
+          const hModes = Array.isArray(a.swing_horizontal_modes)
+            ? a.swing_horizontal_modes
+            : null;
+          const pick = (list, cands) => {
+            const lower = (list || []).map((m) => String(m).toLowerCase());
+            for (const c of cands) {
+              const i = lower.indexOf(String(c).toLowerCase());
+              if (i >= 0) return list[i];
+            }
+            return null;
+          };
+          const axisOn = (mode, ax) => {
+            const m = String(mode || '').toLowerCase();
+            if (ax === 'vertical') {
+              return m === 'vertical' || m === 'both' || m === 'on';
+            }
+            return m === 'horizontal' || m === 'both';
+          };
+          /* Independent horizontal feature (HA ClimateEntityFeature.SWING_HORIZONTAL_MODE). */
+          if (axis === 'horizontal' && hModes && hModes.length) {
+            const curH = a.swing_horizontal_mode;
+            const on = String(curH || '').toLowerCase() !== 'off' && !!curH;
+            const next = on
+              ? pick(hModes, ['off'])
+              : pick(hModes, ['on', 'horizontal']);
+            if (!next) return { swing_horizontal_mode: curH };
+            return { swing_horizontal_mode: next };
+          }
+          if (axis === 'vertical' && hModes && hModes.length) {
+            const cur = a.swing_mode;
+            const on = axisOn(cur, 'vertical');
+            const next = on
+              ? pick(modes, ['off'])
+              : pick(modes, ['vertical', 'on']);
+            if (!next) return { swing_mode: cur };
+            return { swing_mode: next };
+          }
+          /* Combined swing_modes: off | vertical | horizontal | both. */
+          const cur = a.swing_mode;
+          let wantVert = axisOn(cur, 'vertical');
+          let wantHoriz = axisOn(cur, 'horizontal');
+          if (axis === 'vertical') wantVert = !wantVert;
+          else wantHoriz = !wantHoriz;
+          let target = null;
+          if (!wantVert && !wantHoriz) target = pick(modes, ['off']);
+          else if (wantVert && !wantHoriz) target = pick(modes, ['vertical', 'on']);
+          else if (!wantVert && wantHoriz) target = pick(modes, ['horizontal']);
+          else target = pick(modes, ['both']);
+          if (!target) return { swing_mode: cur };
+          return { swing_mode: target };
+        ]]]
+    extra_styles: |
+      [[[
+        const axis = variables.axis || 'vertical';
+        const a = (entity && entity.attributes) || {};
+        const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
+        const hModes = Array.isArray(a.swing_horizontal_modes)
+          ? a.swing_horizontal_modes
+          : null;
+        const axisOn = (mode, ax) => {
+          const m = String(mode || '').toLowerCase();
+          if (ax === 'vertical') {
+            return m === 'vertical' || m === 'both' || m === 'on';
+          }
+          return m === 'horizontal' || m === 'both';
+        };
+        let supported = true;
+        if (axis === 'horizontal') {
+          supported = !!(hModes && hModes.length)
+            || modes.some((m) => /^(horizontal|both)$/i.test(String(m)));
+        } else {
+          supported = modes.some((m) => /^(vertical|both|on|off)$/i.test(String(m)))
+            || modes.length === 0;
+        }
+        let active = false;
+        if (axis === 'horizontal' && hModes && hModes.length) {
+          const curH = a.swing_horizontal_mode;
+          active = String(curH || '').toLowerCase() !== 'off' && !!curH;
+        } else {
+          active = axisOn(a.swing_mode, axis);
+        }
+        const frost = active
+          ? 'var(--lg_color_climate_frost_other)'
+          : 'var(--lg_color_liquid_frost)';
+        const clipBg = `${frost}, var(--lg_color_liquid_base)`;
+        const glow = active ? 'var(--lg_glow_climate_other)' : 'none';
+        const clipShadow = active
+          ? `var(--lg_shadow_liquid), ${glow}`
+          : 'var(--lg_shadow_liquid)';
+        return `
+      :host {
+        width: var(--lg_size_climate_satellite_w) !important;
+        height: var(--lg_size_climate_satellite_w) !important;
+        max-width: var(--lg_size_climate_satellite_w) !important;
+        aspect-ratio: 1 !important;
+        display: ${supported ? 'block' : 'none'} !important;
+        box-sizing: border-box;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: var(--lg_size_climate_satellite_w_phone) !important;
+          height: var(--lg_size_climate_satellite_w_phone) !important;
+          max-width: var(--lg_size_climate_satellite_w_phone) !important;
+        }
+      }
+      ha-card, #card {
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #card {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        box-sizing: border-box;
+        display: ${supported ? 'block' : 'none'};
+        margin: 0 auto;
+        cursor: pointer;
+        overflow: hidden;
+        border: var(--lg_stroke_climate_arc_glass) solid var(--lg_color_climate_arc_glass_stroke);
+        transition: var(--lg_transition_press);
+      }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: 100%;
+        height: 100%;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        background: ${clipBg};
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: ${clipShadow};
+        pointer-events: none;
+        z-index: 0;
+      }
+      #img-cell {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        overflow: visible !important;
+      }
+      #icon {
+        position: relative;
+        z-index: 1;
+        width: var(--lg_size_climate_satellite_icon);
+        height: var(--lg_size_climate_satellite_icon);
+        max-width: var(--lg_size_climate_satellite_icon);
+        max-height: var(--lg_size_climate_satellite_icon);
+        --mdc-icon-size: var(--lg_size_climate_satellite_icon);
+        color: var(--lg_color_text) !important;
+        filter: ${active ? 'var(--lg_filter_climate_other)' : 'none'};
+        opacity: ${active ? '1' : '0.72'};
+      }
+      @media (max-width: 48rem) {
+        #icon {
+          width: var(--lg_size_climate_satellite_icon_phone);
+          height: var(--lg_size_climate_satellite_icon_phone);
+          max-width: var(--lg_size_climate_satellite_icon_phone);
+          max-height: var(--lg_size_climate_satellite_icon_phone);
+          --mdc-icon-size: var(--lg_size_climate_satellite_icon_phone);
+        }
+      }
+      {{ lg_round_icon_only_center_extra_styles() }}
+      #name, #label, #state { display: none !important; }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Small icon-only satellite chip — shared base for the AIC "solar system"
+  # controls that orbit the sun (climate_setpoint_trigger): Turbo, Quiet
+  # (climate_swing_axis_chip keeps its own bespoke multi-state styling but
+  # matches this same size/shape). Deliberately smaller than
+  # lg_size_climate_arc_trigger_w and never shows a text label. Generic
+  # optional gate (variables.gate_entity_id / .gate_states): when set, the
+  # chip reads a SEPARATE entity's state (e.g. the parent climate.* entity)
+  # and disables itself (pointer-events:none + dimmed) unless that entity's
+  # state is one of gate_states — used by climate_turbo_btn's "active only
+  # in heat/cool" requirement without hardcoding the climate entity id here.

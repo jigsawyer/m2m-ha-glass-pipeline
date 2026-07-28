@@ -1,0 +1,116 @@
+  climate_timer_button:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      clock_entity_id: ""
+      armed_entity_id: ""
+      popup_hash: ""
+      mode_entity_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_hour_entity_id: ""
+      clock_minute_entity_id: ""
+      remove_script_id: ""
+      pause_clock_script_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const running = entity && (entity.state === 'active' || entity.state === 'paused');
+        const armedId = variables && variables.armed_entity_id;
+        const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+        const showActive = !!(running || armed);
+        return `
+      :host {
+        width: ${showActive ? 'fit-content' : 'var(--lg_size_climate_timer_idle_w)'} !important;
+        max-width: ${showActive ? 'min(100%, var(--lg_size_climate_timer_active_w))' : 'var(--lg_size_climate_timer_idle_w)'} !important;
+        min-width: 0 !important;
+        height: ${showActive ? 'var(--lg_size_climate_timer_bar_h)' : 'var(--lg_size_climate_timer_idle_w)'} !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 auto !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card, #card {
+        width: ${showActive ? 'fit-content' : '100%'} !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "stack" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr !important;
+        width: 100% !important;
+        height: 100% !important;
+        place-items: center !important;
+      }
+      #idle_btn, #active_bar {
+        grid-area: stack !important;
+        justify-self: center !important;
+        align-self: center !important;
+      }
+      #idle_btn {
+        display: ${showActive ? 'none' : 'block'} !important;
+        width: var(--lg_size_climate_timer_idle_w) !important;
+        height: var(--lg_size_climate_timer_idle_w) !important;
+      }
+      #active_bar {
+        display: ${showActive ? 'block' : 'none'} !important;
+        width: fit-content !important;
+        max-width: min(100%, var(--lg_size_climate_timer_active_w)) !important;
+        height: var(--lg_size_climate_timer_bar_h) !important;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+      @media (max-width: 48rem) {
+        :host {
+          width: ${showActive ? 'fit-content' : 'var(--lg_size_climate_timer_idle_w_phone)'} !important;
+          max-width: ${showActive ? 'min(100%, var(--lg_size_climate_timer_active_w_phone))' : 'var(--lg_size_climate_timer_idle_w_phone)'} !important;
+          height: ${showActive ? 'var(--lg_size_climate_timer_bar_h)' : 'var(--lg_size_climate_timer_idle_w_phone)'} !important;
+        }
+        #idle_btn {
+          width: var(--lg_size_climate_timer_idle_w_phone) !important;
+          height: var(--lg_size_climate_timer_idle_w_phone) !important;
+        }
+        #active_bar {
+          max-width: min(100%, var(--lg_size_climate_timer_active_w_phone)) !important;
+        }
+      }
+        `;
+      ]]]
+    custom_fields:
+      idle_btn:
+        card:
+          type: custom:button-card
+          template: climate_timer_idle_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+      active_bar:
+        card:
+          type: custom:button-card
+          template: climate_timer_active_bar
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            clock_hour_entity_id: "[[[ return (variables && variables.clock_hour_entity_id) || '' ]]]"
+            clock_minute_entity_id: "[[[ return (variables && variables.clock_minute_entity_id) || '' ]]]"
+            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
+            pause_clock_script_id: "[[[ return (variables && variables.pause_clock_script_id) || '' ]]]"
+
+  # Climate timer pop-up mode chip (Duration | Clock). Entity = input_select; option in variables.option.

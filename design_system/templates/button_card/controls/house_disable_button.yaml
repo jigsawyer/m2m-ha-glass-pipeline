@@ -1,0 +1,28 @@
+  house_disable_button:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:power
+    tap_action:
+      action: none
+    hold_action:
+      action: call-service
+      service: switch.turn_off
+      data:
+        entity_id: all
+    extra_styles: |
+      {{ lg_tab_side_btn_layout_extra_styles(disabled=false) }}
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_side_btn);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab_side_btn));
+        pointer-events: none;
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+    state: []

@@ -1,0 +1,137 @@
+  climate_timer_edit_btn:
+    template: climate_timer_action_chip
+    icon: mdi:pencil
+    variables:
+      popup_hash: ""
+      mode_entity_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_entity_id: ""
+      clock_hour_entity_id: ""
+      clock_minute_entity_id: ""
+      armed_entity_id: ""
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const parseDur = (raw) => {
+            const parts = String(raw || '').split(':').map((p) => parseInt(p, 10) || 0);
+            if (parts.length >= 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            if (parts.length === 2) return parts[0] * 60 + parts[1];
+            return 0;
+          };
+          const remSec = (ent) => {
+            if (!ent) return 0;
+            if (ent.state === 'paused') return parseDur(ent.attributes && ent.attributes.remaining);
+            if (ent.state === 'active') {
+              const fin = ent.attributes && ent.attributes.finishes_at;
+              if (!fin) return 0;
+              const ms = new Date(fin).getTime() - Date.now();
+              return Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
+            }
+            return 0;
+          };
+          const clockRemSec = (clockState) => {
+            const parts = String(clockState || '').split(':').map((p) => parseInt(p, 10) || 0);
+            const hh = parts[0] || 0;
+            const mm = parts[1] || 0;
+            const ss = parts[2] || 0;
+            const now = new Date();
+            const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss, 0);
+            if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+            return Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
+          };
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          const clockId = (variables && variables.clock_entity_id) || '';
+          const armedId = (variables && variables.armed_entity_id) || '';
+          const modeId = (variables && variables.mode_entity_id) || '';
+          const running = entity && (entity.state === 'active' || entity.state === 'paused');
+          const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+          let seedMin = 30;
+          try {
+            if (running) {
+              if (modeId) hass.callService('input_select', 'select_option', { entity_id: modeId, option: 'duration' });
+              let sec = remSec(entity);
+              seedMin = Math.max(1, Math.round(sec / 60));
+              const hh = Math.floor(seedMin / 60);
+              const mm = seedMin % 60;
+              if (hoursId) hass.callService('input_number', 'set_value', { entity_id: hoursId, value: hh });
+              if (minutesId) hass.callService('input_number', 'set_value', { entity_id: minutesId, value: mm });
+            } else if (armed && clockId && states[clockId]) {
+              if (modeId) hass.callService('input_select', 'select_option', { entity_id: modeId, option: 'duration' });
+              const sec = clockRemSec(states[clockId].state);
+              seedMin = Math.max(1, Math.min(720, Math.round(sec / 60)));
+              const hh = Math.floor(seedMin / 60);
+              const mm = seedMin % 60;
+              if (hoursId) hass.callService('input_number', 'set_value', { entity_id: hoursId, value: hh });
+              if (minutesId) hass.callService('input_number', 'set_value', { entity_id: minutesId, value: mm });
+            }
+          } catch (e) {}
+          let thermostat = null;
+          let scope = composedParent(this);
+          for (let i = 0; i < 24 && scope; i++) {
+            if (scope.classList && scope.classList.contains('lg-thermostat-host')) {
+              thermostat = scope;
+              break;
+            }
+            scope = composedParent(scope);
+          }
+          const wheelHost = thermostat && thermostat.shadowRoot
+            ? thermostat.shadowRoot.querySelector('.lg-wheel-host')
+            : null;
+          if (!wheelHost) return;
+          const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+          const maxMin = (radial && radial.__lgTimerMaxMin) || 720;
+          const mins = Math.max(0, Math.min(maxMin, seedMin));
+          if (radial) {
+            radial.__lgTimerSeedMinutes = mins;
+            radial.__lgTimerPending = mins;
+            const p = maxMin > 0 ? mins / maxMin : 0;
+            radial.__lgTimerLastProgress = p;
+            const theta = p * Math.PI * 2;
+            const r4 = (n) => Math.round(n * 10000) / 10000;
+            radial.style.setProperty('--lg_timer_t', String(p));
+            radial.style.setProperty('--lg_timer_knob_x', `${r4(50 + 44 * Math.sin(theta))}%`);
+            radial.style.setProperty('--lg_timer_knob_y', `${r4(50 - 44 * Math.cos(theta))}%`);
+            let label;
+            if (mins < 60) label = `"${mins} хв"`;
+            else {
+              const h = Math.floor(mins / 60);
+              const mm = mins % 60;
+              label = mm === 0 ? `"${h} год"` : `"${h} год ${mm} хв"`;
+            }
+            radial.style.setProperty('--lg_timer_label', label);
+          }
+          /* Close TEMP if open. */
+          if (wheelHost.classList.contains('lg-wheel-temp-open')) {
+            const triggerHost = wheelHost.shadowRoot && (
+              wheelHost.shadowRoot.querySelector('.lg-ring-trigger-host.lg-ring-trigger-expanded')
+              || wheelHost.shadowRoot.querySelector('.lg-ring-trigger-expanded')
+            );
+            if (triggerHost) {
+              triggerHost.classList.remove('lg-ring-trigger-expanded');
+              triggerHost.__lgTempStickyOpen = false;
+            }
+            wheelHost.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+            wheelHost.__lgTempOpenedAt = 0;
+          }
+          wheelHost.classList.add('lg-timer-radial-open', 'lg-timer-radial-arming');
+          wheelHost.__lgTimerOpenedAt = Date.now();
+          wheelHost.__lgTimerStickyOpen = true;
+          if (wheelHost.__lgTimerArmTimer) {
+            try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+          }
+          wheelHost.__lgTimerArmTimer = setTimeout(() => {
+            if (wheelHost && wheelHost.classList) wheelHost.classList.remove('lg-timer-radial-arming');
+            wheelHost.__lgTimerArmTimer = 0;
+          }, 300);
+          {{ lg_climate_temp_focus_set_js('true') }}
+          {{ lg_climate_blur_kick_js() }}
+        ]]]

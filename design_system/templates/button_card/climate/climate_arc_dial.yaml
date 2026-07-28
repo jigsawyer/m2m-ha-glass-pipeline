@@ -1,0 +1,96 @@
+  climate_arc_dial:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      arc_total: 1
+    tap_action: |
+      [[[
+        /* Open-only from the dial's own icon — per spec the ring/arc closes
+           in exactly 2 ways: tap on empty space (climate_arc_overlay_btn) or
+           select an option (climate_arc_option_btn). Re-tapping the icon
+           while already expanded must NOT be a 3rd close path. */
+        if (!this.classList.contains('lg-arc-expanded')) {
+          this.classList.add('lg-arc-expanded');
+        }
+        return { action: 'none' };
+      ]]]
+    extra_styles: |
+      [[[
+        this.classList.add('lg-arc-host');
+        const mode = entity ? entity.state : 'off';
+        const modeColor = mode === 'cool'
+          ? 'var(--lg_color_climate_cool)'
+          : mode === 'heat'
+            ? 'var(--lg_color_climate_heat)'
+            : 'var(--lg_color_text)';
+        const modeGlow = mode === 'off' || !mode
+          ? 'none'
+          : mode === 'cool'
+            ? 'var(--lg_glow_climate_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_glow_climate_heat)'
+              : 'var(--lg_glow_climate_other)';
+        const modeFilter = mode === 'off' || !mode
+          ? 'none'
+          : mode === 'cool'
+            ? 'var(--lg_filter_climate_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_filter_climate_heat)'
+              : 'var(--lg_filter_climate_other)';
+        return `
+      :host {
+        --lg_arc_t: 0;
+        --lg_arc_transition: var(--lg_transition_climate_arc_collapse);
+        --lg_arc_pointer: none;
+        position: relative;
+        display: block;
+        overflow: visible !important;
+        z-index: 1;
+      }
+      :host(.lg-arc-expanded) {
+        --lg_arc_t: 1;
+        --lg_arc_transition: var(--lg_transition_climate_arc_expand);
+        --lg_arc_pointer: auto;
+        z-index: 45;
+      }
+      @media (min-width: 48.0625rem) {
+        :host(.lg-arc-expanded) {
+          --lg_arc_transition: var(--lg_transition_climate_arc_expand_desktop);
+        }
+      }
+      {{ lg_climate_round_btn_shell_extra_styles('--lg_size_climate_arc_trigger_w', '--lg_size_climate_arc_trigger_w_phone', '--lg_size_climate_chip_icon', '--lg_size_climate_chip_icon') }}
+      #card {
+        box-shadow: ${modeGlow === 'none' ? 'var(--lg_shadow_climate_arc_sphere)' : modeGlow};
+        opacity: ${mode === 'off' || !mode ? 'var(--lg_opacity_climate_arc_trigger_off)' : '1'};
+      }
+      #icon {
+        color: ${modeColor} !important;
+        filter: ${modeFilter};
+      }
+      /* FIX (regression): button-card attaches its own click handler to the
+         auto-generated wrapper <div> for EACH custom_field (#overlay,
+         #option_1..5), separately from the nested card's own
+         :host. Gate the WRAPPER's own pointer-events on the same variable —
+         !important is required here: button-card sets pointer-events
+         directly on these wrapper divs via element.style (inline), which
+         otherwise beats a plain (non-!important) external rule regardless of
+         selector specificity, silently re-enabling hit-testing on the
+         fullscreen overlay wrapper even while --lg_arc_pointer is 'none'. */
+      #overlay,
+      #option_1, #option_2, #option_3, #option_4, #option_5 {
+        pointer-events: var(--lg_arc_pointer, none) !important;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: ""
+      overlay:
+        card:
+          type: custom:button-card
+          template: climate_arc_overlay_btn
+
+  # HVAC-mode Arc Speed Dial — 5 options: cool/heat/dry/fan_only/auto.
+  # Same climate.set_hvac_mode target/data as the retired climate_left_col.

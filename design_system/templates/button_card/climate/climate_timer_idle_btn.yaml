@@ -1,0 +1,21 @@
+  climate_timer_idle_btn:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    icon: mdi:timer-outline
+    variables:
+      popup_hash: ""
+    tap_action:
+      action: navigate
+      navigation_path: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+    extra_styles: |
+      {{ lg_climate_round_btn_shell_extra_styles('--lg_size_climate_timer_idle_w', '--lg_size_climate_timer_idle_w_phone', '--lg_size_climate_timer_idle_icon', '--lg_size_climate_timer_idle_icon_phone') }}
+      #icon {
+        color: var(--lg_color_text) !important;
+        opacity: 0.92;
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

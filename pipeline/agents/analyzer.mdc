@@ -66,7 +66,7 @@ Keep identifiers, menu paths, HA/UI labels, token names, and file paths in origi
 
 | Flag | Set when | ADR |
 |---|---|---|
-| `allow_template_layout_edit: true` (+ `tokens_and_button_card_templates_only: false`) | A `@stylist` intent must change layout templates or `button_card_templates` | 0003 |
+| `allow_template_layout_edit: true` (+ `tokens_and_button_card_templates_only: false`) | A `@stylist` intent must change layout templates or `button_card/**` sources | 0003 / 0000 |
 | `allow_climate_ring_control_deferred_commit: true` | Thermostat setpoint ring work | 0017 |
 | `allow_hacs_bubble_card_popup: true` | Any Bubble pop-up | 0020 |
 | `allow_hacs_mushroom: true` | Nested Mushroom cards (e.g. laundry params) | 0010, 0026 |

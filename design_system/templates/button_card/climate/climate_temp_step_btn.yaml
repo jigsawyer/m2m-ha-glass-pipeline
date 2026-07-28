@@ -1,0 +1,130 @@
+  climate_temp_step_btn:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      direction: 1
+    tap_action:
+      action: call-service
+      service: climate.set_temperature
+      target:
+        entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      data:
+        temperature: |
+          [[[
+            const a = (entity && entity.attributes) || {};
+            const cur = Number(a.temperature);
+            const step = Number(a.target_temp_step) || 1;
+            const lo = Number(a.min_temp);
+            const hi = Number(a.max_temp);
+            const dir = Number(variables.direction) || 1;
+            if (!Number.isFinite(cur)) return cur;
+            let next = cur + (dir * step);
+            if (Number.isFinite(lo)) next = Math.max(lo, next);
+            if (Number.isFinite(hi)) next = Math.min(hi, next);
+            const rounded = Math.round(next / step) * step;
+            return Math.round(rounded * 10) / 10;
+          ]]]
+    extra_styles: |
+      [[[
+        const mode = entity ? entity.state : 'off';
+        const enabled = mode === 'heat' || mode === 'cool';
+        /* Never opacity:0 for missing entity — that hid ± when nest eval lagged. */
+        return `
+      :host {
+        width: var(--lg_size_climate_step_btn) !important;
+        max-width: var(--lg_size_climate_step_btn) !important;
+        min-width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        max-height: var(--lg_size_climate_step_btn) !important;
+        min-height: var(--lg_size_climate_step_btn) !important;
+        display: block !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        pointer-events: ${enabled ? 'auto' : 'none'} !important;
+        opacity: ${enabled ? '1' : 'var(--lg_opacity_tab_side_disabled)'} !important;
+      }
+      ha-card, #card {
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        max-width: var(--lg_size_climate_step_btn) !important;
+        max-height: var(--lg_size_climate_step_btn) !important;
+        aspect-ratio: 1 / 1 !important;
+        border-radius: 50% !important;
+        box-sizing: border-box !important;
+        margin: 0 auto !important;
+        position: relative !important;
+        overflow: hidden !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        cursor: pointer;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "i" !important;
+        grid-template-columns: var(--lg_size_climate_step_btn) !important;
+        grid-template-rows: var(--lg_size_climate_step_btn) !important;
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        justify-items: center !important;
+        align-items: center !important;
+        margin: 0 auto !important;
+        position: relative !important;
+        padding: 0 !important;
+      }
+      #img-cell {
+        grid-area: i !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+        clip-path: none !important;
+        z-index: 1 !important;
+        position: relative !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+      #liquid_clip {
+        grid-area: i !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: var(--lg_size_climate_step_btn) !important;
+        height: var(--lg_size_climate_step_btn) !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #liquid_clip .lg-liquid-clip-shell {
+        position: absolute !important;
+        inset: 0 !important;
+        border-radius: 50% !important;
+        pointer-events: none !important;
+      }
+      #icon,
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        width: var(--lg_size_climate_step_icon) !important;
+        height: var(--lg_size_climate_step_icon) !important;
+        --mdc-icon-size: var(--lg_size_climate_step_icon);
+        color: var(--lg_color_text) !important;
+        position: relative !important;
+        z-index: 1 !important;
+      }
+      {{ lg_round_icon_only_center_extra_styles() }}
+      #name, #label, #state { display: none !important; }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

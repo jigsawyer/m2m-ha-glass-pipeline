@@ -1,0 +1,33 @@
+  switch_button:
+    show_icon: true
+    show_name: true
+    show_state: false
+    show_label: false
+    show_ripple: false
+    state:
+      - operator: template
+        value: |
+          [[[
+            const st = entity ? entity.state : '';
+            return st === 'unavailable' || st === 'unknown' || !entity;
+          ]]]
+        icon: mdi:alert-circle-outline
+    extra_styles: |
+      {{ lg_switch_button_layout_extra_styles() }}
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_haptic_press_js() }}
+          const id = (entity && entity.entity_id)
+            || (this && this._config && this._config.entity)
+            || '';
+          if (!id) return;
+          try {
+            hass.callService('homeassistant', 'toggle', { entity_id: id });
+          } catch (e) {}
+        ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: '{{ lg_distort_shell_html() }}'

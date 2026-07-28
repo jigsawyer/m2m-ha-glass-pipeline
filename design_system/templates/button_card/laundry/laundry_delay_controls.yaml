@@ -1,0 +1,59 @@
+  laundry_delay_controls:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    triggers_update: all
+    icon: |
+      [[[
+        const armedId = variables.armed_entity_id || '';
+        const armed = armedId && states[armedId] && states[armedId].state === 'on';
+        return armed ? 'mdi:timer-cancel-outline' : 'mdi:timer-plus-outline';
+      ]]]
+    name: |
+      [[[
+        const armedId = variables.armed_entity_id || '';
+        const armed = armedId && states[armedId] && states[armedId].state === 'on';
+        return armed ? 'Скасувати відкладення' : 'Відкладений старт';
+      ]]]
+    show_name: true
+    tap_action:
+      action: |
+        [[[
+          const armedId = variables.armed_entity_id || '';
+          const armed = armedId && states[armedId] && states[armedId].state === 'on';
+          if (armed) return 'call-service';
+          return 'navigate';
+        ]]]
+      navigation_path: |
+        [[[ return variables.popup_hash || ''; ]]]
+      service: script.turn_on
+      target:
+        entity_id: |
+          [[[ return variables.cancel_script_id || ''; ]]]
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        height: var(--lg_size_laundry_action_h) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      ha-card,
+      #card {
+        height: var(--lg_size_laundry_action_h) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      #card:active {
+        transform: var(--lg_transform_laundry_press_scale);
+        box-shadow: var(--lg_glow_laundry_press);
+        backdrop-filter: blur(var(--lg_blur_laundry_press));
+        -webkit-backdrop-filter: blur(var(--lg_blur_laundry_press));
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

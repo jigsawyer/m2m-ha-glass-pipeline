@@ -1,0 +1,232 @@
+  floor_tab_switch:
+    show_icon: false
+    show_name: false
+    show_state: false
+    variables:
+      label_floor_1: "Перший поверх"
+      label_floor_2: "Другий поверх"
+      option_floor_1: "floor_1"
+      option_floor_2: "floor_2"
+    # State-invariant custom_fields HTML + JS extra_styles: Lit unsafeHTML replaces
+    # DOM when HTML strings change; keep markup identical so transform/opacity can transition.
+    extra_styles: |
+      [[[
+        const isFloor2 = entity && (
+          entity.state === variables.option_floor_2 || entity.state === 'on'
+        );
+        const pillTx = isFloor2
+          ? 'var(--lg_transform_tab_active_floor2)'
+          : 'var(--lg_transform_tab_active_floor1)';
+        const op1 = isFloor2 ? 'var(--lg_opacity_tab_label_inactive)' : '1';
+        const op2 = isFloor2 ? '1' : 'var(--lg_opacity_tab_label_inactive)';
+        return `
+      :host {
+        width: var(--lg_size_tab_w);
+        min-width: 0;
+        max-width: 100%;
+        min-height: var(--lg_size_tab_h);
+        display: block;
+        box-sizing: border-box;
+        margin: 0;
+        --ha-card-border-radius: var(--lg_radius_tab) !important;
+      }
+      ha-card {
+        border-radius: var(--lg_radius_tab) !important;
+        --ha-card-border-radius: var(--lg_radius_tab) !important;
+        overflow: hidden !important;
+        clip-path: inset(0 round var(--lg_radius_tab));
+      }
+      #container {
+        grid-template-areas: "tab_chrome" "tab_labels";
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 0;
+      }
+      #card {
+        position: relative;
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab));
+        width: 100%;
+        min-width: 0;
+        height: var(--lg_size_tab_h);
+        min-height: var(--lg_size_tab_h);
+        max-width: 100%;
+        justify-self: center;
+        place-self: center;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: var(--lg_radius_tab);
+        border: var(--lg_stroke_glass) solid var(--lg_color_tab_border);
+        background: var(--lg_color_tab_fill);
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+        transition: var(--lg_transition_smooth);
+        cursor: pointer;
+      }
+      #tab_chrome {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+      #tab_labels {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+      }
+      .lg-tab-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_tab_label_size);
+        font-weight: var(--lg_font_body_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        padding-top: var(--lg_space_tab_label_nudge);
+        -webkit-font-smoothing: var(--lg_font_smoothing);
+        transition: var(--lg_transition_tab_pill);
+      }
+      .lg-tab-label--floor1 {
+        opacity: ${op1};
+      }
+      .lg-tab-label--floor2 {
+        opacity: ${op2};
+      }
+      .lg-tab-label__line {
+        display: block;
+        text-align: center;
+      }
+      .lg-tab-chrome {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .lg-tab-track {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_inner);
+        background: var(--lg_color_tab_track);
+        backdrop-filter: blur(var(--lg_blur_tab_track));
+        -webkit-backdrop-filter: blur(var(--lg_blur_tab_track));
+      }
+      .lg-tab-edge-dark {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_inner);
+        border: var(--lg_stroke_tab_edge) solid var(--lg_color_tab_edge_dark_stroke);
+        mix-blend-mode: multiply;
+        filter: blur(var(--lg_blur_tab_edge));
+      }
+      .lg-tab-edge-light {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_inner);
+        border: var(--lg_stroke_tab_edge) solid var(--lg_color_tab_edge_light_stroke);
+        mix-blend-mode: plus-lighter;
+        filter: blur(var(--lg_blur_tab_highlight));
+      }
+      .lg-tab-edge-soft {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_inner);
+        border: var(--lg_stroke_tab_edge) solid var(--lg_color_tab_border_soft);
+        mix-blend-mode: plus-lighter;
+        filter: blur(var(--lg_blur_tab_highlight));
+      }
+      .lg-tab-active {
+        position: absolute;
+        top: var(--lg_space_tab_active_top);
+        left: var(--lg_space_tab_active_inset);
+        width: var(--lg_size_tab_active_w);
+        height: var(--lg_size_tab_active_h);
+        border-radius: var(--lg_radius_tab_active);
+        background: var(--lg_color_tab_active);
+        transform: ${pillTx};
+        transition: var(--lg_transition_tab_pill);
+      }
+      .lg-tab-distort {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab));
+        background: var(--lg_color_tab_fill);
+        backdrop-filter: blur(var(--lg_blur_tab_distort));
+        -webkit-backdrop-filter: blur(var(--lg_blur_tab_distort));
+        pointer-events: none;
+      }
+        `;
+      ]]]
+    tap_action:
+      action: call-service
+      service: |
+        [[[
+          const id = (entity && entity.entity_id) || '';
+          if (id.startsWith('input_select.')) return 'input_select.select_option';
+          if (id.startsWith('input_boolean.')) return 'input_boolean.toggle';
+          return 'homeassistant.toggle';
+        ]]]
+      service_data: |
+        [[[
+          const id = (entity && entity.entity_id) || '';
+          if (id.startsWith('input_select.')) {
+            const cur = entity.state;
+            const next = (cur === variables.option_floor_1)
+              ? variables.option_floor_2
+              : variables.option_floor_1;
+            return { entity_id: id, option: next };
+          }
+          return id ? { entity_id: id } : {};
+        ]]]
+    custom_fields:
+      tab_chrome: |
+        [[[
+          return `
+            <div class="lg-tab-chrome">
+              <div class="lg-tab-track"></div>
+              <div class="lg-tab-edge-dark"></div>
+              <div class="lg-tab-edge-light"></div>
+              <div class="lg-tab-edge-soft"></div>
+              <div class="lg-tab-active"></div>
+              <div class="lg-tab-distort"></div>
+            </div>
+          `;
+        ]]]
+      tab_labels: |
+        [[[
+          const splitTwoLine = (label) => {
+            const raw = String(label || '').trim();
+            const i = raw.indexOf(' ');
+            if (i < 0) {
+              return `<span class="lg-tab-label__line">${raw}</span>`;
+            }
+            const a = raw.slice(0, i);
+            const b = raw.slice(i + 1);
+            return `<span class="lg-tab-label__line">${a}</span><span class="lg-tab-label__line">${b}</span>`;
+          };
+          return `
+            <span class="lg-tab-label lg-tab-label--floor1">${splitTwoLine(variables.label_floor_1)}</span>
+            <span class="lg-tab-label lg-tab-label--floor2">${splitTwoLine(variables.label_floor_2)}</span>
+          `;
+        ]]]
+
+  # Arc Speed Dial option pill (ArcOption). Generalizes the retired
+  # climate_mode_chip (state-based: hvac_mode) + climate_attrib_chip
+  # (attribute-based: fan_mode) into one DRY template so the same pill
+  # powers both the HVAC-mode arc and the fan-speed arc. Service call
+  # payloads are byte-identical to the retired templates (preserve_behavior)
+  # — only the visual chrome (glass container, arc placement) is new.
+  # Position/stagger math lives here (reads variables.arc_index/arc_total,
+  # set by the parent climate_hvac_arc_dial / climate_fan_arc_dial); expand
+  # state (--lg_arc_t: 0|1, --lg_arc_transition: <string>) is an INHERITED
+  # CSS custom property set by the ancestor climate_arc_dial :host(.lg-arc-expanded)
+  # — proven cross-shadow-boundary technique already used for
+  # --lg_climate_temp_fill_color / --slider-color in climate_thermostat.

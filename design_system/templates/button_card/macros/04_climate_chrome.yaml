@@ -1,0 +1,496 @@
+
+{# Klimat chips: icon above UA name INSIDE circle; chrome = climate_house_off tab-side.
+   Proven icon bug: #img-cell clip-path creates stacking context so sibling #liquid_clip
+   (z-index:0) painted over #icon. Fix: no clip on #img-cell; #img-cell/#name z-index:1
+   over tab-side #liquid_clip (same pattern as lg_tab_side_btn_layout_extra_styles).
+   Apple CC Klimat: liquid disk is icon-only perfect circle; UA label sits BELOW outside glass. #}
+{% macro lg_climate_chip_icon_extra_styles() -%}
+      {# Host = dock column (label band); liquid disk stays AIC circle diameter. #}
+      #container {
+        display: grid !important;
+        grid-template-areas: "i" "n" !important;
+        grid-template-columns: var(--lg_size_climate_dock_col) !important;
+        grid-template-rows: var(--lg_size_aic_btn) var(--lg_size_climate_chip_label_h) !important;
+        justify-content: center !important;
+        justify-items: center !important;
+        align-content: start !important;
+        row-gap: var(--lg_space_climate_chip_label_gap) !important;
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_dock_col) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        aspect-ratio: unset !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        clip-path: none !important;
+        position: relative !important;
+        padding: 0 !important;
+      }
+      #img-cell {
+        grid-area: i !important;
+        position: relative !important;
+        z-index: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        justify-self: center !important;
+        align-self: start !important;
+        place-self: start center !important;
+        width: var(--lg_size_aic_btn) !important;
+        height: var(--lg_size_aic_btn) !important;
+        min-width: var(--lg_size_aic_btn) !important;
+        max-width: var(--lg_size_aic_btn) !important;
+        min-height: var(--lg_size_aic_btn) !important;
+        max-height: var(--lg_size_aic_btn) !important;
+        aspect-ratio: 1 / 1 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        border-radius: var(--lg_radius_aic_btn) !important;
+        overflow: hidden !important;
+        clip-path: none !important;
+        box-sizing: border-box !important;
+        background: transparent !important;
+      }
+      {# Idle glass defaults; active chip overrides swap frost tint (keep blur — switch_button ON).
+         Circle = icon row only. dock_col > aic_btn — H-center disk with left:50% + translateX. #}
+      #liquid_clip {
+        grid-area: i !important;
+        position: absolute !important;
+        inset: auto !important;
+        top: 0 !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: var(--lg_size_aic_btn) !important;
+        height: var(--lg_size_aic_btn) !important;
+        min-width: var(--lg_size_aic_btn) !important;
+        min-height: var(--lg_size_aic_btn) !important;
+        max-width: var(--lg_size_aic_btn) !important;
+        max-height: var(--lg_size_aic_btn) !important;
+        aspect-ratio: 1 / 1 !important;
+        border-radius: var(--lg_radius_aic_btn) !important;
+        overflow: hidden !important;
+        clip-path: none !important;
+        isolation: isolate !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+        justify-self: center !important;
+        align-self: start !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #liquid_clip .lg-liquid-clip-shell {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: var(--lg_radius_aic_btn) !important;
+        overflow: hidden !important;
+        clip-path: none !important;
+        pointer-events: none !important;
+      }
+      #icon,
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        place-content: center !important;
+        place-items: center !important;
+        line-height: 0 !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        width: var(--lg_size_climate_chip_icon) !important;
+        height: var(--lg_size_climate_chip_icon) !important;
+        max-width: var(--lg_size_climate_chip_icon) !important;
+        max-height: var(--lg_size_climate_chip_icon) !important;
+        overflow: visible !important;
+      }
+      #icon {
+        --mdc-icon-size: var(--lg_size_climate_chip_icon);
+        position: relative !important;
+        z-index: 1 !important;
+        left: auto !important;
+        right: auto !important;
+        justify-self: center !important;
+        transform: translateY(var(--lg_space_icon_optical_nudge));
+      }
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        --mdc-icon-size: var(--lg_size_climate_chip_icon);
+      }
+      #icon ha-svg-icon svg {
+        display: block !important;
+        margin: 0 auto !important;
+      }
+      #name {
+        grid-area: n !important;
+        position: relative !important;
+        z-index: 1 !important;
+        display: block !important;
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_chip_label_min_w) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_label_h) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        justify-self: center !important;
+        align-self: center !important;
+        font-family: var(--lg_font_label_family) !important;
+        font-size: var(--lg_font_climate_chip_size) !important;
+        font-weight: var(--lg_font_label_weight) !important;
+        line-height: var(--lg_line_height_label) !important;
+        color: var(--lg_color_text) !important;
+        opacity: 0.78;
+      }
+      #label, #state { display: none !important; }
+{%- endmacro %}
+{# Keep AIC macros for TEMP chrome; chips use liquid_clip (tab-side round language). #}
+{% macro lg_aic_button_shell_extra_styles() -%}
+      .lg-aic-btn {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        clip-path: circle(50% at 50% 50%);
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .lg-aic-btn__darken,
+      .lg-aic-btn__luminosity,
+      .lg-aic-btn__frost {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+      }
+      .lg-aic-btn__darken {
+        background: var(--lg_color_climate_cc_layer_darken);
+        mix-blend-mode: darken;
+      }
+      .lg-aic-btn__luminosity {
+        background: var(--lg_color_climate_cc_layer_luminosity);
+        mix-blend-mode: luminosity;
+      }
+      .lg-aic-btn__frost {
+        background: var(--lg_color_climate_cc_frost);
+        backdrop-filter: blur(var(--lg_blur_climate_cc));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_cc));
+        mix-blend-mode: plus-lighter;
+      }
+      .lg-aic-btn__rim {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        box-shadow: var(--lg_shadow_climate_cc_inset);
+        pointer-events: none;
+      }
+{%- endmacro %}
+{% macro lg_aic_button_shell_html() -%}
+<div class="lg-aic-btn" aria-hidden="true"><div class="lg-aic-btn__darken"></div><div class="lg-aic-btn__luminosity"></div><div class="lg-aic-btn__frost"></div><div class="lg-aic-btn__rim"></div></div>
+{%- endmacro %}
+{# Tall column temperature glass chrome (Apple-style pill).
+   Fill is painted on #temp_mod::before (setpoint %) — shell is rim/frost only so
+   slider inherit fill can show through during drag (use_state_color:false → inherit). #}
+{% macro lg_climate_cc_shell_extra_styles() -%}
+      .lg-climate-cc {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_climate_cc);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_climate_cc));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: transparent;
+      }
+      .lg-climate-cc__frost {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_climate_cc);
+        z-index: 1;
+        background: var(--lg_color_climate_cc_frost);
+        /* No backdrop-filter — iOS washes nested slider fill under heavy frost. */
+        pointer-events: none;
+      }
+      .lg-climate-cc__rim {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_climate_cc);
+        box-shadow: var(--lg_shadow_climate_cc_inset);
+        pointer-events: none;
+        z-index: 2;
+      }
+{%- endmacro %}
+{% macro lg_climate_cc_shell_html() -%}
+<div class="lg-climate-cc" aria-hidden="true"><div class="lg-climate-cc__frost"></div><div class="lg-climate-cc__rim"></div></div>
+{%- endmacro %}
+{# Klimat chip host: dock-col wide (label band) × (circle + label) tall; disk = AIC. #}
+{% macro lg_aic_button_host_extra_styles() -%}
+      :host {
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_dock_col) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        aspect-ratio: unset !important;
+        flex: 0 0 auto !important;
+        display: block;
+        justify-self: center;
+        align-self: center;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: 0 !important;
+      }
+      ha-card {
+        width: var(--lg_size_climate_dock_col) !important;
+        min-width: var(--lg_size_climate_dock_col) !important;
+        max-width: var(--lg_size_climate_dock_col) !important;
+        height: var(--lg_size_climate_chip_host_h) !important;
+        min-height: var(--lg_size_climate_chip_host_h) !important;
+        max-height: var(--lg_size_climate_chip_host_h) !important;
+        aspect-ratio: unset !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+{%- endmacro %}
+{# Climate room-off — round icon-only (no liquid chrome); mirrors disable_room
+   via climate-scoped tokens; never shares light lg_size_disable_* (ADR 0014). #}
+{% macro lg_climate_room_off_layout_extra_styles() -%}
+      :host {
+        width: var(--lg_size_climate_room_off_w) !important;
+        max-width: var(--lg_size_climate_room_off_w) !important;
+        min-width: var(--lg_size_climate_room_off_w) !important;
+        height: var(--lg_size_climate_room_off_h) !important;
+        max-height: var(--lg_size_climate_room_off_h) !important;
+        min-height: var(--lg_size_climate_room_off_h) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_climate_room_off) !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: var(--lg_size_climate_room_off_w_phone) !important;
+          max-width: var(--lg_size_climate_room_off_w_phone) !important;
+          min-width: var(--lg_size_climate_room_off_w_phone) !important;
+          height: var(--lg_size_climate_room_off_h_phone) !important;
+          max-height: var(--lg_size_climate_room_off_h_phone) !important;
+          min-height: var(--lg_size_climate_room_off_h_phone) !important;
+        }
+      }
+      ha-card {
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: 1 !important;
+        border-radius: var(--lg_radius_climate_room_off) !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_climate_room_off) !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "i" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 100% !important;
+        justify-content: center !important;
+        align-items: center !important;
+        place-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      #card {
+        position: relative;
+        box-sizing: border-box;
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: 1;
+        border-radius: var(--lg_radius_climate_room_off);
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+        transition: var(--lg_transition_press);
+        cursor: pointer;
+        margin: 0;
+        padding: 0;
+      }
+      #card:active {
+        box-shadow: var(--lg_glow_climate_room_off_press);
+        transform: var(--lg_transform_climate_room_off_press_scale);
+      }
+      #icon {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        width: var(--lg_size_climate_room_off_icon) !important;
+        height: var(--lg_size_climate_room_off_icon) !important;
+        max-width: var(--lg_size_climate_room_off_icon) !important;
+        max-height: var(--lg_size_climate_room_off_icon) !important;
+        --mdc-icon-size: var(--lg_size_climate_room_off_icon);
+      }
+      #card:active #icon {
+        color: var(--lg_color_climate_room_off_press) !important;
+        filter: var(--lg_filter_climate_room_off_icon);
+      }
+      @media (max-width: 48rem) {
+        #icon {
+          width: var(--lg_size_climate_room_off_icon_phone) !important;
+          height: var(--lg_size_climate_room_off_icon_phone) !important;
+          max-width: var(--lg_size_climate_room_off_icon_phone) !important;
+          max-height: var(--lg_size_climate_room_off_icon_phone) !important;
+          --mdc-icon-size: var(--lg_size_climate_room_off_icon_phone);
+        }
+      }
+      #img-cell {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        justify-self: center !important;
+        align-self: center !important;
+        place-self: center !important;
+        overflow: hidden !important;
+      }
+      {{ lg_round_icon_only_center_extra_styles() }}
+      #name, #label, #state {
+        display: none !important;
+      }
+      #liquid_clip {
+        display: none !important;
+      }
+{%- endmacro %}
+{# Shared "round button" glass shell — the shell/material contract used by
+   EVERY climate round button (arc dial trigger, exploded arc option chips,
+   the setpoint circle, the ring approve button): perfect circle
+   (lg_radius_climate_round_btn = 50%; room-off uses its own non-round shell),
+   glass border + frosted
+   #liquid_clip fill, consistent icon proportions with its own phone
+   override, no native #name/#label/#state. Position/transform/animation and
+   any per-state glow stay OUTSIDE this macro (layered by each caller's own
+   extra_styles below the macro call) since those differ legitimately by
+   role (tap-to-expand dial vs absolutely-positioned option vs static
+   approve button) — unifying the shell must not erase those semantics. #}
+{% macro lg_climate_round_btn_shell_extra_styles(width_token, width_token_phone, icon_token, icon_token_phone) -%}
+      :host {
+        width: var({{ width_token }}) !important;
+        max-width: var({{ width_token }}) !important;
+        min-width: var({{ width_token }}) !important;
+        height: var({{ width_token }}) !important;
+        max-height: var({{ width_token }}) !important;
+        min-height: var({{ width_token }}) !important;
+        aspect-ratio: 1 !important;
+        box-sizing: border-box;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: var({{ width_token_phone }}) !important;
+          max-width: var({{ width_token_phone }}) !important;
+          min-width: var({{ width_token_phone }}) !important;
+          height: var({{ width_token_phone }}) !important;
+          max-height: var({{ width_token_phone }}) !important;
+          min-height: var({{ width_token_phone }}) !important;
+        }
+      }
+      ha-card, #card {
+        background: transparent !important;
+        box-shadow: none !important;
+        /* Stays visible (not hidden): callers like climate_arc_dial and
+           climate_setpoint_trigger nest absolutely-positioned expansion
+           custom_fields (#overlay, #option_N, #ring_overlay)
+           INSIDE this same #card that must fan out / grow past the small
+           idle circle's own bounds. The circular look itself comes from
+           #liquid_clip's own overflow:hidden + border-radius:50% below, not
+           from clipping at the #card level. */
+        overflow: visible !important;
+      }
+      #card {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 1;
+        box-sizing: border-box;
+        border-radius: var(--lg_radius_climate_round_btn);
+        border: var(--lg_stroke_climate_arc_glass) solid var(--lg_color_climate_arc_glass_stroke);
+        box-shadow: var(--lg_shadow_climate_arc_sphere);
+        cursor: pointer;
+        transition: var(--lg_transition_press);
+      }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: 100%;
+        height: 100%;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        background: var(--lg_color_climate_arc_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_climate_arc_glass)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_arc_glass)) saturate(var(--lg_saturate_glass));
+        pointer-events: none;
+        z-index: 0;
+      }
+      #img-cell {
+        position: relative;
+        z-index: 1;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        overflow: visible !important;
+      }
+      #icon {
+        position: relative;
+        z-index: 1;
+        width: var({{ icon_token }}) !important;
+        height: var({{ icon_token }}) !important;
+        max-width: var({{ icon_token }}) !important;
+        max-height: var({{ icon_token }}) !important;
+        --mdc-icon-size: var({{ icon_token }});
+      }
+      @media (max-width: 48rem) {
+        #icon {
+          width: var({{ icon_token_phone }}) !important;
+          height: var({{ icon_token_phone }}) !important;
+          max-width: var({{ icon_token_phone }}) !important;
+          max-height: var({{ icon_token_phone }}) !important;
+          --mdc-icon-size: var({{ icon_token_phone }});
+        }
+      }
+      {{ lg_round_icon_only_center_extra_styles() }}
+      #name, #label, #state { display: none !important; }
+{%- endmacro %}

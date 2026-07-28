@@ -1,0 +1,102 @@
+  laundry_delay_scheduler:
+    show_name: true
+    show_icon: false
+    show_state: false
+    show_label: true
+    show_ripple: false
+    triggers_update: all
+    variables:
+      cycle_duration_entity_id: ""
+      delay_mode_entity_id: ""
+      schedule_script_id: ""
+      popup_hash: ""
+    label: |
+      [[[
+        const modeId = variables.delay_mode_entity_id || '';
+        const durId = variables.cycle_duration_entity_id || '';
+        const mode = modeId && states[modeId] ? states[modeId].state : 'START_AT';
+        const dur = durId && states[durId] ? states[durId].state : '?';
+        return mode + ' · цикл ≈ ' + dur + ' хв';
+      ]]]
+    custom_fields:
+      mode_start:
+        card:
+          type: custom:button-card
+          template: laundry_action_chip
+          name: START_AT
+          icon: mdi:play-circle-outline
+          tap_action:
+            action: call-service
+            service: input_select.select_option
+            target:
+              entity_id: |
+                [[[ return variables.delay_mode_entity_id || ''; ]]]
+            data:
+              option: START_AT
+      mode_finish:
+        card:
+          type: custom:button-card
+          template: laundry_action_chip
+          name: FINISH_BY
+          icon: mdi:flag-checkered
+          tap_action:
+            action: call-service
+            service: input_select.select_option
+            target:
+              entity_id: |
+                [[[ return variables.delay_mode_entity_id || ''; ]]]
+            data:
+              option: FINISH_BY
+      time_row:
+        card:
+          type: custom:button-card
+          template: laundry_delay_time_confirm
+          entity: |
+            [[[ return variables.cycle_duration_entity_id || entity.entity_id; ]]]
+          variables:
+            cycle_duration_entity_id: '[[[ return variables.cycle_duration_entity_id || ""; ]]]'
+            delay_mode_entity_id: '[[[ return variables.delay_mode_entity_id || ""; ]]]'
+            schedule_script_id: '[[[ return variables.schedule_script_id || ""; ]]]'
+            popup_hash: '[[[ return variables.popup_hash || ""; ]]]'
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        display: block !important;
+      }
+      #card {
+        position: relative !important;
+        padding: var(--lg_space_laundry_pad) !important;
+        border-radius: var(--lg_radius_laundry) !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas:
+          "name name"
+          "label label"
+          "mode_start mode_finish"
+          "time_row time_row" !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        width: 100% !important;
+        position: relative !important;
+      }
+      #name {
+        grid-area: name !important;
+        position: relative !important;
+        inset: auto !important;
+      }
+      #label {
+        grid-area: label !important;
+        position: relative !important;
+        inset: auto !important;
+        opacity: 0.8;
+      }
+      #mode_start, #mode_finish, #time_row {
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+      }
+      #mode_start { grid-area: mode_start !important; }
+      #mode_finish { grid-area: mode_finish !important; }
+      #time_row { grid-area: time_row !important; }

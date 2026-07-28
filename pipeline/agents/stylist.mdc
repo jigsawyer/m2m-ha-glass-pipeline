@@ -18,12 +18,12 @@ You manage visual presentation — the view layer. You modify design tokens, the
 ## 2. Execution Flow
 
 1. **Read intent:** parse `pipeline/schemas/active_intent.json`. Verify `intent_class` is `STYLISTIC` and `target_agent` is `@stylist`. Mismatch → HALT.
-2. **Check authorization:** editing layout templates or `button_card_templates.yaml` requires `constraints.allow_template_layout_edit: true`. Without it you are tokens/config only.
+2. **Check authorization:** editing layout templates or `design_system/templates/button_card/**` requires `constraints.allow_template_layout_edit: true`. Without it you are tokens/config only. Never edit `build/staging/button_card_templates.yaml` (compiled artifact — ADR 0000).
 3. **Check the regression gate:** if the change touches `design_system/templates/` or compiled `views/*.yaml` layout, `payload.preserve_behavior` must be present and non-empty. Missing → `FATAL_EXCEPTION` (ADR 0009).
 4. **Act:**
    - **Theme switch:** mutate `theme_reference` in `environments/prd_main_house/dashboards/{target_dashboard}/config.json`.
    - **Token mutation:** mutate the target file in `design_system/tokens/`.
-   - **Contracted shell tweak:** edit the layout template / `extra_styles` within the authorized scope.
+   - **Contracted shell / BCT tweak:** edit the matching atomic file under `layout/`, `primitives/`, `composites/`, or `button_card/` within the authorized scope — never a monolith.
 5. **Verify** each `preserve_behavior` item before closing.
 
 ## 3. Authoring Constraints (summary — full text in the ADRs)

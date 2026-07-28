@@ -1,0 +1,586 @@
+
+{# DynamicSegmentsGroup (analyzer §6b): N = count(visible) share 360° evenly.
+   Math.sum(segment spans) === 360 always (N * (360/N)).
+   Sectors fill their whole span; separators are constant-width strips carved by
+   the #liquid_clip mask from lg_size_climate_wheel_seg_gap (a length, not deg).
+   seg_slot + wheel-host classes recompute index/total when timer/swing hide.
+   seg_index 0 starts at 12 o'clock. Fill centered in each span.
+   Clip radii MUST match CSS mask tokens (closest-side % → box-% * 0.5).
+   JS vars: __lgSegRot, __lgSegSpan, __lgSegFill, __lgClipPts, __lgIconTop,
+   __lgBndA / __lgBndB (gap strip angles), __lgSegVisible. #}
+{# Set climate_global_wheel layer (main|fan|mode). Call ONLY from
+   tap_action.action=javascript (click).
+   Layer SoT = window.__lgKlimatWheelLayerByEntity[entity_id] — survives host
+   recreate. After switch: setConfig on nested segments (requestUpdate alone
+   does NOT re-eval extra_styles — nests stayed opacity:0 → empty rings). #}
+{% macro lg_haptic_press_js() -%}
+          try {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+          } catch (e) {}
+{%- endmacro %}
+{% macro lg_climate_wheel_set_layer_js(layer_expr) -%}
+        (() => {
+          {{ lg_haptic_press_js() }}
+          const __lgCP = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const __lgWant = String({{ layer_expr }} || 'main');
+          const __lgNext = (__lgWant === 'fan' || __lgWant === 'mode') ? __lgWant : 'main';
+          let __lgScope = __lgCP(this);
+          for (let __i = 0; __i < 16 && __lgScope; __i++) {
+            if (__lgScope.classList && __lgScope.classList.contains('lg-wheel-host')) {
+              const __lgCfg = __lgScope._config || __lgScope.config || {};
+              const __lgEid = String((__lgCfg.entity) || (__lgScope.__lgWheelEntityId) || '');
+              if (__lgEid) __lgScope.__lgWheelEntityId = __lgEid;
+              window.__lgKlimatWheelLayerByEntity = window.__lgKlimatWheelLayerByEntity || {};
+              if (__lgEid) window.__lgKlimatWheelLayerByEntity[__lgEid] = __lgNext;
+              __lgScope.__lgWheelLayer = __lgNext;
+              __lgScope.classList.remove('lg-wheel-layer-main', 'lg-wheel-layer-fan', 'lg-wheel-layer-mode');
+              __lgScope.classList.add('lg-wheel-layer-' + __lgNext);
+              const __lgShow = {
+                main: {
+                  quiet_btn: 1, fan_entry: 1, turbo_btn: 1, timer_slot: 1,
+                  mode_entry: 1, swing_h: 1
+                },
+                fan: {
+                  back_fan: 1, fan_auto: 1, fan_low: 1, fan_med: 1, fan_high: 1
+                },
+                mode: {
+                  back_mode: 1, mode_cool: 1, mode_heat: 1, mode_dry: 1,
+                  mode_fan_only: 1, mode_auto: 1
+                }
+              }[__lgNext] || {};
+              let __lgForced = 0;
+              try {
+                const __lgRoot = __lgScope.shadowRoot;
+                if (__lgRoot) {
+                  __lgRoot.querySelectorAll('button-card').forEach((__lgBc) => {
+                    try {
+                      const __lgWrap = __lgBc.parentElement;
+                      const __lgWid = (__lgWrap && __lgWrap.id) || '';
+                      if (__lgWid && (__lgShow[__lgWid] || __lgWid === 'quiet_btn' || __lgWid === 'fan_entry'
+                          || __lgWid === 'turbo_btn' || __lgWid === 'timer_slot' || __lgWid === 'mode_entry'
+                          || __lgWid === 'swing_h' || __lgWid === 'swing_v' || __lgWid === 'back_fan'
+                          || __lgWid === 'fan_auto' || __lgWid === 'fan_low' || __lgWid === 'fan_med'
+                          || __lgWid === 'fan_high' || __lgWid === 'back_mode' || __lgWid === 'mode_cool'
+                          || __lgWid === 'mode_heat' || __lgWid === 'mode_dry' || __lgWid === 'mode_fan_only'
+                          || __lgWid === 'mode_auto')) {
+                        const __lgOn = !!__lgShow[__lgWid];
+                        __lgBc.style.setProperty('opacity', __lgOn ? '1' : '0', 'important');
+                        __lgBc.style.setProperty('visibility', __lgOn ? 'visible' : 'hidden', 'important');
+                      }
+                      const __lgCardCfg = __lgBc._config || __lgBc.config;
+                      if (__lgCardCfg && typeof __lgBc.setConfig === 'function') {
+                        __lgBc.setConfig(Object.assign({}, __lgCardCfg));
+                        __lgForced += 1;
+                      } else if (typeof __lgBc.requestUpdate === 'function') {
+                        __lgBc.requestUpdate();
+                        __lgForced += 1;
+                      }
+                    } catch (__lgE) {}
+                  });
+                }
+              } catch (__lgE2) {}
+              break;
+            }
+            __lgScope = __lgCP(__lgScope);
+          }
+        })();
+{%- endmacro %}
+
+{% macro lg_climate_wheel_seg_math_js() -%}
+        const __lgComposedParent = (el) => {
+          if (!el) return null;
+          if (el.parentElement) return el.parentElement;
+          const rn = el.getRootNode && el.getRootNode();
+          return (rn && rn.host) || null;
+        };
+        let __lgWheel = null;
+        let __lgScope = __lgComposedParent(this);
+        for (let i = 0; i < 24 && __lgScope; i++) {
+          if (__lgScope.classList && __lgScope.classList.contains('lg-wheel-host')) {
+            __lgWheel = __lgScope;
+            break;
+          }
+          __lgScope = __lgComposedParent(__lgScope);
+        }
+        const __lgIdToSlot = {
+          quiet_btn: 'quiet', fan_entry: 'fan_entry', turbo_btn: 'turbo',
+          timer_slot: 'timer', swing_h: 'swing_h', swing_v: 'swing_v',
+          mode_entry: 'mode_entry', back_fan: 'back_fan', fan_auto: 'fan_auto',
+          fan_low: 'fan_low', fan_med: 'fan_med', fan_high: 'fan_high',
+          back_mode: 'back_mode', mode_cool: 'mode_cool', mode_heat: 'mode_heat',
+          mode_dry: 'mode_dry', mode_fan_only: 'mode_fan_only', mode_auto: 'mode_auto'
+        };
+        const __lgWrapId = (() => {
+          let p = this;
+          for (let i = 0; i < 8 && p; i++) {
+            if (p.id && __lgIdToSlot[p.id]) return p.id;
+            p = p.parentElement;
+          }
+          return '';
+        })();
+        const __lgSlotFromDom = __lgIdToSlot[__lgWrapId] || '';
+        const __lgSlotFromVar = String((variables && variables.seg_slot) || '');
+        const __lgSlot = __lgSlotFromDom || __lgSlotFromVar;
+        let __lgSegIdx = Number(variables && variables.seg_index);
+        let __lgSegTotal = Math.max(1, Number(variables && variables.seg_total) || 6);
+        let __lgSegVisible = true;
+        let __lgSlots = [];
+        let __lgLayer = 'none';
+        if (__lgWheel) {
+          const __lgTimerActive = __lgWheel.classList.contains('lg-wheel-timer-active');
+          const __lgSwingOn = __lgWheel.classList.contains('lg-wheel-swing-h-on');
+          /* Property SoT: window map by entity (survives host recreate), then expando. */
+          const __lgCfgW = __lgWheel._config || __lgWheel.config || {};
+          const __lgEid = String((__lgCfgW.entity) || (__lgWheel.__lgWheelEntityId) || '');
+          if (__lgEid) __lgWheel.__lgWheelEntityId = __lgEid;
+          window.__lgKlimatWheelLayerByEntity = window.__lgKlimatWheelLayerByEntity || {};
+          const __lgFromMap = __lgEid ? window.__lgKlimatWheelLayerByEntity[__lgEid] : null;
+          const __lgProp = (__lgFromMap === 'fan' || __lgFromMap === 'mode')
+            ? __lgFromMap
+            : ((__lgWheel.__lgWheelLayer === 'fan' || __lgWheel.__lgWheelLayer === 'mode')
+              ? __lgWheel.__lgWheelLayer
+              : 'main');
+          __lgWheel.__lgWheelLayer = __lgProp;
+          __lgLayer = __lgProp;
+          const __lgLayerFan = __lgLayer === 'fan';
+          const __lgLayerMode = __lgLayer === 'mode';
+          const __lgLayerMain = __lgLayer === 'main';
+          /* Keep CSS classes aligned with map SoT every segment eval. */
+          __lgWheel.classList.remove('lg-wheel-layer-main', 'lg-wheel-layer-fan', 'lg-wheel-layer-mode');
+          __lgWheel.classList.add('lg-wheel-layer-' + __lgLayer);
+          if (__lgLayerFan) {
+            __lgSlots = ['fan_auto', 'back_fan', 'fan_low', 'fan_med', 'fan_high'];
+          } else if (__lgLayerMode) {
+            __lgSlots = ['mode_auto', 'mode_cool', 'mode_heat', 'mode_dry', 'mode_fan_only', 'back_mode'];
+          } else {
+            /* Main layer — MUST match climate_global_wheel CSS visibility.
+               ADR 0025: timer segment stays visible while armed/running so
+               re-tap can cancel — never drop it from the equal-sector list. */
+            __lgSlots = ['quiet', 'fan_entry', 'turbo', 'timer'];
+            if (__lgSwingOn) __lgSlots.push('swing_h');
+            __lgSlots.push('mode_entry');
+          }
+          __lgSegTotal = Math.max(1, __lgSlots.length);
+          if (__lgSlot) {
+            const __lgDynIdx = __lgSlots.indexOf(__lgSlot);
+            if (__lgDynIdx >= 0) {
+              __lgSegIdx = __lgDynIdx;
+              __lgSegVisible = true;
+            } else {
+              /* Hidden slot: do not keep YAML clock holes (sparse ring bug). */
+              __lgSegIdx = 0;
+              __lgSegVisible = false;
+            }
+          }
+        }
+        if (!(Number.isFinite(__lgSegIdx))) __lgSegIdx = 0;
+        __lgSegTotal = Math.max(1, __lgSegTotal);
+        const __lgNodeDisabled = !entity || entity.state === 'unavailable' || entity.state === 'unknown';
+        const __lgSegSpan = 360 / __lgSegTotal;
+        const __lgSegRot = __lgSegIdx * __lgSegSpan;
+        /* closest-side % (token) → box-% from center: half of closest-side radius. */
+        const __lgParseClosestToBox = (raw, fallback) => {
+          const n = parseFloat(String(raw || '').trim());
+          return (Number.isFinite(n) && n > 0) ? (n * 0.5) : fallback;
+        };
+        let __lgInnerR = 27;
+        let __lgOuterR = 48;
+        if (this) {
+          const __lgCs = getComputedStyle(this);
+          const __lgPhone = window.matchMedia('(max-width: 48rem)').matches;
+          const __lgInnerTok = __lgPhone
+            ? '--lg_size_climate_wheel_inner_pct_phone'
+            : '--lg_size_climate_wheel_inner_pct';
+          const __lgOuterTok = __lgPhone
+            ? '--lg_size_climate_wheel_outer_pct_phone'
+            : '--lg_size_climate_wheel_outer_pct';
+          __lgInnerR = __lgParseClosestToBox(__lgCs.getPropertyValue(__lgInnerTok), __lgPhone ? 32 : 27);
+          __lgOuterR = __lgParseClosestToBox(__lgCs.getPropertyValue(__lgOuterTok), 48);
+          if (!(__lgOuterR > __lgInnerR)) { __lgInnerR = __lgPhone ? 32 : 27; __lgOuterR = 48; }
+        }
+        /* Sector fills its FULL angular span. The visible separation is carved
+           afterwards by two constant-width strips in the #liquid_clip mask (see
+           lg_size_climate_wheel_seg_gap), NOT by shrinking this angle — an
+           angular gap has a chord of 2*r*sin(gap/2), so it widened with radius
+           (measured 3.93px inner -> 6.98px outer, factor 1.776 desktop). */
+        const __lgSegFill = __lgSegSpan;
+        /* CSS gradient-line angles (0deg = to top, clockwise) whose normals are
+           the two sector boundary rays at +/- span/2 from this segment's centre. */
+        const __lgBndA = (90 + (__lgSegSpan / 2)).toFixed(3);
+        const __lgBndB = (90 - (__lgSegSpan / 2)).toFixed(3);
+        const __lgIconTop = (50 - ((__lgInnerR + __lgOuterR) / 2)).toFixed(3);
+        const __lgA0 = (-0.5 * __lgSegFill) * Math.PI / 180;
+        const __lgA1 = (0.5 * __lgSegFill) * Math.PI / 180;
+        /* Inflate hit clip slightly so vector-effect stroke on the true rim
+           is not half-clipped by #card clip-path. */
+        const __lgHitOuter = Math.min(50, __lgOuterR + 1.25);
+        const __lgHitInner = Math.max(0, __lgInnerR - 1.25);
+        const __lgHitFill = Math.min(__lgSegSpan - 0.01, __lgSegFill + 1.25);
+        const __lgHitA0 = (-0.5 * __lgHitFill) * Math.PI / 180;
+        const __lgHitA1 = (0.5 * __lgHitFill) * Math.PI / 180;
+        const __lgAnnulusPts = (innerR, outerR, a0, a1) => {
+          const pts = [];
+          const steps = 14;
+          for (let i = 0; i <= steps; i++) {
+            const t = a0 + (a1 - a0) * (i / steps);
+            pts.push((50 + outerR * Math.sin(t)).toFixed(3) + '% ' + (50 - outerR * Math.cos(t)).toFixed(3) + '%');
+          }
+          for (let i = steps; i >= 0; i--) {
+            const t = a0 + (a1 - a0) * (i / steps);
+            pts.push((50 + innerR * Math.sin(t)).toFixed(3) + '% ' + (50 - innerR * Math.cos(t)).toFixed(3) + '%');
+          }
+          return pts.join(',');
+        };
+        const __lgClipPts = __lgAnnulusPts(__lgHitInner, __lgHitOuter, __lgHitA0, __lgHitA1);
+{%- endmacro %}
+
+{% macro lg_climate_wheel_slot_position_css() -%}
+      :host {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        transform: rotate(${__lgSegRot}deg) !important;
+        z-index: 2;
+        box-sizing: border-box !important;
+        pointer-events: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        aspect-ratio: auto !important;
+        overflow: visible !important;
+        opacity: ${__lgSegVisible ? '1' : '0'} !important;
+        visibility: ${__lgSegVisible ? 'visible' : 'hidden'} !important;
+        --lg_wheel_inner_pct: var(--lg_size_climate_wheel_inner_pct);
+        --lg_wheel_outer_pct: var(--lg_size_climate_wheel_outer_pct);
+      }
+      @media (max-width: 48rem) {
+        :host {
+          --lg_wheel_inner_pct: var(--lg_size_climate_wheel_inner_pct_phone);
+          --lg_wheel_outer_pct: var(--lg_size_climate_wheel_outer_pct_phone);
+        }
+      }
+      ha-card {
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        pointer-events: none !important;
+      }
+      #card {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        aspect-ratio: 1 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        cursor: pointer;
+        pointer-events: ${__lgSegVisible && !__lgNodeDisabled ? 'auto' : 'none'} !important;
+        background: transparent !important;
+        /* clip-path = hit-test sector only (full span, so adjacent hit areas
+           meet and the visual gap is never a dead tap zone); the visible fill
+           and its constant-width separators live on #liquid_clip's mask. */
+        clip-path: polygon(${__lgClipPts}) !important;
+        -webkit-clip-path: polygon(${__lgClipPts}) !important;
+        transition: var(--lg_transition_climate_node_state), var(--lg_transition_climate_node_press);
+        filter: ${__lgNodeDisabled ? 'var(--lg_filter_climate_node_disabled)' : 'none'};
+        opacity: ${__lgNodeDisabled ? 'var(--lg_opacity_climate_node_disabled)' : '1'};
+      }
+      /* Spring Press (ADR 0028): #card spans the FULL annulus box
+         (inset:0 / 100%x100%, clip-path only trims the visible wedge), so its
+         default transform-origin (center) IS the disk's own hub — scaling
+         here reads as the wedge compressing toward the wheel center, the same
+         proven pattern already used by lg_climate_round_btn_shell_extra_styles
+         for the setpoint/arc-dial round buttons (#card:active there). :active
+         is retained for the held pointer regardless of the shrink, per
+         standard UA press-capture behavior — no separate JS pointer tracking
+         needed. Own press-scale token (not lg_transform_climate_press_scale)
+         so this doesn't retune the already-shipped round-button feel. */
+      #card:active {
+        transform: var(--lg_transform_climate_wheel_seg_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
+      /* Switch-like liquid glass (climate-scoped frost + lg_shadow_liquid mirror)
+         + annular mask. Single-layer fill — multi-layer + plus-lighter broke
+         mask-composite on quiet/turbo (ghost icons / sparse wedges). */
+      #liquid_clip {
+        position: absolute !important;
+        inset: 0 !important;
+        border-radius: 0 !important;
+        overflow: hidden !important;
+        background: var(--lg_color_climate_wheel_seg_frost) !important;
+        backdrop-filter: blur(var(--lg_blur_climate_wheel_seg)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_wheel_seg)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_climate_wheel_seg) !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+        /* Layer 1 conic = full sector span. Layer 2 radial = annulus.
+           Layers 3+4 = constant-width strips centred on the two boundary rays;
+           intersecting them subtracts a gap of exactly
+           lg_size_climate_wheel_seg_gap regardless of radius (each neighbour
+           gives up half of it). A linear-gradient's line runs through the box
+           centre, so the 50%+/-half-gap band is exactly the boundary ray.
+           Requires span < 180deg (true for N >= 3) so the opposite ray of each
+           infinite strip never crosses this sector. */
+        -webkit-mask-image:
+          conic-gradient(
+            from calc(-0.5 * ${__lgSegFill} * 1deg),
+            #000 0deg,
+            #000 calc(${__lgSegFill} * 1deg),
+            transparent calc(${__lgSegFill} * 1deg)
+          ),
+          radial-gradient(
+            closest-side,
+            transparent var(--lg_wheel_inner_pct),
+            #000 calc(var(--lg_wheel_inner_pct) + 0.05%),
+            #000 var(--lg_wheel_outer_pct),
+            transparent calc(var(--lg_wheel_outer_pct) + 0.05%)
+          ),
+          linear-gradient(
+            ${__lgBndA}deg,
+            #000 calc(50% - (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            transparent calc(50% - (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            transparent calc(50% + (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            #000 calc(50% + (var(--lg_size_climate_wheel_seg_gap) / 2))
+          ),
+          linear-gradient(
+            ${__lgBndB}deg,
+            #000 calc(50% - (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            transparent calc(50% - (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            transparent calc(50% + (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            #000 calc(50% + (var(--lg_size_climate_wheel_seg_gap) / 2))
+          );
+        mask-image:
+          conic-gradient(
+            from calc(-0.5 * ${__lgSegFill} * 1deg),
+            #000 0deg,
+            #000 calc(${__lgSegFill} * 1deg),
+            transparent calc(${__lgSegFill} * 1deg)
+          ),
+          radial-gradient(
+            closest-side,
+            transparent var(--lg_wheel_inner_pct),
+            #000 calc(var(--lg_wheel_inner_pct) + 0.05%),
+            #000 var(--lg_wheel_outer_pct),
+            transparent calc(var(--lg_wheel_outer_pct) + 0.05%)
+          ),
+          linear-gradient(
+            ${__lgBndA}deg,
+            #000 calc(50% - (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            transparent calc(50% - (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            transparent calc(50% + (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            #000 calc(50% + (var(--lg_size_climate_wheel_seg_gap) / 2))
+          ),
+          linear-gradient(
+            ${__lgBndB}deg,
+            #000 calc(50% - (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            transparent calc(50% - (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            transparent calc(50% + (var(--lg_size_climate_wheel_seg_gap) / 2)),
+            #000 calc(50% + (var(--lg_size_climate_wheel_seg_gap) / 2))
+          );
+        -webkit-mask-composite: source-in;
+        mask-composite: intersect;
+      }
+      #container {
+        position: absolute !important;
+        inset: 0 !important;
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+        pointer-events: none !important;
+        overflow: visible !important;
+      }
+      /* Icon box on annular midline; counter-rotate so glyph stays upright.
+         Flex H+V center (analyzer §0e) + overflow:visible mitigates iOS WebKit
+         mask crop on secondary Modes/Power layers when sector fill is tight. */
+      #img-cell {
+        position: absolute !important;
+        left: 50% !important;
+        top: ${__lgIconTop}% !important;
+        width: var(--lg_size_climate_wheel_seg_icon) !important;
+        height: var(--lg_size_climate_wheel_seg_icon) !important;
+        max-width: var(--lg_size_climate_wheel_seg_icon) !important;
+        max-height: var(--lg_size_climate_wheel_seg_icon) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+        transform: translate(-50%, -50%) rotate(calc(-1 * ${__lgSegRot}deg)) !important;
+        pointer-events: none !important;
+        z-index: 2 !important;
+      }
+      #icon,
+      #icon ha-icon,
+      #icon ha-svg-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        place-content: center !important;
+        place-items: center !important;
+        line-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+      #icon {
+        width: var(--lg_size_climate_wheel_seg_icon) !important;
+        height: var(--lg_size_climate_wheel_seg_icon) !important;
+        max-width: var(--lg_size_climate_wheel_seg_icon) !important;
+        max-height: var(--lg_size_climate_wheel_seg_icon) !important;
+        --mdc-icon-size: var(--lg_size_climate_wheel_seg_icon);
+        transform: none !important;
+        color: var(--lg_color_climate_wheel_seg_icon) !important;
+        filter: var(--lg_filter_climate_wheel_seg_icon);
+      }
+      #icon ha-svg-icon svg {
+        display: block !important;
+        margin: 0 auto !important;
+        overflow: visible !important;
+      }
+      @media (max-width: 48rem) {
+        #img-cell, #icon {
+          width: var(--lg_size_climate_wheel_seg_icon_phone) !important;
+          height: var(--lg_size_climate_wheel_seg_icon_phone) !important;
+          max-width: var(--lg_size_climate_wheel_seg_icon_phone) !important;
+          max-height: var(--lg_size_climate_wheel_seg_icon_phone) !important;
+          --mdc-icon-size: var(--lg_size_climate_wheel_seg_icon_phone);
+        }
+      }
+      #name, #label, #state { display: none !important; }
+{%- endmacro %}
+
+{# Propagate / clear TEMP red-box focus on thermostat + room hosts (composed tree).
+   open_expr MUST be Jinja-emitted ({{ open_expr }}) — never ${open_expr}: that
+   literal survives build and breaks button-card new Function (Unexpected token '{').
+   When opening: hide sibling .lg-climate-room-host under the same floor (ONLY
+   active room stays readable). When closing: restore siblings. #}
+{% macro lg_climate_temp_focus_set_js(open_expr) -%}
+        (() => {
+          const __lgOpen = !!({{ open_expr }});
+          const __lgCP = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const __lgActiveRooms = [];
+          let __lgScope = __lgCP(this);
+          let __lgFloor = null;
+          for (let __i = 0; __i < 24 && __lgScope; __i++) {
+            if (__lgScope.classList) {
+              if (__lgScope.classList.contains('lg-thermostat-host')
+                  || __lgScope.classList.contains('lg-climate-room-host')) {
+                __lgScope.classList.toggle('lg-temp-focus', __lgOpen);
+                if (__lgScope.classList.contains('lg-climate-room-host')) {
+                  __lgActiveRooms.push(__lgScope);
+                }
+              }
+              if (__lgScope.classList.contains('lg-climate-floor-host')) {
+                __lgFloor = __lgScope;
+              }
+            }
+            __lgScope = __lgCP(__lgScope);
+          }
+          const __lgWalkRooms = (node, depth, out) => {
+            if (!node || depth > 18 || out.length > 12) return;
+            if (node.classList && node.classList.contains('lg-climate-room-host')) {
+              out.push(node);
+            }
+            if (node.shadowRoot) __lgWalkRooms(node.shadowRoot, depth + 1, out);
+            if (node.querySelectorAll) {
+              node.querySelectorAll('*').forEach((el) => {
+                if (el.shadowRoot) __lgWalkRooms(el.shadowRoot, depth + 1, out);
+              });
+            }
+          };
+          if (__lgFloor) {
+            const __lgAllRooms = [];
+            __lgWalkRooms(__lgFloor, 0, __lgAllRooms);
+            __lgAllRooms.forEach((__lgRoom) => {
+              const __lgIsActive = __lgActiveRooms.indexOf(__lgRoom) !== -1;
+              if (__lgOpen && !__lgIsActive) {
+                __lgRoom.classList.add('lg-temp-sibling-hidden');
+                __lgRoom.style.setProperty('opacity', '0');
+                __lgRoom.style.setProperty('visibility', 'hidden');
+                __lgRoom.style.setProperty('pointer-events', 'none');
+              } else {
+                __lgRoom.classList.remove('lg-temp-sibling-hidden');
+                __lgRoom.style.removeProperty('opacity');
+                __lgRoom.style.removeProperty('visibility');
+                __lgRoom.style.removeProperty('pointer-events');
+              }
+            });
+          }
+        })();
+{%- endmacro %}
+
+{# One-shot compositor kick for backdrop-filter after TEMP open/close only
+   (not every extra_styles re-render — that would flicker glass). #}
+{% macro lg_climate_blur_kick_js() -%}
+        (() => {
+          const __lgCP = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          let __lgScope = __lgCP(this);
+          for (let __i = 0; __i < 24 && __lgScope; __i++) {
+            if (__lgScope.classList
+                && (__lgScope.classList.contains('lg-thermostat-host')
+                    || __lgScope.classList.contains('lg-climate-room-host')
+                    || __lgScope.classList.contains('lg-climate-floor-host'))) {
+              __lgScope.classList.remove('lg-blur-kick');
+              void __lgScope.offsetWidth;
+              __lgScope.classList.add('lg-blur-kick');
+              const __lgKickEl = __lgScope;
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  if (__lgKickEl && __lgKickEl.classList) {
+                    __lgKickEl.classList.remove('lg-blur-kick');
+                  }
+                });
+              });
+            }
+            __lgScope = __lgCP(__lgScope);
+          }
+        })();
+{%- endmacro %}
+
+{# One-shot cold-load compositor kick on climate room/floor hosts (first paint). #}
+{% macro lg_climate_blur_cold_kick_js() -%}
+        if (!this.__lgBlurColdKicked) {
+          this.__lgBlurColdKicked = true;
+          this.classList.remove('lg-blur-kick');
+          void this.offsetWidth;
+          this.classList.add('lg-blur-kick');
+          const __lgColdKickEl = this;
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (__lgColdKickEl && __lgColdKickEl.classList) {
+                __lgColdKickEl.classList.remove('lg-blur-kick');
+              }
+            });
+          });
+        }
+{%- endmacro %}

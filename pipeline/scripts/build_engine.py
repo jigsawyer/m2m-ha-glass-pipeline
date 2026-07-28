@@ -4,16 +4,20 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 # --- CONFIGURATION (PATHS) ---
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 ENV_DIR = PROJECT_ROOT / "environments" / "prd_main_house"
 TEMPLATE_DIR = PROJECT_ROOT / "design_system" / "templates"
+BUTTON_CARD_DIR = TEMPLATE_DIR / "button_card"
+LEGACY_BUTTON_CARD_MONOLITH = TEMPLATE_DIR / "button_card_templates.yaml"
 TOKENS_DIR = PROJECT_ROOT / "design_system" / "tokens"
 ASSETS_DIR = PROJECT_ROOT / "design_system" / "assets" / "liquid_glass"
 STAGING_DIR = PROJECT_ROOT / "build" / "staging"
 DEFAULT_BACKGROUND = "/local/liquid_glass/ipad_dark_mesh.jpg"
+# Soft limit for atomic design-system sources (ADR 0000 — no god objects).
+MAX_ATOMIC_SOURCE_LINES = 800
 
 INLINE_STYLE_RE = re.compile(r"""style\s*=\s*['"]""", re.IGNORECASE)
 # Drop prior stamps so rebuilds replace, not stack.
@@ -32,6 +36,31 @@ def with_build_stamp(text):
     """Prepend (or replace) the build stamp on generated staging YAML."""
     body = BUILD_STAMP_RE.sub("", text.lstrip("\ufeff")).lstrip("\n")
     return f"{build_stamp_line()}\n{body}"
+
+
+def resolve_template(env, template_ref):
+    """
+    Load an instance shell by bare template_ref (ADR 0008 taxonomy).
+
+    Search order: layout/ → primitives/ → composites/ → templates root.
+    Prefer taxonomy paths so root duplicates are not required.
+    """
+    candidates = [
+        f"layout/{template_ref}.yaml",
+        f"primitives/{template_ref}.yaml",
+        f"composites/{template_ref}.yaml",
+        f"{template_ref}.yaml",
+    ]
+    for rel in candidates:
+        try:
+            return env.get_template(rel)
+        except TemplateNotFound:
+            continue
+    print(
+        "FATAL_EXCEPTION: template not found for "
+        f"'{template_ref}' (tried: {', '.join(candidates)})"
+    )
+    exit(1)
 
 
 def assert_no_inline_styles(text, source_label):
@@ -129,13 +158,15 @@ def render_component(env, hardware_map, comp):
     # Layout template with custom_props may omit hardware binding
     if logical_id is None and "custom_props" in comp:
         try:
-            template = env.get_template(f"{template_ref}.yaml")
+            template = resolve_template(env, template_ref)
             return template.render(
                 entity_id=entity_id or "",
                 domain=domain or "",
                 name=label,
                 custom_props=custom_props,
             ).strip()
+        except SystemExit:
+            raise
         except Exception as e:
             print(f"FATAL_EXCEPTION: Template {template_ref}.yaml failed to render: {e}")
             exit(1)
@@ -148,13 +179,15 @@ def render_component(env, hardware_map, comp):
         exit(1)
 
     try:
-        template = env.get_template(f"{template_ref}.yaml")
+        template = resolve_template(env, template_ref)
         return template.render(
             entity_id=entity_id,
             domain=domain,
             name=label,
             custom_props=custom_props,
         ).strip()
+    except SystemExit:
+        raise
     except Exception as e:
         print(f"FATAL_EXCEPTION: Template {template_ref}.yaml failed to render: {e}")
         exit(1)
@@ -193,13 +226,15 @@ def render_wrapper(env, wrapper_name, name, cards, header_cards=None, corner_car
       ignore the unused template var.
     """
     try:
-        template = env.get_template(f"{wrapper_name}.yaml")
+        template = resolve_template(env, wrapper_name)
         return template.render(
             name=name,
             cards=cards,
             header_cards=header_cards or [],
             corner_card=corner_card or "",
         ).strip()
+    except SystemExit:
+        raise
     except Exception as e:
         print(f"FATAL_EXCEPTION: Failed to render {wrapper_name}.yaml: {e}")
         exit(1)
@@ -459,27 +494,109 @@ def write_legacy_room_view(views_dir, room_id, room_yaml_blocks):
     room_file.write_text(with_build_stamp("".join(chunks)), encoding="utf-8")
 
 
+def collect_button_card_sources():
+    """
+    Atomic BCT sources under design_system/templates/button_card/ (ADR 0000).
+
+    macros/*.yaml first (Jinja macros), then domain entry YAMLs (one key each).
+    Instance shells in layout/primitives/composites are NOT included.
+    """
+    if not BUTTON_CARD_DIR.is_dir():
+        print(
+            "FATAL_EXCEPTION: missing button_card source tree at "
+            f"{BUTTON_CARD_DIR} (ADR 0000)"
+        )
+        exit(1)
+
+    macros_dir = BUTTON_CARD_DIR / "macros"
+    macro_files = sorted(macros_dir.glob("*.yaml")) if macros_dir.is_dir() else []
+    entry_files = sorted(
+        p
+        for p in BUTTON_CARD_DIR.rglob("*.yaml")
+        if "macros" not in p.relative_to(BUTTON_CARD_DIR).parts
+    )
+    if not entry_files:
+        print(
+            "FATAL_EXCEPTION: no button_card entry YAML files under "
+            f"{BUTTON_CARD_DIR}"
+        )
+        exit(1)
+    return macro_files, entry_files
+
+
+def assemble_button_card_source(macro_files, entry_files):
+    """Concatenate macros + wrapper + indented dictionary entries (exact text)."""
+    parts = []
+    for path in macro_files:
+        text = path.read_text(encoding="utf-8")
+        if text and not text.endswith("\n"):
+            text += "\n"
+        parts.append(text)
+    parts.append("button_card_templates:\n")
+    for path in entry_files:
+        text = path.read_text(encoding="utf-8")
+        if text and not text.endswith("\n"):
+            text += "\n"
+        parts.append(text)
+    return "".join(parts)
+
+
+def assert_no_god_object_sources():
+    """Reject legacy monolith and oversized atomic sources (ADR 0000)."""
+    if LEGACY_BUTTON_CARD_MONOLITH.exists():
+        print(
+            "FATAL_EXCEPTION: legacy god object still present: "
+            f"{LEGACY_BUTTON_CARD_MONOLITH}. Edit atomic files under "
+            f"{BUTTON_CARD_DIR}/ instead (ADR 0000)."
+        )
+        exit(1)
+
+    # Scan design_system/templates for oversized YAML (exclude compiled staging).
+    offenders = []
+    for path in TEMPLATE_DIR.rglob("*.yaml"):
+        # Skip nothing under templates — all are sources. button_card entries
+        # must stay atomic; instance shells too.
+        try:
+            n = sum(1 for _ in path.open(encoding="utf-8"))
+        except OSError as e:
+            print(f"FATAL_EXCEPTION: cannot read {path}: {e}")
+            exit(1)
+        if n > MAX_ATOMIC_SOURCE_LINES:
+            offenders.append(f"{path.relative_to(PROJECT_ROOT)} ({n} lines)")
+    if offenders:
+        print(
+            "FATAL_EXCEPTION: god-object source file(s) exceed "
+            f"{MAX_ATOMIC_SOURCE_LINES} lines (ADR 0000 / SOLID):"
+        )
+        for item in offenders:
+            print(f"  - {item}")
+        exit(1)
+
+
 def stage_button_card_templates(env):
     """
     Emit HA-ready button_card_templates for dashboard !include.
 
-    Source file keeps the outer `button_card_templates:` key for readability;
-    the staged include must be the inner mapping only (no wrapper key, no Jinja).
+    Sources are atomic YAML under design_system/templates/button_card/;
+    the staged include is the inner mapping only (no wrapper key, no Jinja).
     """
+    assert_no_god_object_sources()
+    macro_files, entry_files = collect_button_card_sources()
+    source = assemble_button_card_source(macro_files, entry_files)
     try:
-        rendered = env.get_template("button_card_templates.yaml").render().strip()
+        rendered = env.from_string(source).render().strip()
     except Exception as e:
-        print(f"FATAL_EXCEPTION: button_card_templates.yaml failed to render: {e}")
+        print(f"FATAL_EXCEPTION: button_card sources failed to render: {e}")
         exit(1)
 
-    assert_no_inline_styles(rendered, "button_card_templates.yaml (rendered)")
-    assert_no_styles_object(rendered, "button_card_templates.yaml (rendered)")
+    assert_no_inline_styles(rendered, "button_card (rendered)")
+    assert_no_styles_object(rendered, "button_card (rendered)")
 
     lines = rendered.splitlines()
     if not lines or lines[0].strip() != "button_card_templates:":
         print(
-            "FATAL_EXCEPTION: button_card_templates.yaml must start with "
-            "'button_card_templates:'"
+            "FATAL_EXCEPTION: assembled button_card sources must render with "
+            "leading 'button_card_templates:'"
         )
         exit(1)
 
@@ -502,7 +619,10 @@ def stage_button_card_templates(env):
         )
         exit(1)
     out.write_text(with_build_stamp(body_text), encoding="utf-8")
-    print(f"  -> Staged button_card_templates.yaml ({len(body)} lines)")
+    print(
+        f"  -> Staged button_card_templates.yaml ({len(body)} lines) "
+        f"from {len(macro_files)} macros + {len(entry_files)} entries"
+    )
 
 
 def _yaml_quote(value):
@@ -757,6 +877,18 @@ def build_dashboard(dashboard_id):
 
     root_yaml = STAGING_DIR / "dashboard.yaml"
     root_yaml.write_text(with_build_stamp(root_content), encoding="utf-8")
+
+    missing_views = [
+        name
+        for name in generated_views
+        if not (views_dir / f"{name}.yaml").is_file()
+    ]
+    if not generated_views or missing_views:
+        print(
+            "FATAL_EXCEPTION: staging views incomplete after build: "
+            f"generated={generated_views} missing={missing_views}"
+        )
+        exit(1)
 
     print(f"[4/4] BUILD COMPLETE. Artifacts ready in {STAGING_DIR}")
     print(f"  -> Build stamp: {build_stamp_line()}")

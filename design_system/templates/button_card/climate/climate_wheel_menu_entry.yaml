@@ -1,0 +1,64 @@
+  climate_wheel_menu_entry:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      seg_index: 0
+      seg_total: 6
+      seg_slot: fan_entry
+      wheel_layer: fan
+    icon: |
+      [[[
+        const layer = (variables && variables.wheel_layer) || 'fan';
+        if (layer === 'mode') {
+          const mode = entity && entity.state;
+          if (mode === 'cool') return 'mdi:snowflake';
+          if (mode === 'heat') return 'mdi:fire';
+          if (mode === 'dry') return 'mdi:water';
+          if (mode === 'fan_only') return 'mdi:fan';
+          if (mode === 'auto' || mode === 'heat_cool') return 'mdi:thermometer';
+          return 'mdi:power';
+        }
+        const fm = entity && entity.attributes ? String(entity.attributes.fan_mode || '').toLowerCase() : '';
+        if (fm === 'low') return 'mdi:weather-windy';
+        if (fm === 'medium') return 'mdi:gauge';
+        if (fm === 'high') return 'mdi:gauge-full';
+        return 'mdi:fan';
+      ]]]
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_climate_wheel_set_layer_js("(variables && variables.wheel_layer) || 'fan'") }}
+        ]]]
+    extra_styles: |
+      [[[
+        {{ lg_climate_wheel_seg_math_js() }}
+        const layer = (variables && variables.wheel_layer) || 'fan';
+        let active = false;
+        let color = 'var(--lg_color_text)';
+        let glow = 'none';
+        let iconFilter = 'none';
+        if (layer === 'mode') {
+          const mode = entity ? entity.state : 'off';
+          active = mode === 'cool' || mode === 'heat' || mode === 'dry' || mode === 'fan_only' || mode === 'auto' || mode === 'heat_cool';
+          color = mode === 'cool' ? 'var(--lg_color_climate_cool)' : mode === 'heat' ? 'var(--lg_color_climate_heat)' : 'var(--lg_color_text)';
+          glow = mode === 'cool' ? 'var(--lg_glow_climate_cool)' : mode === 'heat' ? 'var(--lg_glow_climate_heat)' : active ? 'var(--lg_glow_climate_other)' : 'none';
+          iconFilter = mode === 'cool' ? 'var(--lg_filter_climate_cool)' : mode === 'heat' ? 'var(--lg_filter_climate_heat)' : active ? 'var(--lg_filter_climate_other)' : 'none';
+        } else {
+          const fm = entity && entity.attributes ? String(entity.attributes.fan_mode || '').toLowerCase() : '';
+          active = !!fm;
+          glow = active ? 'var(--lg_glow_climate_other)' : 'none';
+          iconFilter = active ? 'var(--lg_filter_climate_other)' : 'none';
+          color = active ? 'var(--lg_color_climate_other)' : 'var(--lg_color_text)';
+        }
+        return `
+      {{ lg_climate_wheel_slot_position_css() }}
+      #icon { color: ${color} !important; filter: ${iconFilter}; opacity: ${active ? '1' : '0.85'}; }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

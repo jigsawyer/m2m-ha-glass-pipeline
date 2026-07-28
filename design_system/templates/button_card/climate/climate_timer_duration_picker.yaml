@@ -1,0 +1,330 @@
+  climate_timer_duration_picker:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      minutes_entity_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const fmtDuration = (ha, hoursEid, minutesEid) => {
+          const hs = ha && ha.states && ha.states[hoursEid];
+          const ms = ha && ha.states && ha.states[minutesEid];
+          const h = clampInt(parseInt(hs && hs.state, 10) || 0, 0, 12);
+          const m = clampInt(parseInt(ms && ms.state, 10) || 0, 0, 59);
+          return `${pad2(h)}:${pad2(m)}`;
+        };
+        const card = this;
+        const hoursEid = card.config && card.config.entity;
+        const minutesEid = variables.minutes_entity_id;
+        const ha = card.hass;
+        const expected = fmtDuration(ha, hoursEid, minutesEid);
+        card.__lgDurationHoursEid = hoursEid;
+        card.__lgDurationMinutesEid = minutesEid;
+        card.__lgDurationApplyFromInput = (el) => {
+          const raw = (el && el.value) || card.__lgDurationLastValue || '';
+          if (!raw) return;
+          const hEid = card.__lgDurationHoursEid;
+          const mEid = card.__lgDurationMinutesEid;
+          const hass = card.hass;
+          if (!hEid || !mEid || !hass) return;
+          const parts = String(raw).split(':');
+          const h = clampInt(parseInt(parts[0], 10) || 0, 0, 12);
+          const m = clampInt(parseInt(parts[1], 10) || 0, 0, 59);
+          const next = `${pad2(h)}:${pad2(m)}`;
+          card.__lgDurationLastValue = next;
+          // Never rewrite el.value during commit — mutates iOS picker mid-dismiss.
+          if (card.__lgDurationDisplay) card.__lgDurationDisplay.textContent = next;
+          const hs = hass.states && hass.states[hEid];
+          const ms = hass.states && hass.states[mEid];
+          const curH = clampInt(parseInt(hs && hs.state, 10) || 0, 0, 12);
+          const curM = clampInt(parseInt(ms && ms.state, 10) || 0, 0, 59);
+          if (h !== curH) {
+            hass.callService('input_number', 'set_value', { entity_id: hEid, value: h });
+          }
+          if (m !== curM) {
+            hass.callService('input_number', 'set_value', { entity_id: mEid, value: m });
+          }
+        };
+        card.__lgDurationOnInput = (ev) => {
+          const el = ev && ev.target;
+          if (el && el.value) {
+            card.__lgDurationLastValue = el.value;
+            if (card.__lgDurationDisplay) card.__lgDurationDisplay.textContent = el.value;
+          }
+        };
+        card.__lgDurationOnChange = (ev) => {
+          const el = ev && ev.target;
+          if (el && el.value) {
+            card.__lgDurationLastValue = el.value;
+            if (card.__lgDurationDisplay) card.__lgDurationDisplay.textContent = el.value;
+          }
+          card.__lgDurationApplyFromInput(el);
+        };
+        card.__lgDurationOnBlur = (ev) => {
+          const el = ev && ev.target;
+          card.__lgDurationApplyFromInput(el);
+          card.__lgDurationPickerOpen = false;
+        };
+        card.__lgDurationOpenPicker = (ev) => {
+          if (ev) {
+            ev.stopPropagation();
+            ev.stopImmediatePropagation && ev.stopImmediatePropagation();
+          }
+          const input = card.__lgDurationInput;
+          if (!input) return;
+          card.__lgDurationPickerOpen = true;
+          try { input.focus({ preventScroll: true }); } catch (_) { try { input.focus(); } catch (__) {} }
+          if (typeof input.showPicker === 'function') {
+            try { input.showPicker(); } catch (_) {}
+          }
+        };
+        if (!card.__lgDurationOnInputBound) {
+          card.__lgDurationOnInputBound = (ev) => card.__lgDurationOnInput && card.__lgDurationOnInput(ev);
+          card.__lgDurationOnChangeBound = (ev) => card.__lgDurationOnChange && card.__lgDurationOnChange(ev);
+          card.__lgDurationOnBlurBound = (ev) => card.__lgDurationOnBlur && card.__lgDurationOnBlur(ev);
+          card.__lgDurationOpenPickerBound = (ev) => card.__lgDurationOpenPicker && card.__lgDurationOpenPicker(ev);
+        };
+        const mount = () => {
+          const root = card.shadowRoot;
+          if (!root) return;
+          const slot = root.querySelector('#duration_live') || root.querySelector('#container');
+          if (!slot) return;
+          let live = root.querySelector('#lg_duration_live');
+          if (live && live.isConnected && !live.querySelector('.lg-climate-timer-duration__overlay')) {
+            live.remove();
+            live = null;
+          }
+          if (!live || !live.isConnected) {
+            live = document.createElement('div');
+            live.id = 'lg_duration_live';
+            live.className = 'lg-climate-timer-duration';
+            const label = document.createElement('span');
+            label.className = 'lg-climate-timer-duration__label';
+            label.textContent = 'Тривалість';
+            const row = document.createElement('div');
+            row.className = 'lg-climate-timer-duration__row';
+            const icon = document.createElement('ha-icon');
+            icon.className = 'lg-climate-timer-duration__icon';
+            icon.setAttribute('icon', 'mdi:timer-outline');
+            const hit = document.createElement('div');
+            hit.className = 'lg-climate-timer-duration__hit';
+            const display = document.createElement('span');
+            display.className = 'lg-climate-timer-duration__display';
+            display.textContent = expected;
+            const input = document.createElement('input');
+            input.className = 'lg-climate-timer-duration__overlay';
+            input.type = 'time';
+            input.step = '60';
+            input.value = expected;
+            input.setAttribute('aria-label', 'Тривалість');
+            hit.appendChild(display);
+            hit.appendChild(input);
+            row.appendChild(icon);
+            row.appendChild(hit);
+            live.appendChild(label);
+            live.appendChild(row);
+            slot.appendChild(live);
+            input.addEventListener('input', card.__lgDurationOnInputBound);
+            input.addEventListener('change', card.__lgDurationOnChangeBound);
+            input.addEventListener('blur', card.__lgDurationOnBlurBound);
+            input.addEventListener('click', card.__lgDurationOpenPickerBound);
+            input.addEventListener('pointerdown', card.__lgDurationOpenPickerBound);
+            hit.addEventListener('click', card.__lgDurationOpenPickerBound);
+            hit.addEventListener('pointerdown', card.__lgDurationOpenPickerBound);
+            card.__lgDurationInput = input;
+            card.__lgDurationDisplay = display;
+            card.__lgDurationLastValue = expected;
+          } else {
+            const input = live.querySelector('.lg-climate-timer-duration__overlay');
+            const display = live.querySelector('.lg-climate-timer-duration__display');
+            if (!input) return;
+            card.__lgDurationInput = input;
+            card.__lgDurationDisplay = display;
+            const focused = root.activeElement === input
+              || (typeof input.matches === 'function' && input.matches(':focus'));
+            if (card.__lgDurationPickerOpen || focused) return;
+            if (card.__lgDurationLastValue && card.__lgDurationLastValue !== expected) {
+              card.__lgDurationApplyFromInput(input);
+              return;
+            }
+            if (input.value !== expected) input.value = expected;
+            if (display && display.textContent !== expected) display.textContent = expected;
+          }
+        };
+        setTimeout(mount, 0);
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: var(--lg_size_climate_timer_duration_h_phone) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --masonry-view-card-margin: 0;
+      }
+      ha-card, #card {
+        position: relative;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_duration_h_phone) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+        background: transparent;
+        box-shadow: none;
+        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      #container {
+        position: relative;
+        display: grid !important;
+        grid-template-areas: "live" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: var(--lg_size_climate_timer_duration_h_phone) !important;
+        place-content: center !important;
+        width: 100% !important;
+        height: var(--lg_size_climate_timer_duration_h_phone) !important;
+        box-sizing: border-box !important;
+        padding: 0 var(--lg_space_climate_timer_duration_pad_x) !important;
+        pointer-events: auto !important;
+      }
+      #duration_live {
+        grid-area: live !important;
+        position: relative;
+        z-index: 2;
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        pointer-events: auto !important;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+      #lg_duration_live {
+        position: relative;
+        z-index: 2;
+        width: 100% !important;
+        min-width: 0 !important;
+        pointer-events: auto !important;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_liquid);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_liquid));
+        isolation: isolate;
+        pointer-events: none;
+        z-index: 0;
+        background: var(--lg_color_liquid_frost), var(--lg_color_liquid_base);
+        background-blend-mode: normal, plus-lighter;
+        backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_liquid)) saturate(var(--lg_saturate_glass));
+        box-shadow: var(--lg_shadow_liquid);
+      }
+      #distort { display: none; }
+      .lg-climate-timer-duration {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_timer_duration_gap);
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+      .lg-climate-timer-duration__row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_timer_duration_gap);
+        width: 100%;
+        min-width: 0;
+      }
+      .lg-climate-timer-duration__icon {
+        --mdc-icon-size: var(--lg_font_climate_timer_duration_size_phone);
+        width: var(--lg_font_climate_timer_duration_size_phone);
+        height: var(--lg_font_climate_timer_duration_size_phone);
+        color: var(--lg_color_text);
+        flex-shrink: 0;
+        pointer-events: none;
+      }
+      .lg-climate-timer-duration__hit {
+        position: relative;
+        box-sizing: border-box;
+        flex: 0 0 auto;
+        width: var(--lg_size_climate_timer_duration_input_w_phone);
+        min-width: var(--lg_size_climate_timer_duration_input_w_phone);
+        max-width: 100%;
+        height: var(--lg_size_climate_timer_duration_input_h_phone);
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        border-radius: var(--lg_radius_liquid);
+        background: var(--lg_color_glass_fill);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        pointer-events: auto !important;
+        z-index: 3;
+        overflow: hidden;
+      }
+      .lg-climate-timer-duration__display {
+        position: relative;
+        z-index: 1;
+        pointer-events: none;
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_duration_size_phone);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: 1;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .lg-climate-timer-duration__overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        opacity: 0;
+        cursor: pointer;
+        pointer-events: auto !important;
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        color: transparent;
+        font-size: 1.25rem;
+      }
+      .lg-climate-timer-duration__label {
+        color: var(--lg_color_text);
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_duration_label_size);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        text-align: center;
+        white-space: nowrap;
+        opacity: 0.85;
+        pointer-events: none;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      duration_live: ""

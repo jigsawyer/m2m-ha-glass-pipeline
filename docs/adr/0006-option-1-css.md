@@ -9,7 +9,7 @@ button-card offers four places to put CSS: theme variables, a native `styles:` o
 Exactly two homes for CSS:
 
 1. **Physical values** (colors, sizes, gaps, radii, blurs, fonts, shadows) → `design_system/tokens/*.json`, emitted to `themes/liquid_glass_v1.0.yaml` as `--lg_*` CSS variables.
-2. **Structural rules** (Grid/Flex, positioning, pseudo/state, animations) → the `extra_styles` block in `button_card_templates.yaml`, scoped with `:host`, `#card`, `#name`, `#container`, `#content`, custom-field IDs, and semantic classes.
+2. **Structural rules** (Grid/Flex, positioning, pseudo/state, animations) → the `extra_styles` block in the matching `design_system/templates/button_card/**` atomic source (assembled into staged `button_card_templates.yaml`), scoped with `:host`, `#card`, `#name`, `#container`, `#content`, custom-field IDs, and semantic classes.
 
 Bans, enforced at router rejection, authoring, and build validation:
 

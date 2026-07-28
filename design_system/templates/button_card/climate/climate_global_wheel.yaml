@@ -1,0 +1,596 @@
+  climate_global_wheel:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      turbo_entity_id: ""
+      quiet_entity_id: ""
+      timer_entity_id: ""
+      popup_hash: ""
+      armed_entity_id: ""
+      save_duration_script_id: ""
+      remove_script_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_entity_id: ""
+      mode_entity_id: ""
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        this.classList.add('lg-wheel-host');
+        /* Sync classList from window map SoT (entity_id). Survives host recreate. */
+        const __lgEidHost = String((entity && entity.entity_id) || (this._config && this._config.entity) || (this.config && this.config.entity) || '');
+        if (__lgEidHost) this.__lgWheelEntityId = __lgEidHost;
+        window.__lgKlimatWheelLayerByEntity = window.__lgKlimatWheelLayerByEntity || {};
+        let __lgLayerHost = (__lgEidHost && window.__lgKlimatWheelLayerByEntity[__lgEidHost]) || this.__lgWheelLayer || 'main';
+        if (__lgLayerHost !== 'fan' && __lgLayerHost !== 'mode') __lgLayerHost = 'main';
+        this.__lgWheelLayer = __lgLayerHost;
+        if (__lgEidHost) window.__lgKlimatWheelLayerByEntity[__lgEidHost] = __lgLayerHost;
+        this.classList.remove('lg-wheel-layer-main', 'lg-wheel-layer-fan', 'lg-wheel-layer-mode');
+        this.classList.add('lg-wheel-layer-' + __lgLayerHost);
+        const timerId = variables && variables.timer_entity_id;
+        const armedId = variables && variables.armed_entity_id;
+        const tEnt = timerId ? states[timerId] : null;
+        const running = tEnt && (tEnt.state === 'active' || tEnt.state === 'paused');
+        const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+        this.classList.toggle('lg-wheel-timer-active', !!(running || armed));
+        /* Persist timer radial open across re-renders (mirror TEMP sticky). */
+        if (this.__lgTimerStickyOpen || this.classList.contains('lg-timer-radial-open')) {
+          this.classList.add('lg-timer-radial-open');
+          this.__lgTimerStickyOpen = true;
+        }
+        const a = (entity && entity.attributes) || {};
+        const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
+        const hModes = Array.isArray(a.swing_horizontal_modes) ? a.swing_horizontal_modes : null;
+        const swingH = !!(hModes && hModes.length)
+          || modes.some((m) => /^(horizontal|both)$/i.test(String(m)));
+        this.classList.toggle('lg-wheel-swing-h-on', swingH);
+        /* ADR 0029: TEMP frost covers parent room container bounds (not viewport). */
+        const __lgCPFrost = (el) => {
+          if (!el) return null;
+          if (el.parentElement) return el.parentElement;
+          const rn = el.getRootNode && el.getRootNode();
+          return (rn && rn.host) || null;
+        };
+        let __lgRoomFrost = null;
+        let __lgFrostScope = __lgCPFrost(this);
+        for (let __i = 0; __i < 24 && __lgFrostScope; __i++) {
+          if (__lgFrostScope.classList && __lgFrostScope.classList.contains('lg-climate-room-host')) {
+            __lgRoomFrost = __lgFrostScope;
+            break;
+          }
+          __lgFrostScope = __lgCPFrost(__lgFrostScope);
+        }
+        if (this.classList.contains('lg-wheel-temp-open') && __lgRoomFrost) {
+          const __lgRR = __lgRoomFrost.getBoundingClientRect();
+          this.style.setProperty('--lg_temp_frost_top', `${__lgRR.top}px`);
+          this.style.setProperty('--lg_temp_frost_left', `${__lgRR.left}px`);
+          this.style.setProperty('--lg_temp_frost_w', `${__lgRR.width}px`);
+          this.style.setProperty('--lg_temp_frost_h', `${__lgRR.height}px`);
+        } else {
+          this.style.removeProperty('--lg_temp_frost_top');
+          this.style.removeProperty('--lg_temp_frost_left');
+          this.style.removeProperty('--lg_temp_frost_w');
+          this.style.removeProperty('--lg_temp_frost_h');
+        }
+        return `
+      :host {
+        position: relative !important;
+        display: block !important;
+        width: var(--lg_size_climate_wheel_host_w) !important;
+        height: var(--lg_size_climate_wheel_host_h) !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        /* Deep Neumorphic float (hyper-glass refresh): per-segment #liquid_clip
+           layers can't carry an outer box-shadow (overflow:hidden + mask-image
+           clip it away — see #liquid_clip below), so the "floating disc" drop
+           shadow is composited ONCE here, on the whole annular silhouette.
+           filter:drop-shadow follows rendered alpha (not the box edges), so it
+           correctly hugs the ring shape instead of a square bounding box, and
+           :host's own overflow:visible lets it paint past the host bounds.
+           MUST be cleared while TEMP is open — see :host(.lg-wheel-temp-open)
+           below (analyzer.mdc §6 frost containing-block contract). */
+        filter: var(--lg_shadow_climate_wheel_host_float);
+        margin: 0 auto !important;
+        z-index: 1;
+        --lg_wheel_inner_pct: var(--lg_size_climate_wheel_inner_pct);
+        --lg_wheel_outer_pct: var(--lg_size_climate_wheel_outer_pct);
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: var(--lg_size_climate_wheel_host_w_phone) !important;
+          height: var(--lg_size_climate_wheel_host_h_phone) !important;
+          --lg_wheel_inner_pct: var(--lg_size_climate_wheel_inner_pct_phone);
+          --lg_wheel_outer_pct: var(--lg_size_climate_wheel_outer_pct_phone);
+        }
+      }
+      ha-card, #card {
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        overflow: visible !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #trigger {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 3 !important;
+      }
+      /* Segment wrappers fill the wheel so annular hosts share one ring. */
+      #quiet_btn, #fan_entry, #turbo_btn, #timer_slot, #swing_h, #swing_v, #mode_entry,
+      #back_fan, #fan_auto, #fan_low, #fan_med, #fan_high,
+      #back_mode, #mode_cool, #mode_heat, #mode_dry, #mode_fan_only, #mode_auto {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+      :host(.lg-wheel-temp-open) #trigger,
+      :host:has(.lg-ring-trigger-expanded) #trigger {
+        z-index: 46 !important;
+      }
+      /* Layer visibility — main N=6 equal sectors (swing_v omitted for symmetry). */
+      #quiet_btn, #fan_entry, #turbo_btn, #timer_slot, #swing_h, #swing_v, #mode_entry,
+      #back_fan, #fan_auto, #fan_low, #fan_med, #fan_high,
+      #back_mode, #mode_cool, #mode_heat, #mode_dry, #mode_fan_only, #mode_auto {
+        display: none !important;
+        pointer-events: none !important;
+      }
+      :host(.lg-wheel-layer-main) #quiet_btn,
+      :host(.lg-wheel-layer-main) #fan_entry,
+      :host(.lg-wheel-layer-main) #turbo_btn,
+      :host(.lg-wheel-layer-main) #timer_slot,
+      :host(.lg-wheel-layer-main) #mode_entry {
+        display: block !important;
+        pointer-events: auto !important;
+      }
+      :host(.lg-wheel-layer-main.lg-wheel-swing-h-on) #swing_h {
+        display: block !important;
+        pointer-events: auto !important;
+      }
+      :host(.lg-wheel-layer-fan) #back_fan,
+      :host(.lg-wheel-layer-fan) #fan_auto,
+      :host(.lg-wheel-layer-fan) #fan_low,
+      :host(.lg-wheel-layer-fan) #fan_med,
+      :host(.lg-wheel-layer-fan) #fan_high {
+        display: block !important;
+        pointer-events: auto !important;
+      }
+      :host(.lg-wheel-layer-mode) #back_mode,
+      :host(.lg-wheel-layer-mode) #mode_cool,
+      :host(.lg-wheel-layer-mode) #mode_heat,
+      :host(.lg-wheel-layer-mode) #mode_dry,
+      :host(.lg-wheel-layer-mode) #mode_fan_only,
+      :host(.lg-wheel-layer-mode) #mode_auto {
+        display: block !important;
+        pointer-events: auto !important;
+      }
+      /* TEMP focus gated by the single lg-wheel-temp-open flag (set
+         synchronously by climate_setpoint_trigger's tap_action).
+         Segments MUST NOT display — not merely dimmed.
+         Snap frost (visibility) — no opacity fade over backdrop-filter.
+         Wrapper is also position:fixed so it is not trapped by wheel layout. */
+      /* ADR 0029: container-scoped TEMP frost (room bounds via --lg_temp_frost_*).
+         Still position:fixed to escape filter containing-block (ADR 0018 recipe).
+         Idle: collapse to 0×0 (overflow contract). */
+      :host(.lg-wheel-temp-open) {
+        filter: none !important;
+      }
+      #temp_frost {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        z-index: 40 !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transition: none !important;
+      }
+      :host(.lg-wheel-temp-open) #temp_frost {
+        top: var(--lg_temp_frost_top, 0) !important;
+        left: var(--lg_temp_frost_left, 0) !important;
+        width: var(--lg_temp_frost_w, 100%) !important;
+        height: var(--lg_temp_frost_h, 100%) !important;
+        max-width: none !important;
+        max-height: none !important;
+        right: auto !important;
+        bottom: auto !important;
+        overflow: hidden !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transition: none !important;
+      }
+      /* Arming window: frost paints (blur samples) but cannot steal the
+         same-gesture pointer that opened TEMP — pairs with JS debounce. */
+      :host(.lg-wheel-temp-open.lg-wheel-temp-arming) #temp_frost,
+      :host(.lg-wheel-temp-open.lg-wheel-temp-arming) #temp_frost > * {
+        pointer-events: none !important;
+      }
+      :host(.lg-wheel-temp-open) #temp_frost > * {
+        pointer-events: auto !important;
+      }
+      :host(.lg-wheel-temp-open.lg-wheel-temp-arming) #temp_frost > * {
+        pointer-events: none !important;
+      }
+      :host(.lg-wheel-temp-open) #quiet_btn,
+      :host(.lg-wheel-temp-open) #fan_entry,
+      :host(.lg-wheel-temp-open) #turbo_btn,
+      :host(.lg-wheel-temp-open) #timer_slot,
+      :host(.lg-wheel-temp-open) #swing_h,
+      :host(.lg-wheel-temp-open) #swing_v,
+      :host(.lg-wheel-temp-open) #mode_entry,
+      :host(.lg-wheel-temp-open) #back_fan,
+      :host(.lg-wheel-temp-open) #fan_auto,
+      :host(.lg-wheel-temp-open) #fan_low,
+      :host(.lg-wheel-temp-open) #fan_med,
+      :host(.lg-wheel-temp-open) #fan_high,
+      :host(.lg-wheel-temp-open) #back_mode,
+      :host(.lg-wheel-temp-open) #mode_cool,
+      :host(.lg-wheel-temp-open) #mode_heat,
+      :host(.lg-wheel-temp-open) #mode_dry,
+      :host(.lg-wheel-temp-open) #mode_fan_only,
+      :host(.lg-wheel-temp-open) #mode_auto {
+        display: none !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+      }
+      /* ADR 0025 — timer radial open: frost + hide segments; mutex with TEMP. */
+      :host(.lg-timer-radial-open) {
+        filter: none !important;
+      }
+      #timer_frost {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        z-index: 40 !important;
+        transition: none !important;
+      }
+      :host(.lg-timer-radial-open) #timer_frost {
+        width: 100vw !important;
+        height: 100vh !important;
+        overflow: visible !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+      }
+      :host(.lg-timer-radial-open.lg-timer-radial-arming) #timer_frost,
+      :host(.lg-timer-radial-open.lg-timer-radial-arming) #timer_frost > * {
+        pointer-events: none !important;
+      }
+      :host(.lg-timer-radial-open) #timer_frost > * {
+        pointer-events: auto !important;
+      }
+      #timer_radial {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: var(--lg_size_climate_timer_radial_w) !important;
+        height: var(--lg_size_climate_timer_radial_w) !important;
+        z-index: 47 !important;
+        display: none !important;
+        pointer-events: none !important;
+      }
+      :host(.lg-timer-radial-open) #timer_radial {
+        display: block !important;
+        pointer-events: auto !important;
+      }
+      @media (max-width: 48rem) {
+        #timer_radial {
+          width: var(--lg_size_climate_timer_radial_w_phone) !important;
+          height: var(--lg_size_climate_timer_radial_w_phone) !important;
+        }
+      }
+      :host(.lg-timer-radial-open) #quiet_btn,
+      :host(.lg-timer-radial-open) #fan_entry,
+      :host(.lg-timer-radial-open) #turbo_btn,
+      :host(.lg-timer-radial-open) #timer_slot,
+      :host(.lg-timer-radial-open) #swing_h,
+      :host(.lg-timer-radial-open) #swing_v,
+      :host(.lg-timer-radial-open) #mode_entry,
+      :host(.lg-timer-radial-open) #back_fan,
+      :host(.lg-timer-radial-open) #fan_auto,
+      :host(.lg-timer-radial-open) #fan_low,
+      :host(.lg-timer-radial-open) #fan_med,
+      :host(.lg-timer-radial-open) #fan_high,
+      :host(.lg-timer-radial-open) #back_mode,
+      :host(.lg-timer-radial-open) #mode_cool,
+      :host(.lg-timer-radial-open) #mode_heat,
+      :host(.lg-timer-radial-open) #mode_dry,
+      :host(.lg-timer-radial-open) #mode_fan_only,
+      :host(.lg-timer-radial-open) #mode_auto,
+      :host(.lg-timer-radial-open) #trigger {
+        display: none !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+      }
+      :host(.lg-wheel-timer-active) #timer_slot #liquid_clip {
+        box-shadow: var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_timer_seg_on) !important;
+        filter: var(--lg_filter_climate_wheel_seg_on);
+      }
+        `;
+      ]]]
+    custom_fields:
+      temp_frost:
+        card:
+          type: custom:button-card
+          template: climate_wheel_temp_frost
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      timer_frost:
+        card:
+          type: custom:button-card
+          template: climate_timer_frost
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      timer_radial:
+        card:
+          type: custom:button-card
+          template: climate_timer_radial_panel
+          entity: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
+          variables:
+            save_duration_script_id: "[[[ return (variables && variables.save_duration_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+      trigger:
+        card:
+          type: custom:button-card
+          template: climate_setpoint_trigger
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      quiet_btn:
+        card:
+          type: custom:button-card
+          template: climate_wheel_quiet_btn
+          entity: "[[[ return (variables && variables.quiet_entity_id) || '' ]]]"
+          variables:
+            seg_index: 0
+            seg_total: 6
+            seg_slot: quiet
+      fan_entry:
+        card:
+          type: custom:button-card
+          template: climate_wheel_menu_entry
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            seg_index: 1
+            seg_total: 6
+            seg_slot: fan_entry
+            wheel_layer: fan
+      turbo_btn:
+        card:
+          type: custom:button-card
+          template: climate_wheel_turbo_btn
+          entity: "[[[ return (variables && variables.turbo_entity_id) || '' ]]]"
+          variables:
+            seg_index: 2
+            seg_total: 6
+            seg_slot: turbo
+            gate_entity_id: "[[[ return (entity && entity.entity_id) || '' ]]]"
+            gate_states: ["heat", "cool"]
+      timer_slot:
+        card:
+          type: custom:button-card
+          template: climate_wheel_timer_btn
+          entity: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
+          variables:
+            seg_index: 3
+            seg_total: 6
+            seg_slot: timer
+            popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+      swing_h:
+        card:
+          type: custom:button-card
+          template: climate_wheel_swing_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            axis: horizontal
+            seg_index: 4
+            seg_total: 6
+            seg_slot: swing_h
+      swing_v:
+        card:
+          type: custom:button-card
+          template: climate_wheel_swing_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            axis: vertical
+            seg_index: 0
+            seg_total: 6
+            seg_slot: swing_v
+      mode_entry:
+        card:
+          type: custom:button-card
+          template: climate_wheel_menu_entry
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            seg_index: 5
+            seg_total: 6
+            seg_slot: mode_entry
+            wheel_layer: mode
+      back_fan:
+        card:
+          type: custom:button-card
+          template: climate_wheel_back_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            seg_index: 1
+            seg_total: 5
+            seg_slot: back_fan
+      fan_auto:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:fan
+          variables:
+            seg_index: 0
+            seg_total: 5
+            seg_slot: fan_auto
+            check: attrib
+            attrib: fan_mode
+            value: auto
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_low:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:weather-windy
+          variables:
+            seg_index: 2
+            seg_total: 5
+            seg_slot: fan_low
+            check: attrib
+            attrib: fan_mode
+            value: low
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_med:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:gauge
+          variables:
+            seg_index: 3
+            seg_total: 5
+            seg_slot: fan_med
+            check: attrib
+            attrib: fan_mode
+            value: medium
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      fan_high:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:gauge-full
+          variables:
+            seg_index: 4
+            seg_total: 5
+            seg_slot: fan_high
+            check: attrib
+            attrib: fan_mode
+            value: high
+            service: climate.set_fan_mode
+            data_key: fan_mode
+      back_mode:
+        card:
+          type: custom:button-card
+          template: climate_wheel_back_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            seg_index: 5
+            seg_total: 6
+            seg_slot: back_mode
+      mode_cool:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:snowflake
+          variables:
+            seg_index: 1
+            seg_total: 6
+            seg_slot: mode_cool
+            check: state
+            value: cool
+            service: climate.set_hvac_mode
+            data_key: hvac_mode
+      mode_heat:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:fire
+          variables:
+            seg_index: 2
+            seg_total: 6
+            seg_slot: mode_heat
+            check: state
+            value: heat
+            service: climate.set_hvac_mode
+            data_key: hvac_mode
+      mode_dry:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:water
+          variables:
+            seg_index: 3
+            seg_total: 6
+            seg_slot: mode_dry
+            check: state
+            value: dry
+            service: climate.set_hvac_mode
+            data_key: hvac_mode
+      mode_fan_only:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:fan
+          variables:
+            seg_index: 4
+            seg_total: 6
+            seg_slot: mode_fan_only
+            check: state
+            value: fan_only
+            service: climate.set_hvac_mode
+            data_key: hvac_mode
+      mode_auto:
+        card:
+          type: custom:button-card
+          template: climate_wheel_option_btn
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          icon: mdi:thermometer
+          variables:
+            seg_index: 0
+            seg_total: 6
+            seg_slot: mode_auto
+            check: state
+            value: auto
+            service: climate.set_hvac_mode
+            data_key: hvac_mode
+
+  # Utility row: swing (horizontal/vertical) + power as small glass chips in
+  # a horizontal flex row (replaces the retired grid-dock placement). Chip
+  # templates + services untouched: climate_swing_axis_chip / climate_power_btn.
+  # Satellite band — 4 small icon-only toggles orbiting the sun (swing
+  # vertical/horizontal + the new Turbo/Quiet switches). climate_power_btn
+  # is retired from here: room on/off now lives inside the climate room
+  # panel as a tap-to-off button (climate_room_off_button).

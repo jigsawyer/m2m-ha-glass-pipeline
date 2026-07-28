@@ -1,77 +1,33 @@
 {
   "target_dashboard": "svitlo",
-  "intent_class": "EXTRACTIVE",
-  "target_agent": "@extractor",
+  "intent_class": "STYLISTIC",
+  "target_agent": "@stylist",
   "constraints": {
-    "allow_hacs_bubble_card_popup": true,
-    "allow_hacs_mushroom": true,
-    "allow_hacs_card_mod": true
+    "allow_template_layout_edit": true,
+    "tokens_and_button_card_templates_only": false,
+    "allow_climate_ring_control_deferred_commit": true
   },
   "payload": {
-    "action_summary": "Rework laundry_machine to Apple liquid-glass appliance cards per specs/laundry_glass_rework_ui.md with ADR 0026 entity remap and explicit mushroom + card-mod",
-    "spec_ref": "specs/laundry_glass_rework_ui.md",
+    "action_summary": "Implement Klimat Central Hub FSM per specs/climate_ui_adjustments.md and ADR 0029: OFF hub turn_on; DEFAULT_ON↔EDIT_TEMP; Power→Cancel abort; container-scoped TEMP blur; 270° horseshoe matching wheel outer; value cold→warm arc/thumb gradient; keep radial node press/haptic/glow (ADR 0028).",
+    "evidence": "specs/climate_ui_adjustments.md (operator-approved SoT); docs/adr/0029-klimat-hub-fsm.md",
     "requested_entities": [
-      "washer_machine_select",
-      "washer_machine_state",
-      "washer_job_state",
-      "washer_completion_time",
-      "washer_remote_control",
-      "washer_power",
-      "washer_spin_level",
-      "washer_water_temperature",
-      "washer_rinse_cycles",
-      "washer_bubble_soak",
-      "dryer_machine_select",
-      "dryer_machine_state",
-      "dryer_job_state",
-      "dryer_completion_time",
-      "dryer_remote_control",
-      "dryer_power",
-      "dryer_wrinkle_prevent"
+      "climate_setpoint_trigger",
+      "climate_thermostat_ring_panel",
+      "climate_global_wheel",
+      "climate_wheel_temp_frost",
+      "climate_room_off_button",
+      "climate_thermostat"
     ],
-    "adr_remaps": {
-      "sensor._state": "machine_state + select run/pause/stop + power binary + armed",
-      "time_remaining": "completion_time countdown",
-      "select._program": "omit — no ST program entity",
-      "number._temperature/_spin_speed": "mushroom on select water_temperature / spin_level",
-      "number._dry_level": "mushroom on switch wrinkle_prevent",
-      "switch._power": "binary_sensor power — read-only header indicator",
-      "switch._child_lock": "omit — no entity",
-      "datetime._delay_start": "Bubble delay FSM START_AT FINISH_BY",
-      "mushroom_sliders": "mushroom-select-card / mushroom-number-card / mushroom-entity-card",
-      "card-mod": "glass on nested mushroom/HA hosts via CSS vars lg_*_laundry_*"
-    },
-    "forbidden_plugins": [
-      "browser_mod",
-      "state-switch"
-    ],
-    "token_policy": "laundry-scoped lg_*_laundry_* only; physical values in tokens; card-mod references var(--lg_*); no inventing rgba or px; HALT for live probe if number min/max/step or select options missing from attributes",
-    "fsm": {
-      "OFF": "power binary off or unavailable — Powered Off; controls locked",
-      "READY": "not armed; select not run/pause — Ready to Start; Start enabled",
-      "RUNNING": "select == run — ETA timer + progress ring; controls locked; Delay hidden",
-      "PAUSED": "select == pause — ETA blurred + Paused overlay; Start resumes",
-      "ERROR": "machine_state error-like — red glass hue",
-      "STATE_SCHEDULED": "armed=on — delay cancel only; Bubble scheduling unchanged"
-    },
-    "layout": {
-      "desktop": "laundry_room_container grid 1fr 1fr washer|dryer",
-      "phone": "single column stack",
-      "wrappers": "floor_container + laundry_room_container"
-    },
     "preserve_behavior": [
-      "home and klimat views unchanged",
-      "pralnia light switch on home view unchanged",
-      "laundry delay FSM START_AT FINISH_BY and schedule/cancel scripts unchanged",
-      "Bubble laundry delay popups hash and centered glass unchanged",
-      "floor_container wrapper unchanged",
-      "ADR 0026 entity SoT and logical_id wiring unchanged"
-    ],
-    "extractor_halts": [
-      "No program or child_lock entities — do not invent",
-      "Power is binary_sensor — no switch.toggle",
-      "If rinse number bounds or select options absent from hass.states attributes — request operator probe on HA prod then clean temp logs",
-      "Debounce 500ms / haptics only if proven by mushroom or companion capability; else skip without inventing"
+      "Deferred setpoint commit: climate.set_temperature once on hub commit while EDIT_TEMP; no on-drag HA spam",
+      "Cancel (X) and any non-commit dismiss revert pending temp/fill/thumb to live entity",
+      "Timer radial mutex with TEMP (.lg-timer-radial-open ⟂ .lg-wheel-temp-open) unchanged (ADR 0025)",
+      "Wheel layer segment counts and HA mode/fan payloads unchanged (ADR 0019)",
+      "Floor/house climate off remain hold-to-off; room off in DEFAULT_ON remains tap turn_off (ADR 0016)",
+      "No retune of shared light tokens (lg_size_switch_*, disable_room_button) — climate-scoped only (ADR 0014)",
+      "Option 1 CSS only: lg_* tokens + extra_styles; no inline style / native button-card styles (ADR 0006)",
+      "Fluid units only — no hardcoded px (ADR 0007)",
+      "Radial Interactive Node press/active/disabled parity with lighting pills retained (ADR 0028 §§1-4,6-7)"
     ]
   }
 }

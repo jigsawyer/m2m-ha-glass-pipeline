@@ -1,0 +1,31 @@
+  floor_voice_placeholder:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    icon: mdi:microphone
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+    extra_styles: |
+      {{ lg_tab_side_btn_layout_extra_styles(disabled=true) }}
+      /* Idle outline via existing glass rim (shared placeholder; light+Klimat).
+         Host opacity no longer applied (icon-only fade) so rim/glass stay readable.
+         Stroke width stays shared lg_stroke_glass — Klimat house-off uses climate stroke. */
+      #card {
+        border-color: var(--lg_color_glass_rim) !important;
+      }
+      .lg-liquid-clip-shell {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--lg_radius_tab_side_btn);
+        overflow: hidden;
+        clip-path: inset(0 round var(--lg_radius_tab_side_btn));
+        pointer-events: none;
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: ""
+    state: []

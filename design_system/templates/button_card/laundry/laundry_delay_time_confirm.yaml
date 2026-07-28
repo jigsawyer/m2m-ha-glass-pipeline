@@ -1,0 +1,147 @@
+  laundry_delay_time_confirm:
+    show_name: true
+    show_icon: false
+    show_state: false
+    show_ripple: false
+    triggers_update: all
+    name: Підтвердити
+    variables:
+      cycle_duration_entity_id: ""
+      delay_mode_entity_id: ""
+      schedule_script_id: ""
+      popup_hash: ""
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      picker: |
+        [[[
+          if (!window.__lgLaundryDelayInit) {
+            window.__lgLaundryDelayInit = true;
+            document.addEventListener('input', (ev) => {
+              const t = ev.target;
+              if (!t || !t.classList || !t.classList.contains('lg-laundry-time')) return;
+              window.__lgLaundryTargetTime = t.value;
+            }, true);
+          }
+          const now = new Date();
+          const pad = (n) => String(n).padStart(2, '0');
+          const def = pad((now.getHours() + 1) % 24) + ':' + pad(now.getMinutes());
+          if (!window.__lgLaundryTargetTime) window.__lgLaundryTargetTime = def;
+          return `<div class="lg-laundry-picker"><input class="lg-laundry-time" type="time" value="${window.__lgLaundryTargetTime || def}" /><div class="lg-laundry-error" hidden></div></div>`;
+        ]]]
+    tap_action:
+      action: |
+        [[[
+          const modeId = variables.delay_mode_entity_id || '';
+          const durId = variables.cycle_duration_entity_id || '';
+          const mode = (modeId && states[modeId] && states[modeId].state) || 'START_AT';
+          const cycleMin = parseInt(durId && states[durId] ? states[durId].state : '60', 10) || 60;
+          const readFresh = () => {
+            try {
+              const root = this && this.shadowRoot;
+              const inp = root && root.querySelector && root.querySelector('input.lg-laundry-time');
+              if (inp && inp.value) return inp.value;
+            } catch (e) {}
+            return window.__lgLaundryTargetTime || '';
+          };
+          const raw = readFresh();
+          window.__lgLaundryTargetTime = raw;
+          const showErr = (msg) => {
+            try {
+              const root = this && this.shadowRoot;
+              const err = root && root.querySelector && root.querySelector('.lg-laundry-error');
+              if (err) { err.hidden = false; err.textContent = msg; return; }
+            } catch (e) {}
+          };
+          if (!raw || !/^\d{2}:\d{2}$/.test(raw)) {
+            showErr('Оберіть час');
+            return 'none';
+          }
+          const now = new Date();
+          const parts = raw.split(':');
+          const target = new Date(now.getTime());
+          target.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+          if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+          let delayMinutes;
+          if (mode === 'FINISH_BY') {
+            const start = new Date(target.getTime() - cycleMin * 60000);
+            if (start.getTime() <= now.getTime()) {
+              showErr('Недостатньо часу для циклу до обраного FINISH_BY');
+              return 'none';
+            }
+            delayMinutes = Math.round((start.getTime() - now.getTime()) / 60000);
+          } else {
+            delayMinutes = Math.round((target.getTime() - now.getTime()) / 60000);
+          }
+          if (!delayMinutes || delayMinutes < 1) {
+            showErr('Не можна планувати в минуле');
+            return 'none';
+          }
+          window.__lgLaundryPendingDelay = {
+            delay_minutes: delayMinutes,
+            delay_mode: mode
+          };
+          return 'call-service';
+        ]]]
+      service: script.turn_on
+      target:
+        entity_id: |
+          [[[ return variables.schedule_script_id || ''; ]]]
+      data: |
+        [[[
+          return window.__lgLaundryPendingDelay || {};
+        ]]]
+    extra_styles: |
+      :host { width: 100% !important; }
+      #card {
+        position: relative !important;
+        padding: var(--lg_space_laundry_pad) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "picker" "name" !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        width: 100% !important;
+        position: relative !important;
+      }
+      #picker {
+        grid-area: picker !important;
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+      }
+      #name {
+        grid-area: name !important;
+        position: relative !important;
+        inset: auto !important;
+        justify-self: center;
+      }
+      #liquid_clip {
+        position: absolute !important;
+        inset: 0 !important;
+        pointer-events: none !important;
+      }
+      .lg-laundry-picker {
+        display: flex;
+        flex-direction: column;
+        gap: var(--lg_space_laundry_gap);
+        width: 100%;
+      }
+      .lg-laundry-time {
+        width: 100%;
+        min-height: var(--lg_size_laundry_action_h);
+        border-radius: var(--lg_radius_liquid);
+        border: var(--lg_stroke_glass) solid rgba(255,255,255,0.35);
+        background: transparent;
+        color: var(--lg_color_text);
+        font-size: var(--lg_font_laundry_title_size);
+        padding: 0 var(--lg_space_laundry_pad);
+        box-sizing: border-box;
+      }
+      .lg-laundry-error {
+        color: rgb(255, 120, 120);
+        font-size: var(--lg_font_laundry_status_size);
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}

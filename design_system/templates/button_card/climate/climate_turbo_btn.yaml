@@ -1,0 +1,10 @@
+  climate_turbo_btn:
+    template: climate_satellite_chip
+    icon: mdi:rocket-launch
+    variables:
+      gate_states: ["heat", "cool"]
+    tap_action:
+      action: toggle
+
+  # Quiet mode — same switch domain toggle, no HVAC-mode gate (spec: toggle
+  # available in all modes).
