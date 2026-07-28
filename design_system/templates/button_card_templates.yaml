@@ -131,6 +131,17 @@
         z-index: 0;
       }
 {%- endmacro %}
+{% macro lg_laundry_mushroom_card_mod() -%}
+ha-card {
+  background: var(--lg_color_laundry_mushroom_fill) !important;
+  border: var(--lg_stroke_glass, 0.0625rem) solid var(--lg_color_laundry_mushroom_rim) !important;
+  border-radius: var(--lg_radius_laundry_control) !important;
+  box-shadow: var(--lg_shadow_laundry_card) !important;
+  backdrop-filter: blur(var(--lg_blur_laundry_glass)) !important;
+  -webkit-backdrop-filter: blur(var(--lg_blur_laundry_glass)) !important;
+  overflow: hidden !important;
+}
+{%- endmacro %}
 {% macro lg_room_folder_shell_extra_styles(width_token) -%}
       {# iOS folder: #container grid — title row 1; #content + #glass_layers share panel row 2.
          button-card grid host is #container (not #card); custom fields use inline grid-area. #}
@@ -485,9 +496,10 @@
           } else if (__lgLayerMode) {
             __lgSlots = ['mode_auto', 'mode_cool', 'mode_heat', 'mode_dry', 'mode_fan_only', 'back_mode'];
           } else {
-            /* Main layer — MUST match climate_global_wheel CSS visibility. */
-            __lgSlots = ['quiet', 'fan_entry', 'turbo'];
-            if (!__lgTimerActive) __lgSlots.push('timer');
+            /* Main layer — MUST match climate_global_wheel CSS visibility.
+               ADR 0025: timer segment stays visible while armed/running so
+               re-tap can cancel — never drop it from the equal-sector list. */
+            __lgSlots = ['quiet', 'fan_entry', 'turbo', 'timer'];
             if (__lgSwingOn) __lgSlots.push('swing_h');
             __lgSlots.push('mode_entry');
           }
@@ -772,6 +784,8 @@
         max-height: var(--lg_size_climate_wheel_seg_icon) !important;
         --mdc-icon-size: var(--lg_size_climate_wheel_seg_icon);
         transform: none !important;
+        color: var(--lg_color_climate_wheel_seg_icon) !important;
+        filter: var(--lg_filter_climate_wheel_seg_icon);
       }
       #icon ha-svg-icon svg {
         display: block !important;
@@ -1310,6 +1324,15 @@
         overflow: visible !important;
       }
       {{ lg_icon_vertical_center_extra_styles(include_name=true) }}
+      /* Icon+label same horizontal axis — optical nudge is for round icon-only
+         (ADR 0015), not icon+text pills (operator: switch label looked shifted). */
+      #icon {
+        transform: none !important;
+      }
+      #img-cell,
+      #name {
+        align-self: center !important;
+      }
       #liquid_clip {
         position: absolute;
         inset: 0;
@@ -1344,6 +1367,7 @@
 {% macro lg_disable_press_feedback_extra_styles() -%}
       #card:active {
         box-shadow: var(--lg_glow_disable);
+        transform: var(--lg_transform_disable_press_scale);
       }
       #icon {
         color: var(--lg_color_text) !important;
@@ -1466,15 +1490,15 @@
       #card {
         position: relative;
         box-sizing: border-box;
-        width: min(100%, var(--lg_size_disable_room_w)) !important;
-        max-width: min(100%, var(--lg_size_disable_room_w)) !important;
-        min-width: 0 !important;
+        width: var(--lg_size_disable_room_w) !important;
+        max-width: var(--lg_size_disable_room_w) !important;
+        min-width: var(--lg_size_disable_room_w) !important;
         height: var(--lg_size_disable_room_h) !important;
         max-height: var(--lg_size_disable_room_h) !important;
         min-height: var(--lg_size_disable_room_h) !important;
-        aspect-ratio: unset;
-        border-radius: var(--lg_radius_liquid);
-        border: var(--lg_stroke_glass) solid transparent;
+        aspect-ratio: 1;
+        border-radius: var(--lg_radius_disable_room);
+        border: none;
         background: transparent;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
@@ -1486,6 +1510,7 @@
         padding: 0;
         justify-self: center;
         place-self: center;
+        cursor: pointer;
       }
       {{ lg_disable_press_feedback_extra_styles() }}
       #icon {
@@ -1510,27 +1535,125 @@
         place-self: center !important;
         overflow: hidden !important;
       }
-      {{ lg_icon_vertical_center_extra_styles(include_name=false) }}
+      {{ lg_round_icon_only_center_extra_styles() }}
+      #name, #label, #state {
+        display: none !important;
+      }
+      /* Icon-only: no liquid chrome — keep slot for DOM stability. */
+      #liquid_clip {
+        display: none !important;
+      }
+      #distort {
+        display: none;
+      }
+{%- endmacro %}
+{# Climate room-off — round icon-only (no liquid chrome); mirrors disable_room
+   via climate-scoped tokens; never shares light lg_size_disable_* (ADR 0014). #}
+{% macro lg_climate_room_off_layout_extra_styles() -%}
+      :host {
+        width: var(--lg_size_climate_room_off_w) !important;
+        max-width: var(--lg_size_climate_room_off_w) !important;
+        min-width: var(--lg_size_climate_room_off_w) !important;
+        height: var(--lg_size_climate_room_off_h) !important;
+        max-height: var(--lg_size_climate_room_off_h) !important;
+        min-height: var(--lg_size_climate_room_off_h) !important;
+        display: block;
+        box-sizing: border-box;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: var(--lg_radius_climate_room_off) !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: var(--lg_size_climate_room_off_w_phone) !important;
+          max-width: var(--lg_size_climate_room_off_w_phone) !important;
+          min-width: var(--lg_size_climate_room_off_w_phone) !important;
+          height: var(--lg_size_climate_room_off_h_phone) !important;
+          max-height: var(--lg_size_climate_room_off_h_phone) !important;
+          min-height: var(--lg_size_climate_room_off_h_phone) !important;
+        }
+      }
+      ha-card {
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: 1 !important;
+        border-radius: var(--lg_radius_climate_room_off) !important;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_climate_room_off) !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "i" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 100% !important;
+        justify-content: center !important;
+        align-items: center !important;
+        place-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      #card {
+        position: relative;
+        box-sizing: border-box;
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: 1;
+        border-radius: var(--lg_radius_climate_room_off);
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+        transition: var(--lg_transition_press);
+        cursor: pointer;
+        margin: 0;
+        padding: 0;
+      }
+      #card:active {
+        box-shadow: var(--lg_glow_climate_room_off_press);
+        transform: var(--lg_transform_climate_room_off_press_scale);
+      }
+      #icon {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        width: var(--lg_size_climate_room_off_icon) !important;
+        height: var(--lg_size_climate_room_off_icon) !important;
+        max-width: var(--lg_size_climate_room_off_icon) !important;
+        max-height: var(--lg_size_climate_room_off_icon) !important;
+        --mdc-icon-size: var(--lg_size_climate_room_off_icon);
+      }
+      #card:active #icon {
+        color: var(--lg_color_climate_room_off_press) !important;
+        filter: var(--lg_filter_climate_room_off_icon);
+      }
+      @media (max-width: 48rem) {
+        #icon {
+          width: var(--lg_size_climate_room_off_icon_phone) !important;
+          height: var(--lg_size_climate_room_off_icon_phone) !important;
+          max-width: var(--lg_size_climate_room_off_icon_phone) !important;
+          max-height: var(--lg_size_climate_room_off_icon_phone) !important;
+          --mdc-icon-size: var(--lg_size_climate_room_off_icon_phone);
+        }
+      }
+      #img-cell {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        justify-self: center !important;
+        align-self: center !important;
+        place-self: center !important;
+        overflow: hidden !important;
+      }
+      {{ lg_round_icon_only_center_extra_styles() }}
       #name, #label, #state {
         display: none !important;
       }
       #liquid_clip {
-        position: absolute;
-        inset: 0;
-        border-radius: var(--lg_radius_liquid);
-        overflow: hidden;
-        clip-path: inset(0 round var(--lg_radius_liquid));
-        isolation: isolate;
-        pointer-events: none;
-        z-index: 0;
-        background: var(--lg_color_disable_frost), var(--lg_color_liquid_base), var(--lg_color_liquid_burn_soft);
-        background-blend-mode: normal, plus-lighter, color-burn;
-        backdrop-filter: blur(var(--lg_blur_room_btn));
-        -webkit-backdrop-filter: blur(var(--lg_blur_room_btn));
-        box-shadow: var(--lg_shadow_room_btn);
-      }
-      #distort {
-        display: none;
+        display: none !important;
       }
 {%- endmacro %}
 {% macro lg_tab_side_btn_layout_extra_styles(disabled=false) -%}
@@ -1667,8 +1790,8 @@
 {# Shared "round button" glass shell — the shell/material contract used by
    EVERY climate round button (arc dial trigger, exploded arc option chips,
    the setpoint circle, the ring approve button): perfect circle
-   (lg_radius_climate_room_off = 50%, same radius token as the canonical
-   disable-all round button climate_room_off_button), glass border + frosted
+   (lg_radius_climate_round_btn = 50%; room-off uses its own non-round shell),
+   glass border + frosted
    #liquid_clip fill, consistent icon proportions with its own phone
    override, no native #name/#label/#state. Position/transform/animation and
    any per-state glow stay OUTSIDE this macro (layered by each caller's own
@@ -1716,7 +1839,7 @@
         height: 100%;
         aspect-ratio: 1;
         box-sizing: border-box;
-        border-radius: var(--lg_radius_climate_room_off);
+        border-radius: var(--lg_radius_climate_round_btn);
         border: var(--lg_stroke_climate_arc_glass) solid var(--lg_color_climate_arc_glass_stroke);
         box-shadow: var(--lg_shadow_climate_arc_sphere);
         cursor: pointer;
@@ -1943,8 +2066,35 @@ button_card_templates:
       }
       {{ lg_room_folder_shell_extra_styles('--lg_size_container_w') }}
       {{ lg_name_label_extra_styles('--lg_font_room_label_size', '--lg_font_title_weight', '--lg_font_room_tracking', '--lg_line_height_room') }}
+      /* Title + room-off on one header axis; panel spans below (corner via
+         room_corner_actions / build_engine corner_card). */
+      #container {
+        grid-template-areas:
+          "room_title room_corner"
+          "room_panel room_panel" !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        grid-template-rows: min-content min-content !important;
+        align-items: center !important;
+      }
       #name {
+        grid-area: room_title !important;
+        justify-self: center !important;
+        align-self: center !important;
+        text-align: center !important;
+        width: auto !important;
+        max-width: 100% !important;
         overflow: visible;
+      }
+      #corner {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        grid-area: room_corner !important;
+        justify-self: end !important;
+        align-self: center !important;
+        z-index: 5 !important;
+        pointer-events: auto !important;
+        margin-bottom: var(--lg_space_room_title_gap);
       }
       #content {
         width: 100% !important;
@@ -2237,21 +2387,22 @@ button_card_templates:
       /* Child extra_styles replace room_container's — restate name typography
          so #name stays readable (color/font) after the override. */
       {{ lg_name_label_extra_styles('--lg_font_room_label_size', '--lg_font_title_weight', '--lg_font_room_tracking', '--lg_line_height_room') }}
-      /* 2A: name left + room-off right on one header row; panel spans below.
-         Overrides folder shell's single-column room_title / room_panel. */
+      /* Centered room title above panel; room-off sits INSIDE room_panel
+         (top-end overlay on glass), not in an external header corner. */
       #container {
         grid-template-areas:
-          "room_title room_corner"
-          "room_panel room_panel" !important;
-        grid-template-columns: minmax(0, 1fr) auto !important;
+          "room_title"
+          "room_panel" !important;
+        grid-template-columns: 1fr !important;
         grid-template-rows: min-content min-content !important;
         align-items: center !important;
+        justify-items: center !important;
       }
       #name {
         grid-area: room_title !important;
-        justify-self: start !important;
+        justify-self: center !important;
         align-self: center !important;
-        text-align: left !important;
+        text-align: center !important;
         width: auto !important;
         max-width: 100% !important;
         margin-bottom: var(--lg_space_room_title_gap);
@@ -2348,8 +2499,8 @@ button_card_templates:
           box-sizing: border-box !important;
         }
         #name {
-          text-align: left !important;
-          justify-self: start !important;
+          text-align: center !important;
+          justify-self: center !important;
           width: auto !important;
         }
         #content {
@@ -2361,17 +2512,29 @@ button_card_templates:
           box-sizing: border-box !important;
         }
       }
-      /* 2A: room-off sits in room_corner header cell (not absolute badge). */
+      /* Room-off INSIDE glass panel cell (room_panel), top-end.
+         Debug 972285 corner-pre: position:absolute used #card as CB (title+panel),
+         so top:inset sat in the title row (corner.y 223 < content.y 248,
+         insetFromContentBorder.top -25.2, insideContentBorderBox false).
+         Fix: participate as grid item in room_panel (no absolute) — same cell as
+         #content/#glass_layers, justify/align pin to top-end + margin inset. */
       #corner {
+        grid-area: room_panel !important;
         position: relative !important;
         top: auto !important;
         right: auto !important;
-        grid-area: room_corner !important;
+        left: auto !important;
+        bottom: auto !important;
         justify-self: end !important;
-        align-self: center !important;
+        align-self: start !important;
         z-index: 5 !important;
         pointer-events: auto !important;
-        margin-bottom: var(--lg_space_room_title_gap);
+        width: max-content !important;
+        height: max-content !important;
+        margin-top: var(--lg_space_climate_room_corner_inset) !important;
+        margin-right: var(--lg_space_climate_room_corner_inset) !important;
+        margin-bottom: 0 !important;
+        margin-left: 0 !important;
       }
       /* TEMP red-box: promote the whole room host's stacking order so its
          viewport-fixed frost overlay paints above SIBLING room cards in the
@@ -2391,8 +2554,8 @@ button_card_templates:
       }
       /* Keep #glass_layers + #content rim painted during TEMP focus — frost
          obscures siblings; hiding room glass caused a white snap-back blink
-         on set_temperature commit (operator evidence). Header grid stays
-         "room_title room_corner" / "room_panel room_panel" (no collapse). */
+         on set_temperature commit (operator evidence). Header stays
+         room_title / room_panel (no collapse). */
       :host(.lg-temp-focus) #content {
         justify-content: flex-start !important;
       }
@@ -2405,6 +2568,48 @@ button_card_templates:
       }
         `;
       ]]]
+
+  laundry_room_container:
+    template: room_container
+    extra_styles: |
+      :host {
+        width: min(100%, var(--lg_size_laundry_room_w)) !important;
+        max-width: min(100%, var(--lg_size_laundry_room_w)) !important;
+        min-width: 0 !important;
+        justify-self: center !important;
+        box-sizing: border-box !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: min(100%, var(--lg_size_laundry_room_w_phone)) !important;
+          max-width: min(100%, var(--lg_size_laundry_room_w_phone)) !important;
+        }
+      }
+      ha-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      {{ lg_room_folder_shell_extra_styles('--lg_size_laundry_room_w') }}
+      {{ lg_name_label_extra_styles('--lg_font_room_label_size', '--lg_font_title_weight', '--lg_font_room_tracking', '--lg_line_height_room') }}
+      #container {
+        grid-template-areas:
+          "room_title"
+          "room_panel" !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: min-content min-content !important;
+        align-items: stretch !important;
+        justify-items: stretch !important;
+      }
+      #name {
+        grid-area: room_title !important;
+        justify-self: center !important;
+        text-align: center !important;
+      }
+      #content {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
 
   switch_button:
     show_icon: true
@@ -2522,13 +2727,11 @@ button_card_templates:
     show_icon: true
     show_state: false
     show_ripple: false
-    icon: mdi:close
+    icon: mdi:power
     variables:
       ha_area_id: ""
       ha_entity_ids: []
     tap_action:
-      action: none
-    hold_action:
       action: call-service
       service: switch.turn_off
       target: |
@@ -2538,11 +2741,13 @@ button_card_templates:
           if (variables.ha_area_id) return { area_id: variables.ha_area_id };
           return {};
         ]]]
+    hold_action:
+      action: none
     extra_styles: |
       :host {
-        width: min(100%, var(--lg_size_disable_room_w)) !important;
-        max-width: min(100%, var(--lg_size_disable_room_w));
-        min-width: 0;
+        width: var(--lg_size_disable_room_w) !important;
+        max-width: var(--lg_size_disable_room_w);
+        min-width: var(--lg_size_disable_room_w);
         height: var(--lg_size_disable_room_h);
         max-height: var(--lg_size_disable_room_h);
         display: block;
@@ -2554,21 +2759,21 @@ button_card_templates:
         box-shadow: none !important;
         filter: none !important;
         overflow: visible !important;
-        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --ha-card-border-radius: var(--lg_radius_disable_room) !important;
         --masonry-view-card-margin: 0;
       }
       ha-card {
-        width: min(100%, var(--lg_size_disable_room_w)) !important;
-        max-width: min(100%, var(--lg_size_disable_room_w)) !important;
-        min-width: 0 !important;
+        width: var(--lg_size_disable_room_w) !important;
+        max-width: var(--lg_size_disable_room_w) !important;
+        min-width: var(--lg_size_disable_room_w) !important;
         height: var(--lg_size_disable_room_h) !important;
         max-height: var(--lg_size_disable_room_h) !important;
         min-height: var(--lg_size_disable_room_h) !important;
-        aspect-ratio: unset !important;
+        aspect-ratio: 1 !important;
         box-sizing: border-box;
-        border-radius: var(--lg_radius_liquid) !important;
+        border-radius: var(--lg_radius_disable_room) !important;
         overflow: visible !important;
-        --ha-card-border-radius: var(--lg_radius_liquid) !important;
+        --ha-card-border-radius: var(--lg_radius_disable_room) !important;
       }
       {{ lg_liquid_clip_shell_extra_styles() }}
       {{ lg_disable_room_layout_extra_styles() }}
@@ -2615,7 +2820,7 @@ button_card_templates:
     show_icon: true
     show_state: false
     show_ripple: false
-    icon: mdi:close
+    icon: mdi:power
     tap_action:
       action: none
     hold_action:
@@ -4415,12 +4620,134 @@ button_card_templates:
       seg_index: 3
       seg_total: 6
       seg_slot: timer
+      armed_entity_id: ""
+      remove_script_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_entity_id: ""
+    icon: |
+      [[[
+        const armedId = (variables && variables.armed_entity_id) || '';
+        const running = entity && (entity.state === 'active' || entity.state === 'paused');
+        const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+        return (running || armed) ? 'mdi:close' : 'mdi:timer-outline';
+      ]]]
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const findWheelHost = (from) => {
+            let scope = composedParent(from);
+            for (let i = 0; i < 16 && scope; i++) {
+              if (scope.classList && scope.classList.contains('lg-wheel-host')) return scope;
+              scope = composedParent(scope);
+            }
+            return null;
+          };
+          const closeTemp = (wheelHost) => {
+            if (!wheelHost || !wheelHost.classList.contains('lg-wheel-temp-open')) return;
+            let triggerHost = null;
+            if (wheelHost.shadowRoot) {
+              triggerHost = wheelHost.shadowRoot.querySelector('.lg-ring-trigger-host.lg-ring-trigger-expanded')
+                || wheelHost.shadowRoot.querySelector('.lg-ring-trigger-expanded');
+            }
+            if (triggerHost) {
+              triggerHost.classList.remove('lg-ring-trigger-expanded');
+              triggerHost.__lgTempStickyOpen = false;
+            }
+            wheelHost.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+            wheelHost.__lgTempOpenedAt = 0;
+            if (wheelHost.__lgTempArmTimer) {
+              try { clearTimeout(wheelHost.__lgTempArmTimer); } catch (e) {}
+              wheelHost.__lgTempArmTimer = 0;
+            }
+          };
+          const openTimer = (wheelHost, seedMinutes) => {
+            closeTemp(wheelHost);
+            const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+            if (radial) {
+              const maxMin = radial.__lgTimerMaxMin || 720;
+              const mins = Math.max(0, Math.min(maxMin, Math.round(seedMinutes || 0)));
+              radial.__lgTimerSeedMinutes = mins;
+              radial.__lgTimerPending = mins > 0 ? mins : undefined;
+              const p = maxMin > 0 ? mins / maxMin : 0;
+              radial.__lgTimerLastProgress = p;
+              const theta = p * Math.PI * 2;
+              const r4 = (n) => Math.round(n * 10000) / 10000;
+              radial.style.setProperty('--lg_timer_t', String(p));
+              radial.style.setProperty('--lg_timer_knob_x', `${r4(50 + 44 * Math.sin(theta))}%`);
+              radial.style.setProperty('--lg_timer_knob_y', `${r4(50 - 44 * Math.cos(theta))}%`);
+              let label;
+              if (mins < 60) label = `"${mins} хв"`;
+              else {
+                const h = Math.floor(mins / 60);
+                const mm = mins % 60;
+                label = mm === 0 ? `"${h} год"` : `"${h} год ${mm} хв"`;
+              }
+              radial.style.setProperty('--lg_timer_label', label);
+            }
+            wheelHost.classList.add('lg-timer-radial-open', 'lg-timer-radial-arming');
+            wheelHost.__lgTimerOpenedAt = Date.now();
+            wheelHost.__lgTimerStickyOpen = true;
+            if (wheelHost.__lgTimerArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+            }
+            wheelHost.__lgTimerArmTimer = setTimeout(() => {
+              if (wheelHost && wheelHost.classList) {
+                wheelHost.classList.remove('lg-timer-radial-arming');
+              }
+              wheelHost.__lgTimerArmTimer = 0;
+            }, 300);
+            {{ lg_climate_temp_focus_set_js('true') }}
+            {{ lg_climate_blur_kick_js() }}
+          };
+          const armedId = (variables && variables.armed_entity_id) || '';
+          const removeId = (variables && variables.remove_script_id) || '';
+          const running = entity && (entity.state === 'active' || entity.state === 'paused');
+          const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+          if (running || armed) {
+            if (removeId) {
+              try { hass.callService('script', 'turn_on', { entity_id: removeId }); } catch (e) {}
+            }
+            return;
+          }
+          const wheelHost = findWheelHost(this);
+          if (!wheelHost) return;
+          if (wheelHost.classList.contains('lg-timer-radial-open')) return;
+          let seed = 30;
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          if (hoursId && states[hoursId]) seed = (parseInt(states[hoursId].state, 10) || 0) * 60;
+          if (minutesId && states[minutesId]) seed += (parseInt(states[minutesId].state, 10) || 0);
+          if (!(seed > 0)) seed = 30;
+          openTimer(wheelHost, seed);
+        ]]]
     extra_styles: |
       [[[
         {{ lg_climate_wheel_seg_math_js() }}
+        const armedId = (variables && variables.armed_entity_id) || '';
+        const running = entity && (entity.state === 'active' || entity.state === 'paused');
+        const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+        const active = !!(running || armed);
         return `
       {{ lg_climate_wheel_slot_position_css() }}
-      #icon { color: var(--lg_color_text) !important; opacity: 0.92; }
+      #icon {
+        color: var(--lg_color_text) !important;
+        opacity: ${active ? '1' : '0.92'};
+        filter: ${active ? 'var(--lg_filter_climate_other)' : 'none'};
+      }
+      #liquid_clip {
+        box-shadow: ${active
+          ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_timer_seg_on)'
+          : 'var(--lg_shadow_climate_wheel_seg)'} !important;
+        filter: ${active ? 'var(--lg_filter_climate_wheel_seg_on)' : 'none'};
+      }
         `;
       ]]]
     custom_fields:
@@ -4516,18 +4843,18 @@ button_card_templates:
     extra_styles: |
       [[[
         return `
-      /* Opacity/pointer gated by climate_global_wheel #temp_frost wrapper
-         (:host(.lg-wheel-temp-open) #temp_frost) — snap visibility (no opacity
-         transition) so backdrop-filter never blinks unblurred tint first.
-         Global focus-viewport tokens (analyzer.mdc §6 / §8). */
+      /* Sized by parent #temp_frost only — NEVER hardcode 100vw here.
+         Debug 972285: nested :host {width:100vw} beat parent collapse rules
+         (frostChild right=2739 = doc scrollW). Fill parent: idle parent is 0×0
+         → child 0; open parent is 100vw → child fills viewport (ADR 0018). */
       :host {
-        position: fixed !important;
+        position: absolute !important;
         inset: 0 !important;
         display: block !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        max-width: 100vw !important;
-        max-height: 100vh !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
         background: var(--lg_color_focus_viewport_fill) !important;
         backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport));
         -webkit-backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport));
@@ -4560,6 +4887,12 @@ button_card_templates:
       timer_entity_id: ""
       popup_hash: ""
       armed_entity_id: ""
+      save_duration_script_id: ""
+      remove_script_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_entity_id: ""
+      mode_entity_id: ""
     tap_action:
       action: none
     extra_styles: |
@@ -4581,6 +4914,11 @@ button_card_templates:
         const running = tEnt && (tEnt.state === 'active' || tEnt.state === 'paused');
         const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
         this.classList.toggle('lg-wheel-timer-active', !!(running || armed));
+        /* Persist timer radial open across re-renders (mirror TEMP sticky). */
+        if (this.__lgTimerStickyOpen || this.classList.contains('lg-timer-radial-open')) {
+          this.classList.add('lg-timer-radial-open');
+          this.__lgTimerStickyOpen = true;
+        }
         const a = (entity && entity.attributes) || {};
         const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
         const hModes = Array.isArray(a.swing_horizontal_modes) ? a.swing_horizontal_modes : null;
@@ -4677,10 +5015,6 @@ button_card_templates:
         display: block !important;
         pointer-events: auto !important;
       }
-      :host(.lg-wheel-layer-main.lg-wheel-timer-active) #timer_slot {
-        display: none !important;
-        pointer-events: none !important;
-      }
       :host(.lg-wheel-layer-fan) #back_fan,
       :host(.lg-wheel-layer-fan) #fan_auto,
       :host(.lg-wheel-layer-fan) #fan_low,
@@ -4703,7 +5037,7 @@ button_card_templates:
          Segments MUST NOT display — not merely dimmed.
          Snap frost (visibility) — no opacity fade over backdrop-filter.
          Wrapper is also position:fixed so it is not trapped by wheel layout. */
-      /* analyzer.mdc §6: the frost MUST be fixed/inset:0 OUTSIDE any
+      /* analyzer.mdc §6 / ADR 0018: frost MUST be fixed/inset:0 OUTSIDE any
          transform/filter containing block. Per CSS Filter Effects L1 a non-none
          filter makes an element the containing block for its position:fixed
          descendants, so the :host drop-shadow above silently re-anchored
@@ -4714,18 +5048,23 @@ button_card_templates:
          annular silhouette this shadow exists for is not painted. #trigger keeps
          its own lg_shadow_climate_arc_sphere box-shadow. Clearing the filter
          also removes the :host stacking context, so frost z-index 40 finally
-         layers against the room instead of being confined inside the wheel. */
+         layers against the room instead of being confined inside the wheel.
+         IDLE CONTRACT (klimat_desktop_viewport_probe.js 2026-07-27): while
+         closed, #temp_frost MUST collapse to 0×0 — a hidden 100vw×100vh child
+         still expands scrollable overflow of filter-trapped ancestors
+         (measured doc overflowW≈1059 / overflowH≈282 with normal roomRect). */
       :host(.lg-wheel-temp-open) {
         filter: none !important;
       }
       #temp_frost {
         position: fixed !important;
         inset: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        max-width: none !important;
-        max-height: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
         margin: 0 !important;
+        overflow: hidden !important;
         z-index: 40 !important;
         opacity: 0 !important;
         visibility: hidden !important;
@@ -4733,6 +5072,11 @@ button_card_templates:
         transition: none !important;
       }
       :host(.lg-wheel-temp-open) #temp_frost {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        max-height: none !important;
+        overflow: hidden !important;
         opacity: 1 !important;
         visibility: visible !important;
         pointer-events: auto !important;
@@ -4745,10 +5089,7 @@ button_card_templates:
         pointer-events: none !important;
       }
       :host(.lg-wheel-temp-open) #temp_frost > * {
-        opacity: 1 !important;
-        visibility: visible !important;
         pointer-events: auto !important;
-        transition: none !important;
       }
       :host(.lg-wheel-temp-open.lg-wheel-temp-arming) #temp_frost > * {
         pointer-events: none !important;
@@ -4775,6 +5116,83 @@ button_card_templates:
         pointer-events: none !important;
         opacity: 0 !important;
       }
+      /* ADR 0025 — timer radial open: frost + hide segments; mutex with TEMP. */
+      :host(.lg-timer-radial-open) {
+        filter: none !important;
+      }
+      #timer_frost {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        z-index: 40 !important;
+        transition: none !important;
+      }
+      :host(.lg-timer-radial-open) #timer_frost {
+        width: 100vw !important;
+        height: 100vh !important;
+        overflow: visible !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+      }
+      :host(.lg-timer-radial-open.lg-timer-radial-arming) #timer_frost,
+      :host(.lg-timer-radial-open.lg-timer-radial-arming) #timer_frost > * {
+        pointer-events: none !important;
+      }
+      :host(.lg-timer-radial-open) #timer_frost > * {
+        pointer-events: auto !important;
+      }
+      #timer_radial {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: var(--lg_size_climate_timer_radial_w) !important;
+        height: var(--lg_size_climate_timer_radial_w) !important;
+        z-index: 47 !important;
+        display: none !important;
+        pointer-events: none !important;
+      }
+      :host(.lg-timer-radial-open) #timer_radial {
+        display: block !important;
+        pointer-events: auto !important;
+      }
+      @media (max-width: 48rem) {
+        #timer_radial {
+          width: var(--lg_size_climate_timer_radial_w_phone) !important;
+          height: var(--lg_size_climate_timer_radial_w_phone) !important;
+        }
+      }
+      :host(.lg-timer-radial-open) #quiet_btn,
+      :host(.lg-timer-radial-open) #fan_entry,
+      :host(.lg-timer-radial-open) #turbo_btn,
+      :host(.lg-timer-radial-open) #timer_slot,
+      :host(.lg-timer-radial-open) #swing_h,
+      :host(.lg-timer-radial-open) #swing_v,
+      :host(.lg-timer-radial-open) #mode_entry,
+      :host(.lg-timer-radial-open) #back_fan,
+      :host(.lg-timer-radial-open) #fan_auto,
+      :host(.lg-timer-radial-open) #fan_low,
+      :host(.lg-timer-radial-open) #fan_med,
+      :host(.lg-timer-radial-open) #fan_high,
+      :host(.lg-timer-radial-open) #back_mode,
+      :host(.lg-timer-radial-open) #mode_cool,
+      :host(.lg-timer-radial-open) #mode_heat,
+      :host(.lg-timer-radial-open) #mode_dry,
+      :host(.lg-timer-radial-open) #mode_fan_only,
+      :host(.lg-timer-radial-open) #mode_auto,
+      :host(.lg-timer-radial-open) #trigger {
+        display: none !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+      }
+      :host(.lg-wheel-timer-active) #timer_slot #liquid_clip {
+        box-shadow: var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_timer_seg_on) !important;
+        filter: var(--lg_filter_climate_wheel_seg_on);
+      }
         `;
       ]]]
     custom_fields:
@@ -4783,6 +5201,20 @@ button_card_templates:
           type: custom:button-card
           template: climate_wheel_temp_frost
           entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      timer_frost:
+        card:
+          type: custom:button-card
+          template: climate_timer_frost
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+      timer_radial:
+        card:
+          type: custom:button-card
+          template: climate_timer_radial_panel
+          entity: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
+          variables:
+            save_duration_script_id: "[[[ return (variables && variables.save_duration_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
       trigger:
         card:
           type: custom:button-card
@@ -4828,6 +5260,11 @@ button_card_templates:
             seg_total: 6
             seg_slot: timer
             popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
       swing_h:
         card:
           type: custom:button-card
@@ -5012,8 +5449,8 @@ button_card_templates:
   # templates + services untouched: climate_swing_axis_chip / climate_power_btn.
   # Satellite band — 4 small icon-only toggles orbiting the sun (swing
   # vertical/horizontal + the new Turbo/Quiet switches). climate_power_btn
-  # is retired from here: room on/off now lives at the room_container
-  # corner as a hold-to-confirm button (climate_room_off_button).
+  # is retired from here: room on/off now lives inside the climate room
+  # panel as a tap-to-off button (climate_room_off_button).
   climate_utility_row:
     show_icon: false
     show_name: false
@@ -5322,6 +5759,21 @@ button_card_templates:
           this.__lgTempStickyOpen = true;
           const wheelHost = findWheelHost(this);
           if (wheelHost) {
+            /* Mutex with timer radial (ADR 0025). */
+            if (wheelHost.classList.contains('lg-timer-radial-open')) {
+              wheelHost.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+              wheelHost.__lgTimerOpenedAt = 0;
+              wheelHost.__lgTimerStickyOpen = false;
+              if (wheelHost.__lgTimerArmTimer) {
+                try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+                wheelHost.__lgTimerArmTimer = 0;
+              }
+              const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+              if (radial) {
+                radial.__lgTimerPending = undefined;
+                radial.classList.remove('lg-timer-dragging');
+              }
+            }
             wheelHost.classList.add('lg-wheel-temp-open', 'lg-wheel-temp-arming');
             wheelHost.__lgTempOpenedAt = Date.now();
             if (wheelHost.__lgTempArmTimer) {
@@ -5500,6 +5952,7 @@ button_card_templates:
         text-align: center;
         font-family: var(--lg_font_label_family);
         line-height: 1.15;
+        filter: var(--lg_filter_climate_setpoint_readout);
       }
       @media (max-width: 48rem) {
         .lg-setpoint-stack {
@@ -5510,7 +5963,7 @@ button_card_templates:
       }
       .lg-setpoint-stack__ambient {
         color: var(--lg_color_text);
-        opacity: 0.72;
+        opacity: 0.88;
         font-size: var(--lg_font_climate_setpoint_ambient_size);
         font-weight: var(--lg_font_label_weight);
         white-space: normal;
@@ -6079,9 +6532,544 @@ button_card_templates:
           type: custom:button-card
           template: climate_thermostat_action_btn
           entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
-  # Dual-state Klimat timer control (replaces text pill):
-  # idle → round timer icon (navigate Bubble popup);
-  # active|paused → liquid countdown bar + pause/play + cancel + edit;
+  # ADR 0025 — in-place radial duration picker frost dismiss (mirrors climate_wheel_temp_frost).
+  climate_timer_frost:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          let wheelHost = null;
+          let scope = composedParent(this);
+          for (let i = 0; i < 16 && scope; i++) {
+            if (scope.classList && scope.classList.contains('lg-wheel-host')) {
+              wheelHost = scope;
+              break;
+            }
+            scope = composedParent(scope);
+          }
+          const openedAt = wheelHost && wheelHost.__lgTimerOpenedAt;
+          const arming = !!(wheelHost && wheelHost.classList.contains('lg-timer-radial-arming'));
+          if (!wheelHost || !wheelHost.classList.contains('lg-timer-radial-open')
+              || arming || (Date.now() - (openedAt || 0)) < 280) {
+            return;
+          }
+          wheelHost.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+          wheelHost.__lgTimerOpenedAt = 0;
+          wheelHost.__lgTimerStickyOpen = false;
+          if (wheelHost.__lgTimerArmTimer) {
+            try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+            wheelHost.__lgTimerArmTimer = 0;
+          }
+          {{ lg_climate_temp_focus_set_js('false') }}
+          {{ lg_climate_blur_kick_js() }}
+          const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+          if (radial) {
+            radial.__lgTimerPending = undefined;
+            radial.__lgTimerLastProgress = 0;
+            radial.classList.remove('lg-timer-dragging');
+            radial.style.setProperty('--lg_timer_t', '0');
+            radial.style.setProperty('--lg_timer_knob_x', '50%');
+            radial.style.setProperty('--lg_timer_knob_y', '6%');
+            radial.style.setProperty('--lg_timer_label', '"0 хв"');
+          }
+        ]]]
+    extra_styles: |
+      [[[
+        return `
+      :host {
+        position: absolute !important;
+        inset: 0 !important;
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        background: var(--lg_color_focus_viewport_fill) !important;
+        backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport));
+        -webkit-backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport));
+        opacity: 1 !important;
+        pointer-events: inherit !important;
+        transition: none !important;
+        box-shadow: none !important;
+        overflow: hidden;
+        z-index: 40 !important;
+      }
+      ha-card, #card, #container {
+        background: transparent !important;
+        box-shadow: none !important;
+        width: 100%;
+        height: 100%;
+      }
+      #icon, #name, #label, #state { display: none !important; }
+        `;
+      ]]]
+
+  # ADR 0025 — full 360° duration radial (deferred commit on central glass tap).
+  climate_timer_radial_panel:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      save_duration_script_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      seed_minutes: 0
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        const maxMin = (() => {
+          let m = 720;
+          if (this) {
+            const raw = parseFloat(getComputedStyle(this).getPropertyValue('--lg_size_climate_timer_max_minutes'));
+            if (Number.isFinite(raw) && raw > 0) m = raw;
+          }
+          return m;
+        })();
+        const fmtLabel = (mins) => {
+          const n = Math.max(0, Math.round(mins));
+          if (n < 60) return `"${n} хв"`;
+          const h = Math.floor(n / 60);
+          const mm = n % 60;
+          if (mm === 0) return `"${h} год"`;
+          return `"${h} год ${mm} хв"`;
+        };
+        const R = 44, CX = 50, CY = 50;
+        const r4 = (n) => Math.round(n * 10000) / 10000;
+        const posForProgress = (p) => {
+          const theta = p * Math.PI * 2;
+          return { x: r4(CX + R * Math.sin(theta)), y: r4(CY - R * Math.cos(theta)) };
+        };
+        const seedFromVars = () => {
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          let mins = Number(variables && variables.seed_minutes) || 0;
+          if (hoursId && states[hoursId]) mins = (parseInt(states[hoursId].state, 10) || 0) * 60;
+          if (minutesId && states[minutesId]) mins += (parseInt(states[minutesId].state, 10) || 0);
+          if (!(mins > 0) && this && typeof this.__lgTimerSeedMinutes === 'number') {
+            mins = this.__lgTimerSeedMinutes;
+          }
+          return Math.max(0, Math.min(maxMin, mins));
+        };
+        if (this) {
+          this.classList.add('lg-timer-radial-host');
+          this.__lgTimerMaxMin = maxMin;
+        }
+        const pendingNow = (this && typeof this.__lgTimerPending === 'number' && Number.isFinite(this.__lgTimerPending))
+          ? this.__lgTimerPending : null;
+        const seedMins = seedFromVars();
+        const displayMins = pendingNow !== null ? pendingNow : seedMins;
+        const timerT = maxMin > 0 ? Math.max(0, Math.min(1, displayMins / maxMin)) : 0;
+        const knobPos = posForProgress(timerT);
+        const labelCss = fmtLabel(displayMins);
+        const dragging = !!(this && this.__lgTimerDragging);
+        if (this && this.updateComplete) {
+          const card = this;
+          const setVar = (n, v) => {
+            const cur = card.style.getPropertyValue(n);
+            if (v === null || v === undefined || v === '') { if (cur) card.style.removeProperty(n); return; }
+            if (cur !== v) card.style.setProperty(n, v);
+          };
+          const applyProgress = (raw, fromDrag) => {
+            let p = Math.max(0, Math.min(1, raw));
+            if (fromDrag && typeof card.__lgTimerLastProgress === 'number') {
+              const prev = card.__lgTimerLastProgress;
+              if (prev > 0.75 && p < 0.25) p = 1;
+              else if (prev < 0.25 && p > 0.75) p = 0;
+            }
+            card.__lgTimerLastProgress = p;
+            const mins = Math.round(p * (card.__lgTimerMaxMin || maxMin));
+            const prevMins = typeof card.__lgTimerPending === 'number' ? card.__lgTimerPending : null;
+            card.__lgTimerPending = mins;
+            const pos = posForProgress(p);
+            setVar('--lg_timer_t', String(p));
+            setVar('--lg_timer_knob_x', `${pos.x}%`);
+            setVar('--lg_timer_knob_y', `${pos.y}%`);
+            setVar('--lg_timer_label', fmtLabel(mins));
+            try {
+              const conf = card.shadowRoot && card.shadowRoot.querySelector('#timer_confirm');
+              const host = conf && (conf.shadowRoot ? conf : conf);
+              const labelEl = host && host.shadowRoot && host.shadowRoot.querySelector('#label');
+              if (labelEl) {
+                const raw = fmtLabel(mins).replace(/^"/, '').replace(/"$/, '');
+                labelEl.textContent = raw;
+              }
+            } catch (e) {}
+            if (fromDrag && prevMins !== null && mins !== prevMins) {
+              const crossed5 = Math.floor(prevMins / 5) !== Math.floor(mins / 5);
+              const crossed10 = Math.floor(prevMins / 10) !== Math.floor(mins / 10);
+              if ((crossed5 || crossed10) && typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate(8); } catch (e) {}
+              }
+            }
+          };
+          const progressFromEvent = (ev, ringEl) => {
+            const rect = ringEl.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            let a = Math.atan2(ev.clientX - cx, -(ev.clientY - cy));
+            if (a < 0) a += Math.PI * 2;
+            return a / (Math.PI * 2);
+          };
+          if (!card.__lgTimerBound) {
+            const bind = () => {
+              const ring = card.shadowRoot && card.shadowRoot.querySelector('#timer_ring');
+              if (!ring || card.__lgTimerBound) return;
+              card.__lgTimerBound = true;
+              const down = (ev) => {
+                /* Ignore taps that start on the confirm glass — confirm owns commit. */
+                const path = (ev.composedPath && ev.composedPath()) || [];
+                if (path.some((n) => n && n.id === 'timer_confirm')) return;
+                card.__lgTimerDragging = true;
+                card.classList.add('lg-timer-dragging');
+                if (ring.setPointerCapture && ev.pointerId !== undefined) {
+                  try { ring.setPointerCapture(ev.pointerId); } catch (e) {}
+                }
+                applyProgress(progressFromEvent(ev, ring), true);
+                ev.preventDefault();
+                ev.stopPropagation();
+              };
+              const move = (ev) => {
+                if (!card.__lgTimerDragging) return;
+                applyProgress(progressFromEvent(ev, ring), true);
+                ev.preventDefault();
+              };
+              const up = () => {
+                card.__lgTimerDragging = false;
+                card.classList.remove('lg-timer-dragging');
+              };
+              ring.addEventListener('pointerdown', down);
+              ring.addEventListener('pointermove', move);
+              ring.addEventListener('pointerup', up);
+              ring.addEventListener('pointercancel', up);
+            };
+            card.updateComplete.then(() => { bind(); setTimeout(bind, 60); setTimeout(bind, 240); });
+          }
+          /* Seed pending when overlay opens without prior drag. */
+          if (pendingNow === null && seedMins > 0) {
+            card.__lgTimerPending = seedMins;
+            card.__lgTimerLastProgress = timerT;
+          }
+        }
+        const fillStroke = dragging
+          ? 'url(#lgTimerGrad)'
+          : 'url(#lgTimerGrad)';
+        return `
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        pointer-events: auto !important;
+        --lg_timer_t: ${timerT};
+        --lg_timer_knob_x: ${knobPos.x}%;
+        --lg_timer_knob_y: ${knobPos.y}%;
+        --lg_timer_label: ${labelCss};
+        --lg_size_climate_timer_max_minutes: ${maxMin};
+      }
+      ha-card, #card {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: var(--lg_size_climate_timer_radial_w) !important;
+        height: var(--lg_size_climate_timer_radial_w) !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+      }
+      #name, #icon, #label, #state { display: none !important; }
+      #timer_ring {
+        grid-area: 1 / 1 !important;
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: 1 / 1 !important;
+        display: block !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+        border-radius: 50% !important;
+        pointer-events: auto !important;
+        touch-action: none !important;
+        z-index: 1 !important;
+      }
+      #timer_ring .lg-timer-radial__svg {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        overflow: visible !important;
+        pointer-events: none !important;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+      }
+      #timer_ring .lg-timer-radial__track {
+        fill: none;
+        stroke: var(--lg_color_climate_timer_track);
+        stroke-width: var(--lg_size_climate_timer_radial_stroke_u);
+        stroke-linecap: round;
+        pointer-events: stroke !important;
+      }
+      #timer_ring .lg-timer-radial__fill {
+        fill: none;
+        stroke: ${fillStroke};
+        stroke-width: var(--lg_size_climate_timer_radial_stroke_u);
+        stroke-linecap: round;
+        stroke-dasharray: calc(var(--lg_timer_t, 0) * 100) calc(100 - (var(--lg_timer_t, 0) * 100));
+        stroke-dashoffset: 0;
+        pointer-events: stroke !important;
+      }
+      #timer_confirm {
+        grid-area: 1 / 1 !important;
+        z-index: 4 !important;
+        justify-self: center !important;
+        align-self: center !important;
+        width: var(--lg_size_climate_timer_radial_glass_pct) !important;
+        height: var(--lg_size_climate_timer_radial_glass_pct) !important;
+        border-radius: 50% !important;
+        position: relative !important;
+        pointer-events: auto !important;
+      }
+      #knob {
+        grid-area: 1 / 1 !important;
+        z-index: 5 !important;
+        position: absolute !important;
+        left: var(--lg_timer_knob_x) !important;
+        top: var(--lg_timer_knob_y) !important;
+        width: var(--lg_size_climate_timer_knob_d) !important;
+        height: var(--lg_size_climate_timer_knob_d) !important;
+        border-radius: 50% !important;
+        background: var(--lg_color_climate_timer_knob) !important;
+        box-shadow: var(--lg_shadow_climate_timer_knob) !important;
+        pointer-events: none !important;
+        transform: var(--lg_transform_climate_timer_knob) !important;
+        transition: var(--lg_transition_climate_timer_knob);
+      }
+      :host(.lg-timer-dragging) #knob {
+        transform: var(--lg_transform_climate_timer_knob_drag) !important;
+        box-shadow: var(--lg_shadow_climate_timer_knob_drag) !important;
+      }
+      @media (max-width: 48rem) {
+        #container {
+          width: var(--lg_size_climate_timer_radial_w_phone) !important;
+          height: var(--lg_size_climate_timer_radial_w_phone) !important;
+        }
+        #timer_ring .lg-timer-radial__track,
+        #timer_ring .lg-timer-radial__fill {
+          stroke-width: var(--lg_size_climate_timer_radial_stroke_u_phone);
+        }
+        #knob {
+          width: var(--lg_size_climate_timer_knob_d_phone) !important;
+          height: var(--lg_size_climate_timer_knob_d_phone) !important;
+        }
+      }
+        `;
+      ]]]
+    custom_fields:
+      timer_ring: >
+        <svg class="lg-timer-radial__svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="lgTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(100, 210, 255, 0.95)"/>
+              <stop offset="55%" stop-color="rgba(255, 176, 90, 0.95)"/>
+              <stop offset="100%" stop-color="rgba(255, 90, 70, 0.95)"/>
+            </linearGradient>
+          </defs>
+          <circle class="lg-timer-radial__track" cx="50" cy="50" r="44" pathLength="100"></circle>
+          <circle class="lg-timer-radial__fill" cx="50" cy="50" r="44" pathLength="100"></circle>
+        </svg>
+      knob: ""
+      timer_confirm:
+        card:
+          type: custom:button-card
+          template: climate_timer_radial_confirm
+          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            save_duration_script_id: "[[[ return (variables && variables.save_duration_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+
+  climate_timer_radial_confirm:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: true
+    show_ripple: false
+    variables:
+      save_duration_script_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+    label: " "
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          let radial = null;
+          let wheelHost = null;
+          let scope = composedParent(this);
+          for (let i = 0; i < 16 && scope; i++) {
+            if (scope.classList && scope.classList.contains('lg-timer-radial-host')) radial = scope;
+            if (scope.classList && scope.classList.contains('lg-wheel-host')) {
+              wheelHost = scope;
+              break;
+            }
+            scope = composedParent(scope);
+          }
+          if (!radial) {
+            scope = composedParent(this);
+            for (let i = 0; i < 16 && scope; i++) {
+              if (scope.classList && scope.classList.contains('lg-timer-radial-host')) {
+                radial = scope;
+                break;
+              }
+              scope = composedParent(scope);
+            }
+          }
+          const maxMin = (radial && radial.__lgTimerMaxMin) || 720;
+          let mins = (radial && typeof radial.__lgTimerPending === 'number')
+            ? radial.__lgTimerPending : 0;
+          mins = Math.max(0, Math.min(maxMin, Math.round(mins)));
+          if (mins < 1) return;
+          const hh = Math.floor(mins / 60);
+          const mm = mins % 60;
+          const duration = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`;
+          const scriptId = (variables && variables.save_duration_script_id) || '';
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          try {
+            if (hoursId) hass.callService('input_number', 'set_value', { entity_id: hoursId, value: hh });
+            if (minutesId) hass.callService('input_number', 'set_value', { entity_id: minutesId, value: mm });
+            if (scriptId) {
+              const svc = String(scriptId).replace(/^script\./, '');
+              hass.callService('script', svc, { duration });
+            }
+          } catch (e) {}
+          if (radial) {
+            radial.__lgTimerPending = undefined;
+            radial.__lgTimerDragging = false;
+            radial.classList.remove('lg-timer-dragging');
+          }
+          if (wheelHost) {
+            wheelHost.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+            wheelHost.__lgTimerOpenedAt = 0;
+            wheelHost.__lgTimerStickyOpen = false;
+            if (wheelHost.__lgTimerArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+              wheelHost.__lgTimerArmTimer = 0;
+            }
+          }
+          {{ lg_climate_temp_focus_set_js('false') }}
+          {{ lg_climate_blur_kick_js() }}
+        ]]]
+    extra_styles: |
+      [[[
+        return `
+      :host {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      ha-card, #card {
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #card {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: var(--lg_stroke_climate_timer_radial_glass) solid var(--lg_color_climate_timer_radial_glass_stroke);
+        box-shadow: var(--lg_shadow_climate_arc_sphere);
+        cursor: pointer;
+        transition: var(--lg_transition_press);
+      }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
+      #container {
+        display: grid !important;
+        place-items: center !important;
+        width: 100%;
+        height: 100%;
+      }
+      #liquid_clip {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        background: var(--lg_color_climate_timer_radial_glass_fill);
+        backdrop-filter: blur(var(--lg_blur_climate_timer_radial_glass)) saturate(var(--lg_saturate_glass));
+        -webkit-backdrop-filter: blur(var(--lg_blur_climate_timer_radial_glass)) saturate(var(--lg_saturate_glass));
+        box-shadow: inset 0 0 0 0.0625rem rgba(255, 255, 255, 0.35), inset 0 0.25rem 0.75rem rgba(255, 255, 255, 0.12);
+        pointer-events: none;
+        z-index: 0;
+      }
+      #label {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text) !important;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_radial_size);
+        font-weight: var(--lg_font_title_weight);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: var(--lg_line_height_label);
+        text-align: center;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      #label::after {
+        content: var(--lg_timer_label, "0 хв");
+      }
+      #icon, #name, #state { display: none !important; }
+      @media (max-width: 48rem) {
+        #label { font-size: var(--lg_font_climate_timer_radial_size_phone); }
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # Dual-state Klimat timer control:
+  # idle → round timer icon (opens in-place radial, ADR 0025);
+  # active|paused → liquid countdown bar + pause/play + edit (cancel via wheel segment);
   # clock-armed → remaining HH:MM:SS + moving progress + pause (pause-clock script).
   # HA timer docs: idle|active|paused; pause/start/cancel actions.
   # Live countdown: finishes_at client tick (remaining not ticked by core).
@@ -6167,63 +7155,131 @@ button_card_templates:
       clock_hour_entity_id: ""
       clock_minute_entity_id: ""
       armed_entity_id: ""
-    tap_action: |
-      [[[
-        const parseDur = (raw) => {
-          const parts = String(raw || '').split(':').map((p) => parseInt(p, 10) || 0);
-          if (parts.length >= 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-          if (parts.length === 2) return parts[0] * 60 + parts[1];
-          return 0;
-        };
-        const remSec = (ent) => {
-          if (!ent) return 0;
-          if (ent.state === 'paused') return parseDur(ent.attributes && ent.attributes.remaining);
-          if (ent.state === 'active') {
-            const fin = ent.attributes && ent.attributes.finishes_at;
-            if (!fin) return 0;
-            const ms = new Date(fin).getTime() - Date.now();
-            return Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
-          }
-          return 0;
-        };
-        const modeId = (variables && variables.mode_entity_id) || '';
-        const hoursId = (variables && variables.hours_entity_id) || '';
-        const minutesId = (variables && variables.minutes_entity_id) || '';
-        const clockId = (variables && variables.clock_entity_id) || '';
-        const clockHId = (variables && variables.clock_hour_entity_id) || '';
-        const clockMId = (variables && variables.clock_minute_entity_id) || '';
-        const armedId = (variables && variables.armed_entity_id) || '';
-        const hash = (variables && variables.popup_hash) || '';
-        const running = entity && (entity.state === 'active' || entity.state === 'paused');
-        const armed = armedId && states[armedId] && states[armedId].state === 'on';
-        try {
-          if (running) {
-            if (modeId) hass.callService('input_select', 'select_option', { entity_id: modeId, option: 'duration' });
-            let sec = remSec(entity);
-            let hh = Math.floor(sec / 3600);
-            let mm = Math.floor((sec % 3600) / 60);
-            if ((sec % 60) > 0) {
-              mm += 1;
-              if (mm >= 60) { mm = 0; hh += 1; }
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const parseDur = (raw) => {
+            const parts = String(raw || '').split(':').map((p) => parseInt(p, 10) || 0);
+            if (parts.length >= 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            if (parts.length === 2) return parts[0] * 60 + parts[1];
+            return 0;
+          };
+          const remSec = (ent) => {
+            if (!ent) return 0;
+            if (ent.state === 'paused') return parseDur(ent.attributes && ent.attributes.remaining);
+            if (ent.state === 'active') {
+              const fin = ent.attributes && ent.attributes.finishes_at;
+              if (!fin) return 0;
+              const ms = new Date(fin).getTime() - Date.now();
+              return Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
             }
-            if (hh === 0 && mm === 0 && sec > 0) mm = 1;
-            if (hoursId) hass.callService('input_number', 'set_value', { entity_id: hoursId, value: hh });
-            if (minutesId) hass.callService('input_number', 'set_value', { entity_id: minutesId, value: mm });
-          } else if (armed) {
-            if (modeId) hass.callService('input_select', 'select_option', { entity_id: modeId, option: 'clock' });
-            const clock = clockId ? states[clockId] : null;
-            if (clock && clock.state) {
-              const parts = String(clock.state).split(':');
-              const ch = parseInt(parts[0], 10) || 0;
-              const cm = parseInt(parts[1], 10) || 0;
-              if (clockHId) hass.callService('input_number', 'set_value', { entity_id: clockHId, value: ch });
-              if (clockMId) hass.callService('input_number', 'set_value', { entity_id: clockMId, value: cm });
+            return 0;
+          };
+          const clockRemSec = (clockState) => {
+            const parts = String(clockState || '').split(':').map((p) => parseInt(p, 10) || 0);
+            const hh = parts[0] || 0;
+            const mm = parts[1] || 0;
+            const ss = parts[2] || 0;
+            const now = new Date();
+            const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss, 0);
+            if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+            return Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
+          };
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          const clockId = (variables && variables.clock_entity_id) || '';
+          const armedId = (variables && variables.armed_entity_id) || '';
+          const modeId = (variables && variables.mode_entity_id) || '';
+          const running = entity && (entity.state === 'active' || entity.state === 'paused');
+          const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+          let seedMin = 30;
+          try {
+            if (running) {
+              if (modeId) hass.callService('input_select', 'select_option', { entity_id: modeId, option: 'duration' });
+              let sec = remSec(entity);
+              seedMin = Math.max(1, Math.round(sec / 60));
+              const hh = Math.floor(seedMin / 60);
+              const mm = seedMin % 60;
+              if (hoursId) hass.callService('input_number', 'set_value', { entity_id: hoursId, value: hh });
+              if (minutesId) hass.callService('input_number', 'set_value', { entity_id: minutesId, value: mm });
+            } else if (armed && clockId && states[clockId]) {
+              if (modeId) hass.callService('input_select', 'select_option', { entity_id: modeId, option: 'duration' });
+              const sec = clockRemSec(states[clockId].state);
+              seedMin = Math.max(1, Math.min(720, Math.round(sec / 60)));
+              const hh = Math.floor(seedMin / 60);
+              const mm = seedMin % 60;
+              if (hoursId) hass.callService('input_number', 'set_value', { entity_id: hoursId, value: hh });
+              if (minutesId) hass.callService('input_number', 'set_value', { entity_id: minutesId, value: mm });
             }
+          } catch (e) {}
+          let thermostat = null;
+          let scope = composedParent(this);
+          for (let i = 0; i < 24 && scope; i++) {
+            if (scope.classList && scope.classList.contains('lg-thermostat-host')) {
+              thermostat = scope;
+              break;
+            }
+            scope = composedParent(scope);
           }
-        } catch (e) {}
-        return { action: 'navigate', navigation_path: hash };
-      ]]]
-
+          const wheelHost = thermostat && thermostat.shadowRoot
+            ? thermostat.shadowRoot.querySelector('.lg-wheel-host')
+            : null;
+          if (!wheelHost) return;
+          const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+          const maxMin = (radial && radial.__lgTimerMaxMin) || 720;
+          const mins = Math.max(0, Math.min(maxMin, seedMin));
+          if (radial) {
+            radial.__lgTimerSeedMinutes = mins;
+            radial.__lgTimerPending = mins;
+            const p = maxMin > 0 ? mins / maxMin : 0;
+            radial.__lgTimerLastProgress = p;
+            const theta = p * Math.PI * 2;
+            const r4 = (n) => Math.round(n * 10000) / 10000;
+            radial.style.setProperty('--lg_timer_t', String(p));
+            radial.style.setProperty('--lg_timer_knob_x', `${r4(50 + 44 * Math.sin(theta))}%`);
+            radial.style.setProperty('--lg_timer_knob_y', `${r4(50 - 44 * Math.cos(theta))}%`);
+            let label;
+            if (mins < 60) label = `"${mins} хв"`;
+            else {
+              const h = Math.floor(mins / 60);
+              const mm = mins % 60;
+              label = mm === 0 ? `"${h} год"` : `"${h} год ${mm} хв"`;
+            }
+            radial.style.setProperty('--lg_timer_label', label);
+          }
+          /* Close TEMP if open. */
+          if (wheelHost.classList.contains('lg-wheel-temp-open')) {
+            const triggerHost = wheelHost.shadowRoot && (
+              wheelHost.shadowRoot.querySelector('.lg-ring-trigger-host.lg-ring-trigger-expanded')
+              || wheelHost.shadowRoot.querySelector('.lg-ring-trigger-expanded')
+            );
+            if (triggerHost) {
+              triggerHost.classList.remove('lg-ring-trigger-expanded');
+              triggerHost.__lgTempStickyOpen = false;
+            }
+            wheelHost.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+            wheelHost.__lgTempOpenedAt = 0;
+          }
+          wheelHost.classList.add('lg-timer-radial-open', 'lg-timer-radial-arming');
+          wheelHost.__lgTimerOpenedAt = Date.now();
+          wheelHost.__lgTimerStickyOpen = true;
+          if (wheelHost.__lgTimerArmTimer) {
+            try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+          }
+          wheelHost.__lgTimerArmTimer = setTimeout(() => {
+            if (wheelHost && wheelHost.classList) wheelHost.classList.remove('lg-timer-radial-arming');
+            wheelHost.__lgTimerArmTimer = 0;
+          }, 300);
+          {{ lg_climate_temp_focus_set_js('true') }}
+          {{ lg_climate_blur_kick_js() }}
+        ]]]
   climate_timer_idle_btn:
     show_icon: true
     show_name: false
@@ -6290,6 +7346,17 @@ button_card_templates:
           const s = sec % 60;
           return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         };
+        const fmtOffAt = (dateOrMs) => {
+          const d = (dateOrMs instanceof Date) ? dateOrMs : new Date(dateOrMs);
+          if (!Number.isFinite(d.getTime())) return '';
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          return `Вимкнеться о ${hh}:${mm}`;
+        };
+        const offAtFromRemSec = (sec) => {
+          if (!(sec > 0)) return '';
+          return fmtOffAt(Date.now() + sec * 1000);
+        };
         const clockRemSec = (clockState) => {
           const parts = String(clockState || '').split(':').map((p) => parseInt(p, 10) || 0);
           const hh = parts[0] || 0;
@@ -6302,23 +7369,36 @@ button_card_templates:
           }
           return Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
         };
+        const clockOffLabel = (clockState) => {
+          const parts = String(clockState || '').split(':');
+          const hh = String(parseInt(parts[0], 10) || 0).padStart(2, '0');
+          const mm = String(parseInt(parts[1], 10) || 0).padStart(2, '0');
+          return `Вимкнеться о ${hh}:${mm}`;
+        };
         const running = entity && (entity.state === 'active' || entity.state === 'paused');
         const armedId = variables && variables.armed_entity_id;
         const clockId = variables && variables.clock_entity_id;
         const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
         const showActions = !!(running || armed);
         let label = '…';
+        let offLabel = '';
         let progress = 0;
         let clockState = '';
         if (running) {
           const dur = parseDur(entity.attributes && entity.attributes.duration);
           const rem = remSec(entity);
           label = fmtHMS(rem);
+          if (entity.state === 'active' && entity.attributes && entity.attributes.finishes_at) {
+            offLabel = fmtOffAt(entity.attributes.finishes_at);
+          } else {
+            offLabel = offAtFromRemSec(rem);
+          }
           progress = dur > 0 ? Math.max(0, Math.min(1, 1 - (rem / dur))) : 0;
         } else if (armed && clockId && states[clockId] && states[clockId].state) {
           clockState = states[clockId].state;
           const rem = clockRemSec(clockState);
           label = fmtHMS(rem);
+          offLabel = clockOffLabel(clockState);
           const cardProbe = this;
           let initial = cardProbe.__lgTimerClockInitialRem;
           if (!initial || rem > initial) {
@@ -6338,14 +7418,23 @@ button_card_templates:
         if (!armed) {
           card.__lgTimerClockInitialRem = 0;
         }
-        const tick = () => {
+        const syncLabels = (countdown, offAt) => {
           const root = card.shadowRoot;
           if (!root) return;
           const labelEl = root.querySelector('.lg-climate-timer-active__label');
-          if (!labelEl) return;
+          const offEl = root.querySelector('.lg-climate-timer-active__off');
+          if (labelEl) labelEl.textContent = countdown;
+          if (offEl) {
+            offEl.textContent = offAt || '';
+            offEl.style.display = offAt ? '' : 'none';
+          }
+        };
+        const tick = () => {
+          const root = card.shadowRoot;
+          if (!root) return;
           if (card.__lgTimerArmed) {
             const rem = clockRemSec(card.__lgTimerClockState);
-            labelEl.textContent = fmtHMS(rem);
+            syncLabels(fmtHMS(rem), clockOffLabel(card.__lgTimerClockState));
             let initial = card.__lgTimerClockInitialRem || Math.max(rem, 1);
             if (rem > initial) {
               initial = rem;
@@ -6356,9 +7445,9 @@ button_card_templates:
             return;
           }
           if (card.__lgTimerPaused) {
-            labelEl.textContent = fmtHMS(card.__lgTimerPausedRemaining || 0);
-            const dur = card.__lgTimerDurationSec || 0;
             const rem = card.__lgTimerPausedRemaining || 0;
+            syncLabels(fmtHMS(rem), offAtFromRemSec(rem));
+            const dur = card.__lgTimerDurationSec || 0;
             const p = dur > 0 ? Math.max(0, Math.min(1, 1 - (rem / dur))) : 0;
             card.style.setProperty('--lg_climate_timer_progress', String(p));
             return;
@@ -6367,7 +7456,7 @@ button_card_templates:
           if (!fin) return;
           const ms = new Date(fin).getTime() - Date.now();
           const rem = Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
-          labelEl.textContent = fmtHMS(rem);
+          syncLabels(fmtHMS(rem), fmtOffAt(fin));
           const dur = card.__lgTimerDurationSec || 0;
           const p = dur > 0 ? Math.max(0, Math.min(1, 1 - (rem / dur))) : 0;
           card.style.setProperty('--lg_climate_timer_progress', String(p));
@@ -6389,11 +7478,22 @@ button_card_templates:
             const text = document.createElement('span');
             text.className = 'lg-climate-timer-active__label';
             text.textContent = label;
+            const off = document.createElement('span');
+            off.className = 'lg-climate-timer-active__off';
+            off.textContent = offLabel || '';
+            if (!offLabel) off.style.display = 'none';
             live.appendChild(text);
+            live.appendChild(off);
             slot.appendChild(live);
           } else {
-            const text = live.querySelector('.lg-climate-timer-active__label');
-            if (text) text.textContent = label;
+            syncLabels(label, offLabel);
+            let off = live.querySelector('.lg-climate-timer-active__off');
+            if (!off) {
+              off = document.createElement('span');
+              off.className = 'lg-climate-timer-active__off';
+              live.appendChild(off);
+              syncLabels(label, offLabel);
+            }
           }
           tick();
           if ((running && entity.state === 'active') || card.__lgTimerArmed) {
@@ -6429,8 +7529,8 @@ button_card_templates:
       {{ lg_liquid_clip_shell_extra_styles() }}
       #container {
         display: grid !important;
-        grid-template-areas: "countdown pause cancel edit" !important;
-        grid-template-columns: var(--lg_size_climate_timer_liquid_w) auto auto auto !important;
+        grid-template-areas: "countdown pause edit" !important;
+        grid-template-columns: var(--lg_size_climate_timer_liquid_w_active) auto auto !important;
         grid-template-rows: var(--lg_size_climate_timer_bar_h) !important;
         align-items: center !important;
         justify-content: start !important;
@@ -6457,7 +7557,7 @@ button_card_templates:
         grid-area: countdown !important;
         position: relative !important;
         inset: auto !important;
-        width: var(--lg_size_climate_timer_liquid_w) !important;
+        width: var(--lg_size_climate_timer_liquid_w_active) !important;
         height: var(--lg_size_climate_timer_bar_h) !important;
         border-radius: var(--lg_radius_liquid);
         overflow: hidden;
@@ -6495,9 +7595,9 @@ button_card_templates:
         grid-area: countdown !important;
         position: relative;
         z-index: 1;
-        width: var(--lg_size_climate_timer_liquid_w) !important;
-        min-width: var(--lg_size_climate_timer_liquid_w) !important;
-        max-width: var(--lg_size_climate_timer_liquid_w) !important;
+        width: var(--lg_size_climate_timer_liquid_w_active) !important;
+        min-width: var(--lg_size_climate_timer_liquid_w_active) !important;
+        max-width: var(--lg_size_climate_timer_liquid_w_active) !important;
         height: var(--lg_size_climate_timer_bar_h) !important;
         display: flex !important;
         align-items: center !important;
@@ -6510,9 +7610,13 @@ button_card_templates:
         width: 100%;
         height: 100%;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 0.0625rem;
         overflow: hidden;
+        padding: 0 var(--lg_space_climate_timer_bar_pad_x);
+        box-sizing: border-box;
       }
       .lg-climate-timer-active__label {
         position: relative;
@@ -6522,22 +7626,26 @@ button_card_templates:
         font-size: var(--lg_font_climate_timer_size);
         font-weight: var(--lg_font_title_weight);
         letter-spacing: var(--lg_font_body_tracking);
-        line-height: var(--lg_line_height_label);
+        line-height: 1.1;
+        white-space: nowrap;
+        text-align: center;
+      }
+      .lg-climate-timer-active__off {
+        position: relative;
+        z-index: 1;
+        color: var(--lg_color_text);
+        opacity: 0.78;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_off_at_size);
+        font-weight: var(--lg_font_body_weight, 400);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: 1.1;
         white-space: nowrap;
         text-align: center;
       }
       #pause_btn {
         grid-area: pause !important;
         display: ${showActions ? 'block' : 'none'} !important;
-        width: var(--lg_size_climate_timer_action_chip_w) !important;
-        height: var(--lg_size_climate_timer_action_chip_w) !important;
-        position: relative;
-        z-index: 2;
-        align-self: center !important;
-      }
-      #cancel_btn {
-        grid-area: cancel !important;
-        display: block !important;
         width: var(--lg_size_climate_timer_action_chip_w) !important;
         height: var(--lg_size_climate_timer_action_chip_w) !important;
         position: relative;
@@ -6559,14 +7667,14 @@ button_card_templates:
           max-width: min(100%, var(--lg_size_climate_timer_active_w_phone)) !important;
         }
         #container {
-          grid-template-columns: var(--lg_size_climate_timer_liquid_w_phone) auto auto auto !important;
+          grid-template-columns: var(--lg_size_climate_timer_liquid_w_active_phone) auto auto !important;
         }
         #liquid_clip, #countdown {
-          width: var(--lg_size_climate_timer_liquid_w_phone) !important;
-          min-width: var(--lg_size_climate_timer_liquid_w_phone) !important;
-          max-width: var(--lg_size_climate_timer_liquid_w_phone) !important;
+          width: var(--lg_size_climate_timer_liquid_w_active_phone) !important;
+          min-width: var(--lg_size_climate_timer_liquid_w_active_phone) !important;
+          max-width: var(--lg_size_climate_timer_liquid_w_active_phone) !important;
         }
-        #pause_btn, #cancel_btn, #edit_btn {
+        #pause_btn, #edit_btn {
           width: var(--lg_size_climate_timer_action_chip_w_phone) !important;
           height: var(--lg_size_climate_timer_action_chip_w_phone) !important;
         }
@@ -6585,13 +7693,6 @@ button_card_templates:
           variables:
             armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
             pause_clock_script_id: "[[[ return (variables && variables.pause_clock_script_id) || '' ]]]"
-      cancel_btn:
-        card:
-          type: custom:button-card
-          template: climate_timer_cancel_btn
-          entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
-          variables:
-            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
       edit_btn:
         card:
           type: custom:button-card
@@ -6781,6 +7882,11 @@ button_card_templates:
         transition: var(--lg_transition_press);
         cursor: pointer;
       }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
+      }
       #icon, #label, #state { display: none !important; }
       #name {
         position: relative;
@@ -6863,6 +7969,11 @@ button_card_templates:
         box-shadow: none;
         transition: var(--lg_transition_press);
         cursor: pointer;
+      }
+      #card:active {
+        transform: var(--lg_transform_climate_press_scale);
+        opacity: var(--lg_opacity_climate_press);
+        filter: var(--lg_filter_climate_press);
       }
       #icon, #label, #state { display: none !important; }
       #name {
@@ -7946,6 +9057,7 @@ button_card_templates:
       clock_hour_entity_id: ""
       clock_minute_entity_id: ""
       remove_script_id: ""
+      save_duration_script_id: ""
       pause_clock_script_id: ""
       turbo_entity_id: ""
       quiet_entity_id: ""
@@ -7973,7 +9085,8 @@ button_card_templates:
         this.classList.add('lg-thermostat-host');
         const __lgWheelEl = this.shadowRoot && this.shadowRoot.querySelector('.lg-wheel-host');
         const __lgTempOpen = !!(__lgWheelEl && __lgWheelEl.classList.contains('lg-wheel-temp-open'));
-        this.classList.toggle('lg-temp-focus', __lgTempOpen);
+        const __lgTimerOpen = !!(__lgWheelEl && __lgWheelEl.classList.contains('lg-timer-radial-open'));
+        this.classList.toggle('lg-temp-focus', __lgTempOpen || __lgTimerOpen);
         return `
       :host {
         width: 100% !important;
@@ -8081,9 +9194,10 @@ button_card_templates:
           min-height: var(--lg_size_climate_timer_bar_h) !important;
         }
       }
-      /* TEMP red-box: hide under-wheel timer entirely (not merely dim). */
+      /* TEMP / timer radial: hide under-wheel timer entirely (not merely dim). */
       :host(.lg-temp-focus) #timer_bar,
-      #container:has(.lg-ring-trigger-expanded) #timer_bar {
+      #container:has(.lg-ring-trigger-expanded) #timer_bar,
+      #container:has(.lg-timer-radial-open) #timer_bar {
         display: none !important;
         opacity: 0 !important;
         pointer-events: none !important;
@@ -8104,6 +9218,12 @@ button_card_templates:
             timer_entity_id: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
             popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
             armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            save_duration_script_id: "[[[ return (variables && variables.save_duration_script_id) || '' ]]]"
+            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"
       timer_bar:
         card:
           type: custom:button-card
@@ -8224,18 +9344,9 @@ button_card_templates:
       distort: ""
     state: []
 
-  # Per-room AC off badge — sits in the climate_room_container top-right
-  # corner (see the `corner` custom_field in
-  # design_system/templates/layout/climate_room_container.yaml), NOT inside
-  # climate_thermostat's own satellite constellation. Docs-native safety
-  # pattern (analyzer.mdc "no accidental destructive taps"): hold_action
-  # only, tap_action: none, same as disable_room_button/
-  # climate_floor_off_button/climate_house_off_button — but climate-scoped
-  # glow/color tokens (lg_glow_climate_room_off_press /
-  # lg_color_climate_room_off_press), never the shared light lg_glow_disable
-  # / lg_color_disable_icon (dashboard isolation, analyzer.mdc §Premium
-  # safety + global.mdc §"Dashboard isolation").
-  # Idle chrome = lg_climate_round_btn_shell (rim + #liquid_clip + §0e center).
+  # Per-room AC off — round icon-only (no liquid chrome) inside room panel.
+  # Room-level tap-to-off (ADR 0016); floor/house stay hold. Climate-scoped
+  # glow/color tokens only (ADR 0014). Round icon centering (ADR 0015).
   climate_room_off_button:
     show_name: false
     show_icon: true
@@ -8245,8 +9356,6 @@ button_card_templates:
     variables:
       ha_entity_ids: []
     tap_action:
-      action: none
-    hold_action:
       action: call-service
       service: climate.turn_off
       target: |
@@ -8255,20 +9364,1266 @@ button_card_templates:
           if (Array.isArray(ids) && ids.length) return { entity_id: ids };
           return {};
         ]]]
+    hold_action:
+      action: none
     extra_styles: |
-      {{ lg_climate_round_btn_shell_extra_styles('--lg_size_climate_room_off_w', '--lg_size_climate_room_off_w_phone', '--lg_size_climate_room_off_icon', '--lg_size_climate_room_off_icon_phone') }}
+      {{ lg_climate_room_off_layout_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # --- Laundry (ADR 0026) — rework glass UI (spec laundry_glass_rework_ui) ---
+  laundry_machine:
+    show_name: true
+    show_icon: true
+    show_state: false
+    show_label: false
+    show_ripple: false
+    triggers_update: all
+    variables:
+      machine_state_entity_id: ""
+      job_state_entity_id: ""
+      completion_entity_id: ""
+      remote_entity_id: ""
+      power_entity_id: ""
+      armed_entity_id: ""
+      cycle_duration_entity_id: ""
+      delay_mode_entity_id: ""
+      delay_timer_entity_id: ""
+      schedule_script_id: ""
+      cancel_script_id: ""
+      popup_hash: ""
+      option_spin_entity_id: ""
+      option_water_entity_id: ""
+      option_rinse_entity_id: ""
+      option_wrinkle_entity_id: ""
+      option_bubble_entity_id: ""
+      machine_kind: "washer"
+    icon: |
+      [[[
+        const kind = variables.machine_kind || 'washer';
+        const armedId = variables.armed_entity_id || '';
+        const armed = armedId && states[armedId] && states[armedId].state === 'on';
+        if (armed) return 'mdi:timer-check-outline';
+        return kind === 'dryer' ? 'mdi:tumble-dryer' : 'mdi:washing-machine';
+      ]]]
+    tap_action:
+      action: none
+    extra_styles: |
+      /* Laundry fields live under #container — grid on ha-card never lays them out
+         (ADR 0006 / lg_container_grid). Rework: header / state / controls. */
       :host {
-        margin: 0 !important;
+        width: var(--lg_size_laundry_card_w) !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        display: block !important;
+        box-sizing: border-box;
+        background: transparent !important;
+        box-shadow: none !important;
+        --ha-card-border-radius: var(--lg_radius_laundry) !important;
+      }
+      @media (max-width: 48rem) {
+        :host {
+          width: var(--lg_size_laundry_card_w_phone) !important;
+        }
+      }
+      #card {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        border-radius: var(--lg_radius_laundry) !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+        padding: var(--lg_space_laundry_pad) !important;
+        background: var(--lg_color_laundry_card_fill) !important;
+        border: var(--lg_stroke_glass, 0.0625rem) solid var(--lg_color_laundry_display_rim) !important;
+        box-shadow: var(--lg_shadow_laundry_card) !important;
+        backdrop-filter: blur(var(--lg_blur_laundry_glass)) !important;
+        -webkit-backdrop-filter: blur(var(--lg_blur_laundry_glass)) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      #card:has(.lg-laundry-state-glow--run) {
+        box-shadow: var(--lg_shadow_laundry_card), var(--lg_glow_laundry_run) !important;
+      }
+      #card:has(.lg-laundry-state-glow--pause) {
+        box-shadow: var(--lg_shadow_laundry_card), var(--lg_glow_laundry_pause) !important;
+      }
+      #card:has(.lg-laundry-state-glow--error) {
+        background: var(--lg_color_laundry_error) !important;
+        border-color: var(--lg_color_laundry_error_rim) !important;
+        box-shadow: var(--lg_shadow_laundry_card), var(--lg_glow_laundry_error) !important;
+        animation: lg-laundry-error-breathe 2.4s ease-in-out infinite;
+      }
+      @keyframes lg-laundry-error-breathe {
+        0%, 100% { border-color: var(--lg_color_laundry_error_rim); }
+        50% { border-color: var(--lg_color_laundry_display_rim); }
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas:
+          "icon name power"
+          "display display display"
+          "opts opts opts"
+          "primary primary primary"
+          "delay delay delay" !important;
+        grid-template-columns: auto minmax(0, 1fr) auto !important;
+        grid-template-rows: auto auto auto auto auto !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        align-items: center !important;
+        justify-items: stretch !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        position: relative !important;
+        box-sizing: border-box !important;
         overflow: visible !important;
       }
-      #icon {
+      #liquid_clip, #distort, #state_glow {
+        position: absolute !important;
+        inset: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        pointer-events: none !important;
+        grid-area: unset !important;
+      }
+      #img, #img-cell {
+        grid-area: icon !important;
+        position: relative !important;
+        inset: auto !important;
+        top: auto !important;
+        left: auto !important;
+        justify-self: start !important;
+        width: var(--lg_size_laundry_icon) !important;
+        height: var(--lg_size_laundry_icon) !important;
+        z-index: 1 !important;
+      }
+      :host:has(.lg-laundry-state-glow--run) #img {
+        animation: lg-laundry-drum 2s linear infinite;
+      }
+      @keyframes lg-laundry-drum {
+        to { transform: rotate(360deg); }
+      }
+      #name {
+        grid-area: name !important;
+        position: relative !important;
+        inset: auto !important;
+        top: auto !important;
+        left: auto !important;
+        justify-self: start !important;
+        width: auto !important;
+        max-width: 100% !important;
+        font-size: var(--lg_font_laundry_title_size) !important;
+        font-weight: 700 !important;
         color: var(--lg_color_text) !important;
+        white-space: normal !important;
+        z-index: 1 !important;
+      }
+      #power, #display, #opts, #primary, #delay {
+        position: relative !important;
+        inset: auto !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        z-index: 1 !important;
+      }
+      #power {
+        grid-area: power !important;
+        justify-self: end !important;
+        width: auto !important;
+      }
+      #display { grid-area: display !important; width: 100% !important; }
+      #opts { grid-area: opts !important; width: 100% !important; }
+      #primary { grid-area: primary !important; width: 100% !important; }
+      #delay { grid-area: delay !important; width: 100% !important; }
+      #opts > *, #primary > *, #delay > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block !important;
+      }
+      :host:has(.lg-laundry-lock--controls) #opts {
+        opacity: var(--lg_opacity_laundry_controls_locked) !important;
+        pointer-events: none !important;
+      }
+      :host:has(.lg-laundry-lock--delay) #delay {
+        display: none !important;
+      }
+      .lg-laundry-power {
+        width: var(--lg_size_laundry_power);
+        height: var(--lg_size_laundry_power);
+        border-radius: 50%;
+        box-sizing: border-box;
+        border: var(--lg_stroke_glass, 0.0625rem) solid var(--lg_color_laundry_display_rim);
+        background: var(--lg_color_laundry_power_off);
+        box-shadow: none;
+        pointer-events: none;
+      }
+      .lg-laundry-power--on {
+        background: var(--lg_color_laundry_power_on);
+        box-shadow: 0 0 0.5rem var(--lg_color_laundry_power_on);
+      }
+      .lg-laundry-display {
+        position: relative;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: var(--lg_size_laundry_display_min_h);
+        padding: var(--lg_space_laundry_pad);
+        border-radius: var(--lg_radius_laundry);
+        background: var(--lg_color_laundry_display_fill);
+        box-shadow: var(--lg_shadow_laundry_display);
+        overflow: hidden;
+        transition: var(--lg_transition_laundry);
+      }
+      .lg-laundry-display::before,
+      .lg-laundry-display::after {
+        content: "";
+        position: absolute;
+        pointer-events: none;
+        inset: 0;
+        border-radius: inherit;
+      }
+      .lg-laundry-display::before {
+        border: var(--lg_stroke_glass, 0.0625rem) solid var(--lg_color_laundry_display_rim);
+        opacity: 0.55;
+      }
+      .lg-laundry-display::after {
+        background: linear-gradient(
+          135deg,
+          var(--lg_color_glass_frost) 0%,
+          transparent 42%,
+          var(--lg_color_glass_luminosity) 100%
+        );
+        opacity: 0.85;
+      }
+      .lg-laundry-display--run::after {
+        background: linear-gradient(
+          180deg,
+          transparent 40%,
+          var(--lg_color_climate_cool) 100%
+        );
+        opacity: 0.18;
+        animation: lg-laundry-wave 3.2s ease-in-out infinite;
+      }
+      @keyframes lg-laundry-wave {
+        0%, 100% { transform: translateY(8%); }
+        50% { transform: translateY(-4%); }
+      }
+      .lg-laundry-display__body {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_laundry_gap);
+        min-height: calc(var(--lg_size_laundry_display_min_h) - var(--lg_space_laundry_pad) * 2);
+        text-align: center;
+        color: var(--lg_color_text);
+        transition: var(--lg_transition_laundry);
+      }
+      .lg-laundry-display--paused .lg-laundry-display__eta {
+        filter: blur(0.08rem);
+        opacity: var(--lg_opacity_laundry_paused_blur);
+      }
+      .lg-laundry-ring-wrap {
+        position: relative;
+        width: var(--lg_size_laundry_ring);
+        height: var(--lg_size_laundry_ring);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .lg-laundry-ring {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .lg-laundry-ring__track,
+      .lg-laundry-ring__meter {
+        fill: none;
+        stroke-width: var(--lg_stroke_laundry_ring);
+        stroke-linecap: round;
+      }
+      .lg-laundry-ring__track {
+        stroke: var(--lg_color_laundry_display_rim);
+        opacity: 0.35;
+      }
+      .lg-laundry-ring__meter {
+        stroke: var(--lg_color_climate_cool);
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dashoffset 0.6s ease;
+      }
+      .lg-laundry-ring--p0 .lg-laundry-ring__meter { stroke-dashoffset: 100; }
+      .lg-laundry-ring--p5 .lg-laundry-ring__meter { stroke-dashoffset: 95; }
+      .lg-laundry-ring--p10 .lg-laundry-ring__meter { stroke-dashoffset: 90; }
+      .lg-laundry-ring--p15 .lg-laundry-ring__meter { stroke-dashoffset: 85; }
+      .lg-laundry-ring--p20 .lg-laundry-ring__meter { stroke-dashoffset: 80; }
+      .lg-laundry-ring--p25 .lg-laundry-ring__meter { stroke-dashoffset: 75; }
+      .lg-laundry-ring--p30 .lg-laundry-ring__meter { stroke-dashoffset: 70; }
+      .lg-laundry-ring--p35 .lg-laundry-ring__meter { stroke-dashoffset: 65; }
+      .lg-laundry-ring--p40 .lg-laundry-ring__meter { stroke-dashoffset: 60; }
+      .lg-laundry-ring--p45 .lg-laundry-ring__meter { stroke-dashoffset: 55; }
+      .lg-laundry-ring--p50 .lg-laundry-ring__meter { stroke-dashoffset: 50; }
+      .lg-laundry-ring--p55 .lg-laundry-ring__meter { stroke-dashoffset: 45; }
+      .lg-laundry-ring--p60 .lg-laundry-ring__meter { stroke-dashoffset: 40; }
+      .lg-laundry-ring--p65 .lg-laundry-ring__meter { stroke-dashoffset: 35; }
+      .lg-laundry-ring--p70 .lg-laundry-ring__meter { stroke-dashoffset: 30; }
+      .lg-laundry-ring--p75 .lg-laundry-ring__meter { stroke-dashoffset: 25; }
+      .lg-laundry-ring--p80 .lg-laundry-ring__meter { stroke-dashoffset: 20; }
+      .lg-laundry-ring--p85 .lg-laundry-ring__meter { stroke-dashoffset: 15; }
+      .lg-laundry-ring--p90 .lg-laundry-ring__meter { stroke-dashoffset: 10; }
+      .lg-laundry-ring--p95 .lg-laundry-ring__meter { stroke-dashoffset: 5; }
+      .lg-laundry-ring--p100 .lg-laundry-ring__meter { stroke-dashoffset: 0; }
+      .lg-laundry-display__eta {
+        font-size: var(--lg_font_laundry_display_size);
+        line-height: 1.1;
+        letter-spacing: 0.02em;
+        font-weight: 600;
+        z-index: 1;
+      }
+      @media (max-width: 48rem) {
+        .lg-laundry-display__eta {
+          font-size: var(--lg_font_laundry_display_size_phone);
+        }
+      }
+      .lg-laundry-display__title {
+        font-size: var(--lg_font_laundry_title_size);
+        font-weight: 600;
+      }
+      .lg-laundry-display__sub {
+        font-size: var(--lg_font_laundry_status_size);
+        opacity: 0.8;
+      }
+      .lg-laundry-display__overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--lg_font_laundry_title_size);
+        font-weight: 700;
+        pointer-events: none;
+        background: var(--lg_color_glass_darken);
+      }
+      .lg-laundry-alert {
+        animation: lg-laundry-shake 5s ease-in-out infinite;
+      }
+      @keyframes lg-laundry-shake {
+        0%, 92%, 100% { transform: translateX(0); }
+        94% { transform: translateX(-0.15rem); }
+        96% { transform: translateX(0.15rem); }
+        98% { transform: translateX(-0.1rem); }
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+      {{ lg_distort_shell_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      distort: '{{ lg_distort_shell_html() }}'
+      state_glow: |
+        [[[
+          const armedId = variables.armed_entity_id || '';
+          const armed = armedId && states[armedId] && states[armedId].state === 'on';
+          const powerId = variables.power_entity_id || '';
+          const power = powerId && states[powerId] ? states[powerId].state : 'on';
+          const stId = variables.machine_state_entity_id || '';
+          const st = stId && states[stId] ? String(states[stId].state).toLowerCase() : '';
+          const sel = entity ? entity.state : '';
+          let mod = 'idle';
+          const locks = [];
+          if (st.includes('error') || st.includes('failure')) mod = 'error';
+          else if (armed) mod = 'scheduled';
+          else if (power === 'off' || power === 'unavailable') {
+            mod = 'off';
+            locks.push('controls');
+          } else if (sel === 'run') {
+            mod = 'run';
+            locks.push('controls', 'delay');
+          } else if (sel === 'pause') {
+            mod = 'pause';
+            locks.push('controls');
+          }
+          const lockCls = locks.map((k) => `lg-laundry-lock--${k}`).join(' ');
+          return `<div class="lg-laundry-state-glow lg-laundry-state-glow--${mod} ${lockCls}"></div>`;
+        ]]]
+      power: |
+        [[[
+          const powerId = variables.power_entity_id || '';
+          const power = powerId && states[powerId] ? states[powerId].state : 'unknown';
+          const on = power === 'on';
+          const cls = on ? 'lg-laundry-power lg-laundry-power--on' : 'lg-laundry-power';
+          return `<div class="${cls}" title="Power ${on ? 'on' : 'off'}"></div>`;
+        ]]]
+      display: |
+        [[[
+          const stId = variables.machine_state_entity_id || '';
+          const jobId = variables.job_state_entity_id || '';
+          const remId = variables.remote_entity_id || '';
+          const compId = variables.completion_entity_id || '';
+          const armedId = variables.armed_entity_id || '';
+          const timerId = variables.delay_timer_entity_id || '';
+          const durId = variables.cycle_duration_entity_id || '';
+          const powerId = variables.power_entity_id || '';
+          const armed = armedId && states[armedId] && states[armedId].state === 'on';
+          const power = powerId && states[powerId] ? states[powerId].state : 'on';
+          const sel = entity ? entity.state : '';
+          const st = stId && states[stId] ? states[stId].state : '';
+          const stLow = String(st || '').toLowerCase();
+          const job = jobId && states[jobId] ? states[jobId].state : '';
+          const remote = remId && states[remId] ? states[remId].state : '';
+          const esc = (s) => String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const fmtEta = () => {
+            let eta = '—';
+            let progress = 0;
+            const raw = compId && states[compId] ? states[compId].state : '';
+            if (raw && raw !== 'unknown' && raw !== 'unavailable') {
+              const end = Date.parse(raw);
+              if (!Number.isNaN(end)) {
+                const ms = Math.max(0, end - Date.now());
+                const totalSec = Math.floor(ms / 1000);
+                const hh = Math.floor(totalSec / 3600);
+                const mm = Math.floor((totalSec % 3600) / 60);
+                const ss = totalSec % 60;
+                const pad = (n) => String(n).padStart(2, '0');
+                eta = hh > 0 ? `${hh}:${pad(mm)}:${pad(ss)}` : `${pad(mm)}:${pad(ss)}`;
+                const durMin = durId && states[durId] ? Number(states[durId].state) : NaN;
+                if (!Number.isNaN(durMin) && durMin > 0) {
+                  const totalMs = durMin * 60000;
+                  progress = Math.max(0, Math.min(1, 1 - (ms / totalMs)));
+                }
+              } else {
+                eta = esc(raw);
+              }
+            }
+            const pClass = 'lg-laundry-ring--p' + (Math.round(progress * 20) * 5);
+            return { eta, pClass };
+          };
+          if (stLow.includes('error') || stLow.includes('failure')) {
+            return `<div class="lg-laundry-display lg-laundry-display--error"><div class="lg-laundry-display__body"><div class="lg-laundry-display__title lg-laundry-alert">Помилка</div><div class="lg-laundry-display__sub">${esc(st)}</div></div></div>`;
+          }
+          if (power === 'off' || power === 'unavailable') {
+            return `<div class="lg-laundry-display lg-laundry-display--off"><div class="lg-laundry-display__body"><div class="lg-laundry-display__title">Powered Off</div><div class="lg-laundry-display__sub">живлення вимкнено</div></div></div>`;
+          }
+          if (armed) {
+            const t = timerId && states[timerId] ? states[timerId].state : '';
+            const sub = t && t !== 'idle' ? esc(t) : 'очікування старту';
+            return `<div class="lg-laundry-display lg-laundry-display--scheduled"><div class="lg-laundry-display__body"><div class="lg-laundry-display__title">Відкладений старт</div><div class="lg-laundry-display__sub">${sub}</div></div></div>`;
+          }
+          if (sel === 'run' || sel === 'pause') {
+            const { eta, pClass } = fmtEta();
+            const subParts = [];
+            if (job && job !== 'none' && job !== 'unknown') subParts.push(esc(job));
+            if (st && st !== 'unknown') subParts.push(esc(st));
+            const sub = subParts.length ? subParts.join(' · ') : (sel === 'pause' ? 'на паузі' : 'цикл триває');
+            const paused = sel === 'pause' ? ' lg-laundry-display--paused' : ' lg-laundry-display--run';
+            const overlay = sel === 'pause' ? '<div class="lg-laundry-display__overlay">Paused</div>' : '';
+            return `<div class="lg-laundry-display${paused}"><div class="lg-laundry-display__body"><div class="lg-laundry-ring-wrap"><svg class="lg-laundry-ring ${pClass}" viewBox="0 0 100 100" aria-hidden="true"><circle class="lg-laundry-ring__track" cx="50" cy="50" r="42" pathLength="100"/><circle class="lg-laundry-ring__meter" cx="50" cy="50" r="42" pathLength="100"/></svg><div class="lg-laundry-display__eta">${eta}</div></div><div class="lg-laundry-display__sub">${sub}</div></div>${overlay}</div>`;
+          }
+          let title = 'Ready to Start';
+          if (sel === 'stop' || st === 'stop' || st === 'off') title = 'Ready to Start';
+          const bits = [];
+          if (st && st !== 'unknown' && st !== 'unavailable') bits.push(esc(st));
+          if (job && job !== 'none' && job !== 'unknown') bits.push(esc(job));
+          if (remote === 'off') bits.push('remote off');
+          const sub = bits.length ? bits.join(' · ') : 'очікування команди';
+          return `<div class="lg-laundry-display lg-laundry-display--ready"><div class="lg-laundry-display__body"><div class="lg-laundry-display__title">${title}</div><div class="lg-laundry-display__sub">${sub}</div></div></div>`;
+        ]]]
+      opts:
+        card:
+          type: custom:button-card
+          template: laundry_params_grid
+          entity: |
+            [[[ return entity.entity_id; ]]]
+          variables:
+            option_spin_entity_id: '[[[ return variables.option_spin_entity_id || ""; ]]]'
+            option_water_entity_id: '[[[ return variables.option_water_entity_id || ""; ]]]'
+            option_rinse_entity_id: '[[[ return variables.option_rinse_entity_id || ""; ]]]'
+            option_wrinkle_entity_id: '[[[ return variables.option_wrinkle_entity_id || ""; ]]]'
+            option_bubble_entity_id: '[[[ return variables.option_bubble_entity_id || ""; ]]]'
+            armed_entity_id: '[[[ return variables.armed_entity_id || ""; ]]]'
+      primary:
+        card:
+          type: custom:button-card
+          template: laundry_primary_action
+          entity: |
+            [[[ return entity.entity_id; ]]]
+          variables:
+            armed_entity_id: '[[[ return variables.armed_entity_id || ""; ]]]'
+            power_entity_id: '[[[ return variables.power_entity_id || ""; ]]]'
+            machine_kind: '[[[ return variables.machine_kind || "washer"; ]]]'
+      delay:
+        card:
+          type: custom:button-card
+          template: laundry_delay_controls
+          entity: |
+            [[[ return variables.armed_entity_id || entity.entity_id; ]]]
+          variables:
+            armed_entity_id: '[[[ return variables.armed_entity_id || ""; ]]]'
+            cancel_script_id: '[[[ return variables.cancel_script_id || ""; ]]]'
+            popup_hash: '[[[ return variables.popup_hash || ""; ]]]'
+            delay_timer_entity_id: '[[[ return variables.delay_timer_entity_id || ""; ]]]'
+
+  laundry_primary_action:
+    show_name: true
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    size: 40%
+    triggers_update: all
+    variables:
+      armed_entity_id: ""
+      power_entity_id: ""
+      machine_kind: "washer"
+    icon: |
+      [[[
+        const armedId = variables.armed_entity_id || '';
+        if (armedId && states[armedId] && states[armedId].state === 'on') return 'mdi:timer-cancel-outline';
+        const p = window.__lgLaundryActionPending;
+        if (p && entity && p.id === entity.entity_id && (Date.now() - p.t) < 12000 && entity.state !== p.want) {
+          return 'mdi:loading';
+        }
+        if (entity && entity.state === 'run') return 'mdi:pause';
+        return 'mdi:play';
+      ]]]
+    name: |
+      [[[
+        const kind = variables.machine_kind || 'washer';
+        const verb = kind === 'dryer' ? 'Dry' : 'Wash';
+        if (entity && entity.state === 'run') return 'Pause';
+        if (entity && entity.state === 'pause') return 'Start ' + verb;
+        return 'Start ' + verb;
+      ]]]
+    tap_action:
+      action: |
+        [[[
+          const armedId = variables.armed_entity_id || '';
+          if (armedId && states[armedId] && states[armedId].state === 'on') return 'none';
+          const powerId = variables.power_entity_id || '';
+          if (powerId && states[powerId] && states[powerId].state === 'off') return 'none';
+          if (!entity) return 'none';
+          const want = entity.state === 'run' ? 'pause' : 'run';
+          const p = window.__lgLaundryActionPending;
+          if (p && p.id === entity.entity_id && (Date.now() - p.t) < 12000 && entity.state !== p.want) return 'none';
+          window.__lgLaundryActionPending = { id: entity.entity_id, want: want, t: Date.now() };
+          return 'call-service';
+        ]]]
+      service: select.select_option
+      target:
+        entity_id: |
+          [[[ return entity.entity_id; ]]]
+      data:
+        option: |
+          [[[ return (entity && entity.state === 'run') ? 'pause' : 'run'; ]]]
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        height: var(--lg_size_laundry_primary_h) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      :host:has(.lg-laundry-chip-gate.is-disabled) {
+        opacity: var(--lg_opacity_laundry_chip_disabled) !important;
+        pointer-events: none !important;
+      }
+      :host:has(.lg-laundry-chip-gate.is-loading) #img {
+        animation: lg-laundry-spin 0.9s linear infinite;
+      }
+      :host:has(.lg-laundry-primary--ready) #card {
+        animation: lg-laundry-pulse-start 1.8s ease-in-out infinite;
+      }
+      :host:has(.lg-laundry-primary--pause) #card {
+        animation: lg-laundry-pulse-pause 1.8s ease-in-out infinite;
+        box-shadow: var(--lg_glow_laundry_pause) !important;
+      }
+      @keyframes lg-laundry-spin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes lg-laundry-pulse-start {
+        0%, 100% { box-shadow: var(--lg_glow_laundry_start); }
+        50% { box-shadow: var(--lg_glow_laundry_run); }
+      }
+      @keyframes lg-laundry-pulse-pause {
+        0%, 100% { box-shadow: var(--lg_glow_laundry_pause); }
+        50% { box-shadow: var(--lg_glow_laundry_press); }
+      }
+      ha-card,
+      #card {
+        height: var(--lg_size_laundry_primary_h) !important;
+        border-radius: var(--lg_radius_laundry_control) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        background: var(--lg_color_laundry_start) !important;
+        color: var(--lg_color_text) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      :host:has(.lg-laundry-primary--pause) ha-card,
+      :host:has(.lg-laundry-primary--pause) #card {
+        background: var(--lg_color_laundry_pause_accent) !important;
       }
       #card:active {
-        box-shadow: var(--lg_glow_climate_room_off_press), var(--lg_shadow_climate_arc_sphere);
+        transform: var(--lg_transform_laundry_press_scale);
       }
-      #card:active #icon {
-        color: var(--lg_color_climate_room_off_press) !important;
+      #name {
+        font-size: var(--lg_font_laundry_title_size) !important;
+        font-weight: 700 !important;
+        color: var(--lg_color_text) !important;
+      }
+      #chip_gate {
+        position: absolute !important;
+        inset: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        pointer-events: none !important;
+        grid-area: unset !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      chip_gate: |
+        [[[
+          const armedId = variables.armed_entity_id || '';
+          const armed = armedId && states[armedId] && states[armedId].state === 'on';
+          const powerId = variables.power_entity_id || '';
+          const powerOff = powerId && states[powerId] && states[powerId].state === 'off';
+          const sel = entity ? entity.state : '';
+          const p = window.__lgLaundryActionPending;
+          const loading = !!(p && entity && p.id === entity.entity_id && (Date.now() - p.t) < 12000 && entity.state !== p.want);
+          if (p && entity && entity.state === p.want) window.__lgLaundryActionPending = null;
+          const cls = ['lg-laundry-chip-gate'];
+          if (armed || powerOff) cls.push('is-disabled');
+          if (loading) cls.push('is-loading');
+          if (sel === 'run') cls.push('lg-laundry-primary--pause');
+          else if (!armed && !powerOff) cls.push('lg-laundry-primary--ready');
+          return `<div class="${cls.join(' ')}"></div>`;
+        ]]]
+
+  laundry_action_chip:
+    show_name: true
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    size: 60%
+    triggers_update: all
+    variables:
+      chip_role: ""
+      armed_entity_id: ""
+    icon: |
+      [[[
+        const role = variables.chip_role || '';
+        const p = window.__lgLaundryActionPending;
+        if (p && entity && p.id === entity.entity_id && (Date.now() - p.t) < 12000) {
+          if (entity.state === p.want) {
+            window.__lgLaundryActionPending = null;
+          } else if (
+            (role === 'start' && p.want === 'run') ||
+            (role === 'pause' && p.want === 'pause') ||
+            (role === 'stop' && p.want === 'stop')
+          ) {
+            return 'mdi:loading';
+          }
+        }
+        if (role === 'start') return 'mdi:play';
+        if (role === 'pause') return 'mdi:pause';
+        if (role === 'stop') return 'mdi:stop';
+        return 'mdi:circle-outline';
+      ]]]
+    extra_styles: |
+      :host {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        height: var(--lg_size_laundry_action_h) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      :host:has(.lg-laundry-chip-gate.is-disabled) {
+        opacity: var(--lg_opacity_laundry_chip_disabled) !important;
+      }
+      :host:has(.lg-laundry-chip-gate.is-loading) #img {
+        animation: lg-laundry-spin 0.9s linear infinite;
+      }
+      @keyframes lg-laundry-spin {
+        to { transform: rotate(360deg); }
+      }
+      ha-card,
+      #card {
+        height: var(--lg_size_laundry_action_h) !important;
+        border-radius: var(--lg_radius_laundry_control) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      #card:active {
+        transform: var(--lg_transform_laundry_press_scale);
+        box-shadow: var(--lg_glow_laundry_press);
+        backdrop-filter: blur(var(--lg_blur_laundry_press));
+        -webkit-backdrop-filter: blur(var(--lg_blur_laundry_press));
+      }
+      #chip_gate {
+        position: absolute !important;
+        inset: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        pointer-events: none !important;
+        grid-area: unset !important;
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      chip_gate: |
+        [[[
+          const role = variables.chip_role || '';
+          const armedId = variables.armed_entity_id || '';
+          const armed = armedId && states[armedId] && states[armedId].state === 'on';
+          const sel = entity ? entity.state : '';
+          let disabled = !!armed;
+          if (role === 'start') disabled = disabled || sel === 'run';
+          if (role === 'pause' || role === 'stop') disabled = disabled || sel !== 'run';
+          const p = window.__lgLaundryActionPending;
+          const loading = !!(p && entity && p.id === entity.entity_id && (Date.now() - p.t) < 12000 && entity.state !== p.want && (
+            (role === 'start' && p.want === 'run') ||
+            (role === 'pause' && p.want === 'pause') ||
+            (role === 'stop' && p.want === 'stop')
+          ));
+          const cls = ['lg-laundry-chip-gate'];
+          if (disabled) cls.push('is-disabled');
+          if (loading) cls.push('is-loading');
+          return `<div class="${cls.join(' ')}"></div>`;
+        ]]]
+
+  laundry_params_grid:
+    show_name: false
+    show_icon: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    triggers_update: all
+    tap_action:
+      action: none
+    variables:
+      option_spin_entity_id: ""
+      option_water_entity_id: ""
+      option_rinse_entity_id: ""
+      option_wrinkle_entity_id: ""
+      option_bubble_entity_id: ""
+      armed_entity_id: ""
+    extra_styles: |
+      :host { width: 100% !important; display: block !important; }
+      #card {
+        position: relative !important;
+        width: 100% !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas:
+          "spin"
+          "water"
+          "rinse"
+          "soak"
+          "wrinkle" !important;
+        grid-template-columns: 1fr !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        width: 100% !important;
+        position: relative !important;
+      }
+      #spin, #water, #rinse, #soak, #wrinkle {
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+      #spin { grid-area: spin !important; }
+      #water { grid-area: water !important; }
+      #rinse { grid-area: rinse !important; }
+      #soak { grid-area: soak !important; }
+      #wrinkle { grid-area: wrinkle !important; }
+      #spin:has(.lg-laundry-param-empty),
+      #water:has(.lg-laundry-param-empty),
+      #rinse:has(.lg-laundry-param-empty),
+      #soak:has(.lg-laundry-param-empty),
+      #wrinkle:has(.lg-laundry-param-empty) {
+        display: none !important;
       }
     custom_fields:
-      liquid_clip: ""
+      spin:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_select
+          variables:
+            param_entity_id: '[[[ return variables.option_spin_entity_id || ""; ]]]'
+            mushroom_name: Віджим
+            mushroom_icon: mdi:rotate-right
+      water:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_select
+          variables:
+            param_entity_id: '[[[ return variables.option_water_entity_id || ""; ]]]'
+            mushroom_name: Температура
+            mushroom_icon: mdi:thermometer-water
+      rinse:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_number
+          variables:
+            param_entity_id: '[[[ return variables.option_rinse_entity_id || ""; ]]]'
+            mushroom_name: Полоскання
+            mushroom_icon: mdi:water
+      soak:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_switch
+          variables:
+            param_entity_id: '[[[ return variables.option_bubble_entity_id || ""; ]]]'
+            mushroom_name: Замочування
+            mushroom_icon: mdi:waves
+      wrinkle:
+        card:
+          type: custom:button-card
+          template: laundry_mushroom_switch
+          variables:
+            param_entity_id: '[[[ return variables.option_wrinkle_entity_id || ""; ]]]'
+            mushroom_name: Антизминання
+            mushroom_icon: mdi:tumble-dryer
+
+  laundry_mushroom_select:
+    show_name: false
+    show_icon: false
+    show_state: false
+    show_ripple: false
+    triggers_update: all
+    tap_action:
+      action: none
+    variables:
+      param_entity_id: ""
+      mushroom_name: ""
+      mushroom_icon: mdi:circle-outline
+    extra_styles: |
+      :host { width: 100% !important; display: block !important; }
+      :host:has(.lg-laundry-param-empty) { display: none !important; }
+      #card { padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+      #container { display: grid !important; grid-template-areas: "body" !important; width: 100% !important; position: relative !important; }
+      #body { grid-area: body !important; position: relative !important; width: 100% !important; }
+      #gate { position: absolute !important; inset: 0 !important; pointer-events: none !important; }
+    custom_fields:
+      gate: |
+        [[[
+          const id = variables.param_entity_id || '';
+          return id ? '<div class="lg-laundry-param-ok"></div>' : '<div class="lg-laundry-param-empty"></div>';
+        ]]]
+      body:
+        card:
+          type: custom:mushroom-select-card
+          entity: |
+            [[[ return variables.param_entity_id || 'sun.sun'; ]]]
+          name: |
+            [[[ return variables.mushroom_name || ''; ]]]
+          icon: |
+            [[[ return variables.mushroom_icon || 'mdi:circle-outline'; ]]]
+          secondary_info: none
+          card_mod:
+            style: |
+{{ lg_laundry_mushroom_card_mod() | indent(14, first=True) }}
+
+  laundry_mushroom_number:
+    show_name: false
+    show_icon: false
+    show_state: false
+    show_ripple: false
+    triggers_update: all
+    tap_action:
+      action: none
+    variables:
+      param_entity_id: ""
+      mushroom_name: ""
+      mushroom_icon: mdi:circle-outline
+    extra_styles: |
+      :host { width: 100% !important; display: block !important; }
+      :host:has(.lg-laundry-param-empty) { display: none !important; }
+      #card { padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+      #container { display: grid !important; grid-template-areas: "body" !important; width: 100% !important; position: relative !important; }
+      #body { grid-area: body !important; position: relative !important; width: 100% !important; }
+      #gate { position: absolute !important; inset: 0 !important; pointer-events: none !important; }
+    custom_fields:
+      gate: |
+        [[[
+          const id = variables.param_entity_id || '';
+          return id ? '<div class="lg-laundry-param-ok"></div>' : '<div class="lg-laundry-param-empty"></div>';
+        ]]]
+      body:
+        card:
+          type: custom:mushroom-number-card
+          entity: |
+            [[[ return variables.param_entity_id || 'sun.sun'; ]]]
+          name: |
+            [[[ return variables.mushroom_name || ''; ]]]
+          icon: |
+            [[[ return variables.mushroom_icon || 'mdi:circle-outline'; ]]]
+          display_mode: slider
+          card_mod:
+            style: |
+{{ lg_laundry_mushroom_card_mod() | indent(14, first=True) }}
+
+  laundry_mushroom_switch:
+    show_name: false
+    show_icon: false
+    show_state: false
+    show_ripple: false
+    triggers_update: all
+    tap_action:
+      action: none
+    variables:
+      param_entity_id: ""
+      mushroom_name: ""
+      mushroom_icon: mdi:circle-outline
+    extra_styles: |
+      :host { width: 100% !important; display: block !important; }
+      :host:has(.lg-laundry-param-empty) { display: none !important; }
+      #card { padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+      #container { display: grid !important; grid-template-areas: "body" !important; width: 100% !important; position: relative !important; }
+      #body { grid-area: body !important; position: relative !important; width: 100% !important; }
+      #gate { position: absolute !important; inset: 0 !important; pointer-events: none !important; }
+    custom_fields:
+      gate: |
+        [[[
+          const id = variables.param_entity_id || '';
+          return id ? '<div class="lg-laundry-param-ok"></div>' : '<div class="lg-laundry-param-empty"></div>';
+        ]]]
+      body:
+        card:
+          type: custom:mushroom-entity-card
+          entity: |
+            [[[ return variables.param_entity_id || 'sun.sun'; ]]]
+          name: |
+            [[[ return variables.mushroom_name || ''; ]]]
+          icon: |
+            [[[ return variables.mushroom_icon || 'mdi:circle-outline'; ]]]
+          tap_action:
+            action: toggle
+          card_mod:
+            style: |
+{{ lg_laundry_mushroom_card_mod() | indent(14, first=True) }}
+
+  laundry_delay_controls:
+    show_name: false
+    show_icon: true
+    show_state: false
+    show_ripple: false
+    triggers_update: all
+    icon: |
+      [[[
+        const armedId = variables.armed_entity_id || '';
+        const armed = armedId && states[armedId] && states[armedId].state === 'on';
+        return armed ? 'mdi:timer-cancel-outline' : 'mdi:timer-plus-outline';
+      ]]]
+    name: |
+      [[[
+        const armedId = variables.armed_entity_id || '';
+        const armed = armedId && states[armedId] && states[armedId].state === 'on';
+        return armed ? 'Скасувати відкладення' : 'Відкладений старт';
+      ]]]
+    show_name: true
+    tap_action:
+      action: |
+        [[[
+          const armedId = variables.armed_entity_id || '';
+          const armed = armedId && states[armedId] && states[armedId].state === 'on';
+          if (armed) return 'call-service';
+          return 'navigate';
+        ]]]
+      navigation_path: |
+        [[[ return variables.popup_hash || ''; ]]]
+      service: script.turn_on
+      target:
+        entity_id: |
+          [[[ return variables.cancel_script_id || ''; ]]]
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        height: var(--lg_size_laundry_action_h) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      ha-card,
+      #card {
+        height: var(--lg_size_laundry_action_h) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        transition: var(--lg_transition_laundry) !important;
+      }
+      #card:active {
+        transform: var(--lg_transform_laundry_press_scale);
+        box-shadow: var(--lg_glow_laundry_press);
+        backdrop-filter: blur(var(--lg_blur_laundry_press));
+        -webkit-backdrop-filter: blur(var(--lg_blur_laundry_press));
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  laundry_delay_scheduler:
+    show_name: true
+    show_icon: false
+    show_state: false
+    show_label: true
+    show_ripple: false
+    triggers_update: all
+    variables:
+      cycle_duration_entity_id: ""
+      delay_mode_entity_id: ""
+      schedule_script_id: ""
+      popup_hash: ""
+    label: |
+      [[[
+        const modeId = variables.delay_mode_entity_id || '';
+        const durId = variables.cycle_duration_entity_id || '';
+        const mode = modeId && states[modeId] ? states[modeId].state : 'START_AT';
+        const dur = durId && states[durId] ? states[durId].state : '?';
+        return mode + ' · цикл ≈ ' + dur + ' хв';
+      ]]]
+    custom_fields:
+      mode_start:
+        card:
+          type: custom:button-card
+          template: laundry_action_chip
+          name: START_AT
+          icon: mdi:play-circle-outline
+          tap_action:
+            action: call-service
+            service: input_select.select_option
+            target:
+              entity_id: |
+                [[[ return variables.delay_mode_entity_id || ''; ]]]
+            data:
+              option: START_AT
+      mode_finish:
+        card:
+          type: custom:button-card
+          template: laundry_action_chip
+          name: FINISH_BY
+          icon: mdi:flag-checkered
+          tap_action:
+            action: call-service
+            service: input_select.select_option
+            target:
+              entity_id: |
+                [[[ return variables.delay_mode_entity_id || ''; ]]]
+            data:
+              option: FINISH_BY
+      time_row:
+        card:
+          type: custom:button-card
+          template: laundry_delay_time_confirm
+          entity: |
+            [[[ return variables.cycle_duration_entity_id || entity.entity_id; ]]]
+          variables:
+            cycle_duration_entity_id: '[[[ return variables.cycle_duration_entity_id || ""; ]]]'
+            delay_mode_entity_id: '[[[ return variables.delay_mode_entity_id || ""; ]]]'
+            schedule_script_id: '[[[ return variables.schedule_script_id || ""; ]]]'
+            popup_hash: '[[[ return variables.popup_hash || ""; ]]]'
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        display: block !important;
+      }
+      #card {
+        position: relative !important;
+        padding: var(--lg_space_laundry_pad) !important;
+        border-radius: var(--lg_radius_laundry) !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas:
+          "name name"
+          "label label"
+          "mode_start mode_finish"
+          "time_row time_row" !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        width: 100% !important;
+        position: relative !important;
+      }
+      #name {
+        grid-area: name !important;
+        position: relative !important;
+        inset: auto !important;
+      }
+      #label {
+        grid-area: label !important;
+        position: relative !important;
+        inset: auto !important;
+        opacity: 0.8;
+      }
+      #mode_start, #mode_finish, #time_row {
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+      }
+      #mode_start { grid-area: mode_start !important; }
+      #mode_finish { grid-area: mode_finish !important; }
+      #time_row { grid-area: time_row !important; }
+
+  laundry_delay_time_confirm:
+    show_name: true
+    show_icon: false
+    show_state: false
+    show_ripple: false
+    triggers_update: all
+    name: Підтвердити
+    variables:
+      cycle_duration_entity_id: ""
+      delay_mode_entity_id: ""
+      schedule_script_id: ""
+      popup_hash: ""
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+      picker: |
+        [[[
+          if (!window.__lgLaundryDelayInit) {
+            window.__lgLaundryDelayInit = true;
+            document.addEventListener('input', (ev) => {
+              const t = ev.target;
+              if (!t || !t.classList || !t.classList.contains('lg-laundry-time')) return;
+              window.__lgLaundryTargetTime = t.value;
+            }, true);
+          }
+          const now = new Date();
+          const pad = (n) => String(n).padStart(2, '0');
+          const def = pad((now.getHours() + 1) % 24) + ':' + pad(now.getMinutes());
+          if (!window.__lgLaundryTargetTime) window.__lgLaundryTargetTime = def;
+          return `<div class="lg-laundry-picker"><input class="lg-laundry-time" type="time" value="${window.__lgLaundryTargetTime || def}" /><div class="lg-laundry-error" hidden></div></div>`;
+        ]]]
+    tap_action:
+      action: |
+        [[[
+          const modeId = variables.delay_mode_entity_id || '';
+          const durId = variables.cycle_duration_entity_id || '';
+          const mode = (modeId && states[modeId] && states[modeId].state) || 'START_AT';
+          const cycleMin = parseInt(durId && states[durId] ? states[durId].state : '60', 10) || 60;
+          const readFresh = () => {
+            try {
+              const root = this && this.shadowRoot;
+              const inp = root && root.querySelector && root.querySelector('input.lg-laundry-time');
+              if (inp && inp.value) return inp.value;
+            } catch (e) {}
+            return window.__lgLaundryTargetTime || '';
+          };
+          const raw = readFresh();
+          window.__lgLaundryTargetTime = raw;
+          const showErr = (msg) => {
+            try {
+              const root = this && this.shadowRoot;
+              const err = root && root.querySelector && root.querySelector('.lg-laundry-error');
+              if (err) { err.hidden = false; err.textContent = msg; return; }
+            } catch (e) {}
+          };
+          if (!raw || !/^\d{2}:\d{2}$/.test(raw)) {
+            showErr('Оберіть час');
+            return 'none';
+          }
+          const now = new Date();
+          const parts = raw.split(':');
+          const target = new Date(now.getTime());
+          target.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+          if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+          let delayMinutes;
+          if (mode === 'FINISH_BY') {
+            const start = new Date(target.getTime() - cycleMin * 60000);
+            if (start.getTime() <= now.getTime()) {
+              showErr('Недостатньо часу для циклу до обраного FINISH_BY');
+              return 'none';
+            }
+            delayMinutes = Math.round((start.getTime() - now.getTime()) / 60000);
+          } else {
+            delayMinutes = Math.round((target.getTime() - now.getTime()) / 60000);
+          }
+          if (!delayMinutes || delayMinutes < 1) {
+            showErr('Не можна планувати в минуле');
+            return 'none';
+          }
+          window.__lgLaundryPendingDelay = {
+            delay_minutes: delayMinutes,
+            delay_mode: mode
+          };
+          return 'call-service';
+        ]]]
+      service: script.turn_on
+      target:
+        entity_id: |
+          [[[ return variables.schedule_script_id || ''; ]]]
+      data: |
+        [[[
+          return window.__lgLaundryPendingDelay || {};
+        ]]]
+    extra_styles: |
+      :host { width: 100% !important; }
+      #card {
+        position: relative !important;
+        padding: var(--lg_space_laundry_pad) !important;
+        border-radius: var(--lg_radius_liquid) !important;
+        overflow: visible !important;
+      }
+      #container {
+        display: grid !important;
+        grid-template-areas: "picker" "name" !important;
+        gap: var(--lg_space_laundry_gap) !important;
+        width: 100% !important;
+        position: relative !important;
+      }
+      #picker {
+        grid-area: picker !important;
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+      }
+      #name {
+        grid-area: name !important;
+        position: relative !important;
+        inset: auto !important;
+        justify-self: center;
+      }
+      #liquid_clip {
+        position: absolute !important;
+        inset: 0 !important;
+        pointer-events: none !important;
+      }
+      .lg-laundry-picker {
+        display: flex;
+        flex-direction: column;
+        gap: var(--lg_space_laundry_gap);
+        width: 100%;
+      }
+      .lg-laundry-time {
+        width: 100%;
+        min-height: var(--lg_size_laundry_action_h);
+        border-radius: var(--lg_radius_liquid);
+        border: var(--lg_stroke_glass) solid rgba(255,255,255,0.35);
+        background: transparent;
+        color: var(--lg_color_text);
+        font-size: var(--lg_font_laundry_title_size);
+        padding: 0 var(--lg_space_laundry_pad);
+        box-sizing: border-box;
+      }
+      .lg-laundry-error {
+        color: rgb(255, 120, 120);
+        font-size: var(--lg_font_laundry_status_size);
+      }
+      {{ lg_liquid_clip_shell_extra_styles() }}

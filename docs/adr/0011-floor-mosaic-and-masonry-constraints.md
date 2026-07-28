@@ -13,7 +13,7 @@ The floor packs rooms of unequal height into a dense multi-column mosaic with a 
 
 The **disable-floor header is a sibling above the mosaic** on the outer grid stack, never inside it.
 
-Do NOT use `#content > layout-card { display: flex; flex-wrap }` as the mosaic engine (shrink-wraps the inner root), and do NOT introduce a new packing plugin. Reference: `build/reports/floor_mosaic_handoff.md`.
+Do NOT use `#content > layout-card { display: flex; flex-wrap }` as the mosaic engine (shrink-wraps the inner root), and do NOT introduce a new packing plugin. Reference: `build/reports/runs/current_run/domains/floor/ships/floor_mosaic_handoff.md`.
 
 ### Plugin constraints (`base-column-layout.ts`, `grid.ts`)
 
@@ -21,7 +21,7 @@ Do NOT use `#content > layout-card { display: flex; flex-wrap }` as the mosaic e
 2. **`colnum = floor(hostWidth / width)`.** Floor host width MUST be `min(100%, N × masonry_col + 2 × inset)`, centered, `N = lg_masonry_floor_cols` (4). Never `max-content` / `fit-content` on a masonry host — it shrink-wraps to one column.
 3. **Do not zero the room host `margin`.** The plugin applies `.column > * { margin: var(--card-margin) }`; `0 !important` on room `:host` kills `card_margin`.
 4. **Only supported keys apply** in `grid-layout` `layout:` / `view_layout`: `grid*`, `place-items`, `place-content`, and per-card `grid*` + `place-self`. `flex-*`, `display`, and arbitrary width keys are silently ignored.
-5. **The plugin self-declares `--column-width` on its own shadow host**, four boundaries below our button-card `#content`; CSS from `button_card_templates.yaml` can never reach it (proven by `build/reports/climate_ko_triple_probe.js`). Masonry geometry is therefore a bare, non-responsive literal — see ADR 0013.
+5. **The plugin self-declares `--column-width` on its own shadow host**, four boundaries below our button-card `#content`; CSS from `button_card_templates.yaml` can never reach it (proven by `build/reports/runs/current_run/domains/climate/probes/climate_ko_triple_probe.js`). Masonry geometry is therefore a bare, non-responsive literal — see ADR 0013.
 
 ## Consequences
 

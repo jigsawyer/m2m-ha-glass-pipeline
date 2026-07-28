@@ -1,0 +1,24 @@
+{# Laundry machine card — thin instance (ADR 0026 rework UI) #}
+type: custom:button-card
+template: laundry_machine
+entity: {{ entity_id }}
+name: {{ name }}
+variables:
+  machine_state_entity_id: "{{ custom_props.machine_state_entity_id | default('') }}"
+  job_state_entity_id: "{{ custom_props.job_state_entity_id | default('') }}"
+  completion_entity_id: "{{ custom_props.completion_entity_id | default('') }}"
+  remote_entity_id: "{{ custom_props.remote_entity_id | default('') }}"
+  power_entity_id: "{{ custom_props.power_entity_id | default('') }}"
+  armed_entity_id: "{{ custom_props.armed_entity_id | default('') }}"
+  cycle_duration_entity_id: "{{ custom_props.cycle_duration_entity_id | default('') }}"
+  delay_mode_entity_id: "{{ custom_props.delay_mode_entity_id | default('') }}"
+  delay_timer_entity_id: "{{ custom_props.delay_timer_entity_id | default('') }}"
+  schedule_script_id: "{{ custom_props.schedule_script_id | default('') }}"
+  cancel_script_id: "{{ custom_props.cancel_script_id | default('') }}"
+  popup_hash: "{{ custom_props.popup_hash | default('') }}"
+  option_spin_entity_id: "{{ custom_props.option_spin_entity_id | default('') }}"
+  option_water_entity_id: "{{ custom_props.option_water_entity_id | default('') }}"
+  option_rinse_entity_id: "{{ custom_props.option_rinse_entity_id | default('') }}"
+  option_wrinkle_entity_id: "{{ custom_props.option_wrinkle_entity_id | default('') }}"
+  option_bubble_entity_id: "{{ custom_props.option_bubble_entity_id | default('') }}"
+  machine_kind: "{{ custom_props.machine_kind | default('washer') }}"

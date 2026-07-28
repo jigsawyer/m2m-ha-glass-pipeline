@@ -29,7 +29,10 @@ Format: **Context** (why the rule exists) → **Decision** (the technical constr
 | [0018](0018-focus-viewport-frost.md) | Focus viewport frost — global recipe | styling, climate, popups |
 | [0019](0019-klimat-global-wheel.md) | Klimat global wheel — mode and fan SoT | climate |
 | [0020](0020-bubble-popups.md) | Bubble pop-ups — authorization, geometry, glass | popups |
-| [0021](0021-klimat-timer-picker.md) | Klimat sleep-timer picker — per-breakpoint controls | climate, responsive |
+| [0021](0021-klimat-timer-picker.md) | Klimat sleep-timer picker — superseded by 0025 | climate, responsive |
 | [0022](0022-jinja-whitespace-in-yaml-lists.md) | Jinja whitespace control in YAML lists | templates |
 | [0023](0023-analyzer-human-channel-language.md) | Analyzer human channel is Ukrainian | communication |
 | [0024](0024-agent-instructions-reference-adrs.md) | Agent instructions are thin; constraints live here | pipeline, meta |
+| [0025](0025-klimat-timer-radial.md) | Klimat sleep-timer — in-place radial duration picker | climate |
+| [0026](0026-laundry-smartthings-entities.md) | Laundry SmartThings entities + Delayed Start FSM | laundry, delay |
+| [0027](0027-reports-domain-partitioning.md) | Reports domain-driven hierarchical partitioning | build, pipeline |

@@ -49,18 +49,18 @@ Keep identifiers, menu paths, HA/UI labels, token names, and file paths in origi
 | Inline `style="..."`, button-card native `styles:`, manual CSS injection, `color_type: blank-card` on a visual template, style injected via `overrides` | 0006 |
 | Fixed `px` in tokens/CSS | 0007 |
 | Template-layout change with no `payload.preserve_behavior` | 0009 |
-| A new layout/slider/popup plugin, Browser Mod, or card-mod-heavy chrome | 0010 |
+| An undeployed plugin (e.g. Browser Mod) or extended-inventory plugin without an explicit intent naming it | 0010 |
 | Mosaic fix routed to `@architect`; `max_width` ≠ `width`; zeroed room host margin; `flex-*`/`display` keys in `grid-layout` | 0011 |
 | Unequal floor L/R/B insets; gaps or insets above ~`3.125rem`; absolute stacking without exclusive layout areas | 0012 |
 | A shared bare-number literal across breakpoints; re-tuning an offset hack instead of decoupling; a new shell shipped un-split | 0013 |
 | Klimat patching shared light primitives (`disable_room_button`, `lg_size_switch_*`, …) | 0014 |
 | A new round icon-only button without H+V centering; per-icon pixel offsets | 0015 |
-| Tap-to-disable; idle disable red glow; ripple on switch/disable; full-opacity inactive tab labels | 0016 |
+| Tap-to-disable for floor/house off; idle disable red glow; ripple on switch/disable; full-opacity inactive tab labels | 0016 |
 | On-drag commit for the setpoint; a pop-up/navigate shell for the setpoint; a proxy helper with guessed bounds; draggable TEMP outside `heat`/`cool`; faded mid status while open | 0017 |
 | Sibling rooms readable under focus frost; opacity transition on a `backdrop-filter` layer | 0018 |
 | Dual arc dials as Klimat SoT; fixed-12 sparse wheel; non-HA mode values; non-annular tiles | 0019 |
 | Bottom-anchored popup; dark chrome panel; `performance_mode: performance`; `floor_container`/masonry nested in a popup | 0020 |
-| Horizontal gradient timer bars; Desktop Force Native; non-HACS timer drag | 0021 |
+| Horizontal gradient timer bars; Bubble/native/`slider-button-card` as timer picker SoT; on-drag timer commit; hiding wheel timer while armed | 0021, 0025 |
 
 ## 5. Constraint Flags
 
@@ -69,8 +69,11 @@ Keep identifiers, menu paths, HA/UI labels, token names, and file paths in origi
 | `allow_template_layout_edit: true` (+ `tokens_and_button_card_templates_only: false`) | A `@stylist` intent must change layout templates or `button_card_templates` | 0003 |
 | `allow_climate_ring_control_deferred_commit: true` | Thermostat setpoint ring work | 0017 |
 | `allow_hacs_bubble_card_popup: true` | Any Bubble pop-up | 0020 |
-| `allow_native_time_input_climate_timer: true` | Phone timer picker | 0021 |
-| `allow_hacs_slider_button_card_climate_timer: true` | Desktop timer picker | 0021 |
+| `allow_hacs_mushroom: true` | Nested Mushroom cards (e.g. laundry params) | 0010, 0026 |
+| `allow_hacs_card_mod: true` | card-mod on nested HA/Mushroom hosts (tokenized CSS vars only) | 0010, 0006, 0026 |
+| `allow_climate_timer_radial_control: true` | In-place Klimat timer radial (duration) | 0025 |
+| `allow_native_time_input_climate_timer: true` | Retired phone timer picker (do not set for new work) | 0021 |
+| `allow_hacs_slider_button_card_climate_timer: true` | Retired desktop timer picker (do not set for new work) | 0021 |
 
 ## 6. Output Schema (Strict JSON)
 

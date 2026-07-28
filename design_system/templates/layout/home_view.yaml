@@ -1,4 +1,7 @@
-{#- SPA shell: panel + centered page; width from container geometry (Apple available-space) -#}
+{#- SPA shell: panel + centered page; width from container geometry (Apple available-space).
+   Main mosaic stays in vertical-stack. Bubble standalone pop-ups (ADR 0020 / v3.2+)
+   render as siblings of that stack under layout-card — nesting them inside the stack
+   races hui-view setConfig (lazy hui-panel-view) and triggers Bubble migration debt. -#}
 title: "{{ title }}"
 path: {{ path }}
 type: panel
@@ -16,8 +19,9 @@ cards:
       margin: 0 auto
       padding: clamp(0.5rem, 1.25vw, 1rem) clamp(1rem, 2.5vw, 2.5rem)
       box-sizing: border-box
-{%- if card_blocks %}
+{%- if card_blocks or extra_card_blocks %}
     cards:
+{%- if card_blocks %}
       - type: vertical-stack
         view_layout:
           grid-column: 1
@@ -27,6 +31,15 @@ cards:
           - {{ lines[0] }}
 {%- for line in lines[1:] %}
             {{ line }}
+{%- endfor %}
+
+{%- endfor %}
+{%- endif %}
+{%- for block in extra_card_blocks | default([]) %}
+{%- set lines = block.strip().split('\n') %}
+      - {{ lines[0] }}
+{%- for line in lines[1:] %}
+        {{ line }}
 {%- endfor %}
 
 {%- endfor %}

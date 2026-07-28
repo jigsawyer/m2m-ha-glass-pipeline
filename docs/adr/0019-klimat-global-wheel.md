@@ -14,7 +14,7 @@ Mode + fan UX is a **symmetrical filled annular ring** (`climate_global_wheel`) 
 
 | Layer | N | Segments |
 |---|---|---|
-| Main | 6 | quiet, fan menu entry, turbo, timer idle (Bubble navigate; active liquid bar under the wheel via `climate_timer_active_bar`), horizontal swing, HVAC mode menu entry. Vertical swing omitted. |
+| Main | 6 | quiet, fan menu entry, turbo, timer segment (always visible; idle → open in-place radial picker ADR 0025; active/paused/armed → cancel via `*_ac_timer_remove`; slim liquid bar under the wheel via `climate_timer_active_bar` without cancel chip), horizontal swing, HVAC mode menu entry. Vertical swing omitted. |
 | Fan | 5 | Back at the fan entry index + auto / low / medium / high |
 | Mode | 6 | Back at the mode entry index + cool / heat / dry / fan_only / auto |
 

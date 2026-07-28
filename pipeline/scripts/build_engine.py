@@ -699,9 +699,11 @@ def build_dashboard(dashboard_id):
                 else:
                     room_count = len(room_content)
 
-            # View-level extras (e.g. Bubble pop-ups) — same view as openers, not inside rooms.
+            # View-level extras (e.g. Bubble pop-ups) — siblings of the floor stack,
+            # not nested inside vertical-stack (Bubble standalone + hui-view setConfig).
+            extra_card_blocks = []
             for extra in view_def.get("extra_cards", []) or []:
-                card_blocks.append(render_component(env, hardware_map, extra))
+                extra_card_blocks.append(render_component(env, hardware_map, extra))
 
             try:
                 home_template = env.get_template("layout/home_view.yaml")
@@ -709,6 +711,7 @@ def build_dashboard(dashboard_id):
                     title=view_title,
                     path=view_path,
                     card_blocks=card_blocks,
+                    extra_card_blocks=extra_card_blocks,
                     background_image=background_image,
                 )
             except Exception as e:

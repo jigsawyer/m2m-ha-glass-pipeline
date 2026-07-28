@@ -24,7 +24,7 @@ The setpoint is an **authorized custom button-card JS radial control** (`climate
 
 **Styling:** `lg_*_climate_ring_*` tokens for physical values, `extra_styles` for structure and pointer binding; ring fill via a host custom property, never inline styles.
 
-This supersedes the dome and the pop-up shell for the setpoint. The ban on rebuilding drag in button-card JS still holds for all other climate UX; `slider-button-card` remains authorized for the timer only (ADR 0021).
+This supersedes the dome and the pop-up shell for the setpoint. The ban on rebuilding drag in button-card JS still holds for all other climate UX **except** the authorized timer radial (ADR 0025). Do not conflate the two radials: setpoint uses `--lg_ring_t` / deferred `climate.set_temperature`; timer uses `--lg_timer_t` / deferred `script.*_ac_timer_save_duration`. They are mutually exclusive open-states (`.lg-wheel-temp-open` ⟂ `.lg-timer-radial-open`).
 
 Reject: other slider plugins, card-mod-heavy chrome, on-drag commit, a pop-up/navigate shell for the setpoint, a proxy helper with guessed bounds, fading mid status while open, or a draggable TEMP ring outside heat/cool → `FATAL_EXCEPTION`.
 

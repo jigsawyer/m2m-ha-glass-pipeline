@@ -68,5 +68,34 @@
 
   "pralnia_svitlo_switch": { "domain": "switch", "entity_id": "switch.pralnia_switch" },
 
+  "washer_machine_select": { "domain": "select", "entity_id": "select.pralnia_pralna_mashina" },
+  "washer_machine_state": { "domain": "sensor", "entity_id": "sensor.pralnia_pralna_mashina_machine_state" },
+  "washer_job_state": { "domain": "sensor", "entity_id": "sensor.pralnia_pralna_mashina_job_state" },
+  "washer_completion_time": { "domain": "sensor", "entity_id": "sensor.pralnia_pralna_mashina_completion_time" },
+  "washer_remote_control": { "domain": "binary_sensor", "entity_id": "binary_sensor.pralnia_pralna_mashina_remote_control" },
+  "washer_power": { "domain": "binary_sensor", "entity_id": "binary_sensor.pralnia_pralna_mashina_power" },
+  "washer_spin_level": { "domain": "select", "entity_id": "select.pralnia_pralna_mashina_spin_level" },
+  "washer_water_temperature": { "domain": "select", "entity_id": "select.pralnia_pralna_mashina_water_temperature" },
+  "washer_rinse_cycles": { "domain": "number", "entity_id": "number.pralnia_pralna_mashina_rinse_cycles" },
+  "washer_bubble_soak": { "domain": "switch", "entity_id": "switch.pralnia_pralna_mashina_bubble_soak" },
+  "washer_delay_armed": { "domain": "input_boolean", "entity_id": "input_boolean.washer_delay_armed" },
+  "washer_delay_minutes": { "domain": "input_number", "entity_id": "input_number.washer_delay_minutes" },
+  "washer_cycle_duration_minutes": { "domain": "input_number", "entity_id": "input_number.washer_cycle_duration_minutes" },
+  "washer_delay_mode": { "domain": "input_select", "entity_id": "input_select.washer_delay_mode" },
+  "washer_delay_timer": { "domain": "timer", "entity_id": "timer.washer_delay" },
+
+  "dryer_machine_select": { "domain": "select", "entity_id": "select.pralnia_sushilna_mashina" },
+  "dryer_machine_state": { "domain": "sensor", "entity_id": "sensor.pralnia_sushilna_mashina_machine_state" },
+  "dryer_job_state": { "domain": "sensor", "entity_id": "sensor.pralnia_sushilna_mashina_job_state" },
+  "dryer_completion_time": { "domain": "sensor", "entity_id": "sensor.pralnia_sushilna_mashina_completion_time" },
+  "dryer_remote_control": { "domain": "binary_sensor", "entity_id": "binary_sensor.pralnia_sushilna_mashina_remote_control" },
+  "dryer_power": { "domain": "binary_sensor", "entity_id": "binary_sensor.pralnia_sushilna_mashina_power" },
+  "dryer_wrinkle_prevent": { "domain": "switch", "entity_id": "switch.pralnia_sushilna_mashina_wrinkle_prevent" },
+  "dryer_delay_armed": { "domain": "input_boolean", "entity_id": "input_boolean.dryer_delay_armed" },
+  "dryer_delay_minutes": { "domain": "input_number", "entity_id": "input_number.dryer_delay_minutes" },
+  "dryer_cycle_duration_minutes": { "domain": "input_number", "entity_id": "input_number.dryer_cycle_duration_minutes" },
+  "dryer_delay_mode": { "domain": "input_select", "entity_id": "input_select.dryer_delay_mode" },
+  "dryer_delay_timer": { "domain": "timer", "entity_id": "timer.dryer_delay" },
+
   "svitlo_floor_tab": { "domain": "input_select", "entity_id": "input_select.svitlo_floor_tab" }
 }

@@ -1,0 +1,237 @@
+# Laundry Delayed Start helpers + scripts (ADR 0026).
+# SmartThings scan found NO native delay entity for DA_WM_TP2_20_COMMON.
+# Apply on HA host as /config/packages/laundry_delay.yaml
+# (configuration.yaml already has packages: !include_dir_named packages).
+# publish_edge does NOT deploy this file — operator copy + reload required.
+#
+# WRITE explanation when applying:
+#   Creates helpers/scripts/automations so the glass UI can schedule
+#   select → run after client-computed delayMinutes (START_AT | FINISH_BY).
+
+input_boolean:
+  washer_delay_armed:
+    name: Washer delay armed
+  dryer_delay_armed:
+    name: Dryer delay armed
+
+input_number:
+  washer_delay_minutes:
+    name: Washer delay minutes
+    min: 0
+    max: 1440
+    step: 1
+    mode: box
+    unit_of_measurement: min
+  dryer_delay_minutes:
+    name: Dryer delay minutes
+    min: 0
+    max: 1440
+    step: 1
+    mode: box
+    unit_of_measurement: min
+  washer_cycle_duration_minutes:
+    name: Washer cycle duration (estimated)
+    min: 1
+    max: 300
+    step: 1
+    initial: 60
+    mode: box
+    unit_of_measurement: min
+  dryer_cycle_duration_minutes:
+    name: Dryer cycle duration (estimated)
+    min: 1
+    max: 300
+    step: 1
+    initial: 90
+    mode: box
+    unit_of_measurement: min
+
+input_select:
+  washer_delay_mode:
+    name: Washer delay mode
+    options:
+      - START_AT
+      - FINISH_BY
+    initial: START_AT
+  dryer_delay_mode:
+    name: Dryer delay mode
+    options:
+      - START_AT
+      - FINISH_BY
+    initial: START_AT
+
+timer:
+  washer_delay:
+    name: Washer delay
+    duration: "01:00:00"
+    restore: true
+  dryer_delay:
+    name: Dryer delay
+    duration: "01:00:00"
+    restore: true
+
+script:
+  washer_delay_schedule:
+    alias: Washer delay schedule
+    description: Arm washer delay and start countdown (delay_minutes from UI).
+    fields:
+      delay_minutes:
+        required: true
+        selector:
+          number:
+            min: 1
+            max: 1440
+            step: 1
+      delay_mode:
+        required: false
+        selector:
+          select:
+            options:
+              - START_AT
+              - FINISH_BY
+    sequence:
+      - variables:
+          mins: "{{ delay_minutes | int(0) }}"
+          hours: "{{ (mins // 60) | int }}"
+          rem: "{{ (mins % 60) | int }}"
+          dur: "{{ '%02d:%02d:00' % (hours, rem) }}"
+      - condition: template
+        value_template: "{{ mins | int >= 1 }}"
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.washer_delay_minutes
+        data:
+          value: "{{ mins }}"
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ delay_mode is defined and delay_mode not in [none, ''] }}"
+            sequence:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.washer_delay_mode
+                data:
+                  option: "{{ delay_mode }}"
+      - service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.washer_delay_armed
+      - service: timer.start
+        target:
+          entity_id: timer.washer_delay
+        data:
+          duration: "{{ dur }}"
+
+  washer_delay_cancel:
+    alias: Washer delay cancel
+    sequence:
+      - service: timer.cancel
+        target:
+          entity_id: timer.washer_delay
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.washer_delay_armed
+
+  dryer_delay_schedule:
+    alias: Dryer delay schedule
+    description: Arm dryer delay and start countdown (delay_minutes from UI).
+    fields:
+      delay_minutes:
+        required: true
+        selector:
+          number:
+            min: 1
+            max: 1440
+            step: 1
+      delay_mode:
+        required: false
+        selector:
+          select:
+            options:
+              - START_AT
+              - FINISH_BY
+    sequence:
+      - variables:
+          mins: "{{ delay_minutes | int(0) }}"
+          hours: "{{ (mins // 60) | int }}"
+          rem: "{{ (mins % 60) | int }}"
+          dur: "{{ '%02d:%02d:00' % (hours, rem) }}"
+      - condition: template
+        value_template: "{{ mins | int >= 1 }}"
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.dryer_delay_minutes
+        data:
+          value: "{{ mins }}"
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ delay_mode is defined and delay_mode not in [none, ''] }}"
+            sequence:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.dryer_delay_mode
+                data:
+                  option: "{{ delay_mode }}"
+      - service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.dryer_delay_armed
+      - service: timer.start
+        target:
+          entity_id: timer.dryer_delay
+        data:
+          duration: "{{ dur }}"
+
+  dryer_delay_cancel:
+    alias: Dryer delay cancel
+    sequence:
+      - service: timer.cancel
+        target:
+          entity_id: timer.dryer_delay
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.dryer_delay_armed
+
+automation:
+  - id: laundry_washer_delay_finished
+    alias: Laundry washer delay finished → run
+    mode: single
+    trigger:
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.washer_delay
+    condition:
+      - condition: state
+        entity_id: input_boolean.washer_delay_armed
+        state: "on"
+    action:
+      - service: select.select_option
+        target:
+          entity_id: select.pralnia_pralna_mashina
+        data:
+          option: run
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.washer_delay_armed
+
+  - id: laundry_dryer_delay_finished
+    alias: Laundry dryer delay finished → run
+    mode: single
+    trigger:
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.dryer_delay
+    condition:
+      - condition: state
+        entity_id: input_boolean.dryer_delay_armed
+        state: "on"
+    action:
+      - service: select.select_option
+        target:
+          entity_id: select.pralnia_sushilna_mashina
+        data:
+          option: run
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.dryer_delay_armed

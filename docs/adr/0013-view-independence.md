@@ -2,7 +2,7 @@
 
 ## Context
 
-`climate_floor_container`'s `custom:masonry-layout` used one bare `width`/`max_width`/`max_cols` literal (320/320/6) for both breakpoints, forced by the plugin: it self-declares `--column-width` on its own shadow host (`base-column-layout.ts` `firstUpdated()`), four boundaries below our `#content`, unreachable by our CSS (proven by `build/reports/climate_ko_triple_probe.js`).
+`climate_floor_container`'s `custom:masonry-layout` used one bare `width`/`max_width`/`max_cols` literal (320/320/6) for both breakpoints, forced by the plugin: it self-declares `--column-width` on its own shadow host (`base-column-layout.ts` `firstUpdated()`), four boundaries below our `#content`, unreachable by our CSS (proven by `build/reports/runs/current_run/domains/climate/probes/climate_ko_triple_probe.js`).
 
 A Desktop-motivated dial redesign (`lg_size_climate_cc_w` / `lg_size_climate_cc_phone` growth) then pushed iPhone room content past that shared 320px track and silently broke a hand-tuned iPhone-only centering hack in `climate_room_container` — reported as "not centered anymore … linked to size change." The plugin does not know which dashboard called it, so the same coupling exists for every `custom:masonry-layout` usage.
 

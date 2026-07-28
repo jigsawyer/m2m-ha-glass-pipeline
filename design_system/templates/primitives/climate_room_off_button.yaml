@@ -1,4 +1,4 @@
-{# Per-room AC off corner badge — hold turns off the room's climate entity #}
+{# Per-room AC off — tap turns off the room's climate entity (ADR 0016) #}
 {%- set props = custom_props | default({}) %}
 {%- set entity_ids = props.get('ha_entity_ids') %}
 type: custom:button-card

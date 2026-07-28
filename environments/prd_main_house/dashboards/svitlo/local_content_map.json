@@ -7,6 +7,7 @@
       {
         "path": "home",
         "title": "Світло",
+        "room_corner_actions_key": "light_room_corner_actions",
         "include_floors": {
           "floor_1": [
             "vitalnia",
@@ -36,8 +37,12 @@
         "floor_wrapper": "climate_floor_container",
         "room_wrapper": "climate_room_container",
         "include_floors": {
-          "floor_1": ["kabinet"],
-          "floor_2": ["spalnia"]
+          "floor_1": [
+            "kabinet"
+          ],
+          "floor_2": [
+            "spalnia"
+          ]
         },
         "floor_tab_flankers": {
           "left": {
@@ -54,41 +59,52 @@
             }
           }
         },
+        "extra_cards": []
+      },
+      {
+        "path": "pralnia-dash",
+        "title": "Пральня",
+        "content_key": "laundry_room_content",
+        "floor_switch": false,
+        "floor_presentation": "flat",
+        "floor_wrapper": "floor_container",
+        "room_wrapper": "laundry_room_container",
+        "include_floors": {
+          "floor_2": [
+            "pralnia"
+          ]
+        },
+        "floor_tab_flankers": {
+          "left": {
+            "template_ref": "floor_voice_placeholder",
+            "custom_props": {}
+          },
+          "right": {
+            "template_ref": "floor_voice_placeholder",
+            "custom_props": {}
+          }
+        },
         "extra_cards": [
           {
-            "template_ref": "climate_timer_popup",
-            "label": "Таймер кабінет",
+            "template_ref": "laundry_delay_popup",
             "custom_props": {
-              "popup_hash": "#klimat-timer-kabinet",
-              "timer_entity_id": "timer.kabinet_ac_sleep",
-              "armed_entity_id": "input_boolean.kabinet_ac_off_armed",
-              "mode_entity_id": "input_select.kabinet_ac_timer_mode",
-              "hours_entity_id": "input_number.kabinet_ac_timer_hours",
-              "minutes_entity_id": "input_number.kabinet_ac_timer_minutes",
-              "clock_entity_id": "input_datetime.kabinet_ac_off_at",
-              "clock_hour_entity_id": "input_number.kabinet_ac_off_hour",
-              "clock_minute_entity_id": "input_number.kabinet_ac_off_minute",
-              "save_duration_script_id": "script.kabinet_ac_timer_save_duration",
-              "save_clock_script_id": "script.kabinet_ac_timer_save_clock",
-              "remove_script_id": "script.kabinet_ac_timer_remove"
+              "popup_hash": "#laundry-delay-washer",
+              "label": "Пральна машина",
+              "armed_entity_id": "input_boolean.washer_delay_armed",
+              "cycle_duration_entity_id": "input_number.washer_cycle_duration_minutes",
+              "delay_mode_entity_id": "input_select.washer_delay_mode",
+              "schedule_script_id": "script.washer_delay_schedule"
             }
           },
           {
-            "template_ref": "climate_timer_popup",
-            "label": "Таймер спальня",
+            "template_ref": "laundry_delay_popup",
             "custom_props": {
-              "popup_hash": "#klimat-timer-spalnia",
-              "timer_entity_id": "timer.spalnia_ac_sleep",
-              "armed_entity_id": "input_boolean.spalnia_ac_off_armed",
-              "mode_entity_id": "input_select.spalnia_ac_timer_mode",
-              "hours_entity_id": "input_number.spalnia_ac_timer_hours",
-              "minutes_entity_id": "input_number.spalnia_ac_timer_minutes",
-              "clock_entity_id": "input_datetime.spalnia_ac_off_at",
-              "clock_hour_entity_id": "input_number.spalnia_ac_off_hour",
-              "clock_minute_entity_id": "input_number.spalnia_ac_off_minute",
-              "save_duration_script_id": "script.spalnia_ac_timer_save_duration",
-              "save_clock_script_id": "script.spalnia_ac_timer_save_clock",
-              "remove_script_id": "script.spalnia_ac_timer_remove"
+              "popup_hash": "#laundry-delay-dryer",
+              "label": "Сушильна машина",
+              "armed_entity_id": "input_boolean.dryer_delay_armed",
+              "cycle_duration_entity_id": "input_number.dryer_cycle_duration_minutes",
+              "delay_mode_entity_id": "input_select.dryer_delay_mode",
+              "schedule_script_id": "script.dryer_delay_schedule"
             }
           }
         ]
@@ -177,11 +193,6 @@
         "custom_props": {
           "icon": "mdi:router-wireless"
         }
-      },
-      {
-        "logical_id": "vitalnia_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
       }
     ],
     "dushova": [
@@ -200,11 +211,6 @@
         "custom_props": {
           "icon": "mdi:fan"
         }
-      },
-      {
-        "logical_id": "dushova_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
       }
     ],
     "kukhnia": [
@@ -239,25 +245,6 @@
         "custom_props": {
           "icon": "mdi:balcony"
         }
-      },
-      {
-        "logical_id": "kukhnia_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату",
-        "custom_props": {
-          "ha_entity_ids": [
-            "switch.pidsvitka_switch",
-            "switch.pidsvitka_switch_2",
-            "switch.pidsvitka_switch_3",
-            "switch.kukhnia_tsentralnii_tranzit_switch",
-            "switch.kukhnia_tsentralnii_tranzit_switch_2",
-            "switch.pravii_tranzit_switch",
-            "switch.pravii_tranzit_switch_2",
-            "switch.svitlo_switch_3",
-            "switch.svitlo_switch_4",
-            "switch.svitlo_3"
-          ]
-        }
       }
     ],
     "zal": [
@@ -284,11 +271,6 @@
         "custom_props": {
           "icon": "mdi:balcony"
         }
-      },
-      {
-        "logical_id": "zal_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
       }
     ],
     "kabinet": [
@@ -317,11 +299,6 @@
         "custom_props": {
           "icon": "mdi:door"
         }
-      },
-      {
-        "logical_id": "korydor_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
       }
     ],
     "spalnia": [
@@ -348,11 +325,6 @@
         "custom_props": {
           "icon": "mdi:balcony"
         }
-      },
-      {
-        "logical_id": "spalnia_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
       }
     ],
     "ditiacha": [
@@ -395,11 +367,6 @@
         "custom_props": {
           "icon": "mdi:balcony"
         }
-      },
-      {
-        "logical_id": "ditiacha_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
       }
     ],
     "vanna": [
@@ -418,11 +385,6 @@
         "custom_props": {
           "icon": "mdi:fan"
         }
-      },
-      {
-        "logical_id": "vanna_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
       }
     ],
     "tualet": [
@@ -446,6 +408,90 @@
       }
     ]
   },
+  "light_room_corner_actions": {
+    "vitalnia": [
+      {
+        "logical_id": "vitalnia_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "dushova": [
+      {
+        "logical_id": "dushova_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "kukhnia": [
+      {
+        "logical_id": "kukhnia_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату",
+        "custom_props": {
+          "ha_entity_ids": [
+            "switch.pidsvitka_switch",
+            "switch.pidsvitka_switch_2",
+            "switch.pidsvitka_switch_3",
+            "switch.kukhnia_tsentralnii_tranzit_switch",
+            "switch.kukhnia_tsentralnii_tranzit_switch_2",
+            "switch.pravii_tranzit_switch",
+            "switch.pravii_tranzit_switch_2",
+            "switch.svitlo_switch_3",
+            "switch.svitlo_switch_4",
+            "switch.svitlo_3"
+          ]
+        }
+      }
+    ],
+    "zal": [
+      {
+        "logical_id": "zal_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "skhody_i_korydor": [
+      {
+        "logical_id": "korydor_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "spalnia": [
+      {
+        "logical_id": "spalnia_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "ditiacha": [
+      {
+        "logical_id": "ditiacha_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "vanna": [
+      {
+        "logical_id": "vanna_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "kabinet": [
+      {
+        "logical_id": "kabinet_svitlo_switch",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату",
+        "custom_props": {
+          "ha_entity_ids": [
+            "switch.kabinet_vimikach_kabinet"
+          ]
+        }
+      }
+    ]
+  },
   "climate_floor_actions": {
     "floor_1": [
       {
@@ -453,7 +499,9 @@
         "template_ref": "climate_floor_off_button",
         "label": "Вимкнути клімат поверху",
         "custom_props": {
-          "ha_entity_ids": ["climate.kabinet_konditsioner_kabinet"]
+          "ha_entity_ids": [
+            "climate.kabinet_konditsioner_kabinet"
+          ]
         }
       }
     ],
@@ -463,7 +511,9 @@
         "template_ref": "climate_floor_off_button",
         "label": "Вимкнути клімат поверху",
         "custom_props": {
-          "ha_entity_ids": ["climate.spalnia_konditsioner_spalnia"]
+          "ha_entity_ids": [
+            "climate.spalnia_konditsioner_spalnia"
+          ]
         }
       }
     ]
@@ -475,7 +525,9 @@
         "template_ref": "climate_room_off_button",
         "label": "Вимкнути кондиціонер",
         "custom_props": {
-          "ha_entity_ids": ["climate.kabinet_konditsioner_kabinet"]
+          "ha_entity_ids": [
+            "climate.kabinet_konditsioner_kabinet"
+          ]
         }
       }
     ],
@@ -485,7 +537,9 @@
         "template_ref": "climate_room_off_button",
         "label": "Вимкнути кондиціонер",
         "custom_props": {
-          "ha_entity_ids": ["climate.spalnia_konditsioner_spalnia"]
+          "ha_entity_ids": [
+            "climate.spalnia_konditsioner_spalnia"
+          ]
         }
       }
     ]
@@ -509,7 +563,8 @@
           "remove_script_id": "script.kabinet_ac_timer_remove",
           "pause_clock_script_id": "script.kabinet_ac_timer_pause_clock",
           "turbo_entity_id": "switch.kabinet_konditsioner_kabinet_fast_heating_cooling",
-          "quiet_entity_id": "switch.kabinet_konditsioner_kabinet_quiet_mode"
+          "quiet_entity_id": "switch.kabinet_konditsioner_kabinet_quiet_mode",
+          "save_duration_script_id": "script.kabinet_ac_timer_save_duration"
         }
       }
     ],
@@ -519,20 +574,70 @@
         "template_ref": "climate_thermostat",
         "label": "Кондиціонер",
         "custom_props": {
-            "timer_entity_id": "timer.spalnia_ac_sleep",
-            "clock_entity_id": "input_datetime.spalnia_ac_off_at",
-            "armed_entity_id": "input_boolean.spalnia_ac_off_armed",
-            "popup_hash": "#klimat-timer-spalnia",
-            "mode_entity_id": "input_select.spalnia_ac_timer_mode",
-            "hours_entity_id": "input_number.spalnia_ac_timer_hours",
-            "minutes_entity_id": "input_number.spalnia_ac_timer_minutes",
-            "clock_hour_entity_id": "input_number.spalnia_ac_off_hour",
-            "clock_minute_entity_id": "input_number.spalnia_ac_off_minute",
-            "remove_script_id": "script.spalnia_ac_timer_remove",
-            "pause_clock_script_id": "script.spalnia_ac_timer_pause_clock",
-            "turbo_entity_id": "switch.spalnia_konditsioner_spalnia_fast_heating_cooling",
-            "quiet_entity_id": "switch.spalnia_konditsioner_spalnia_quiet_mode"
-          }
+          "timer_entity_id": "timer.spalnia_ac_sleep",
+          "clock_entity_id": "input_datetime.spalnia_ac_off_at",
+          "armed_entity_id": "input_boolean.spalnia_ac_off_armed",
+          "popup_hash": "#klimat-timer-spalnia",
+          "mode_entity_id": "input_select.spalnia_ac_timer_mode",
+          "hours_entity_id": "input_number.spalnia_ac_timer_hours",
+          "minutes_entity_id": "input_number.spalnia_ac_timer_minutes",
+          "clock_hour_entity_id": "input_number.spalnia_ac_off_hour",
+          "clock_minute_entity_id": "input_number.spalnia_ac_off_minute",
+          "remove_script_id": "script.spalnia_ac_timer_remove",
+          "pause_clock_script_id": "script.spalnia_ac_timer_pause_clock",
+          "turbo_entity_id": "switch.spalnia_konditsioner_spalnia_fast_heating_cooling",
+          "quiet_entity_id": "switch.spalnia_konditsioner_spalnia_quiet_mode",
+          "save_duration_script_id": "script.spalnia_ac_timer_save_duration"
+        }
+      }
+    ]
+  },
+  "laundry_room_content": {
+    "pralnia": [
+      {
+        "logical_id": "washer_machine_select",
+        "template_ref": "laundry_machine",
+        "label": "Пральна машина",
+        "custom_props": {
+          "machine_kind": "washer",
+          "machine_state_entity_id": "sensor.pralnia_pralna_mashina_machine_state",
+          "job_state_entity_id": "sensor.pralnia_pralna_mashina_job_state",
+          "completion_entity_id": "sensor.pralnia_pralna_mashina_completion_time",
+          "remote_entity_id": "binary_sensor.pralnia_pralna_mashina_remote_control",
+          "power_entity_id": "binary_sensor.pralnia_pralna_mashina_power",
+          "armed_entity_id": "input_boolean.washer_delay_armed",
+          "cycle_duration_entity_id": "input_number.washer_cycle_duration_minutes",
+          "delay_mode_entity_id": "input_select.washer_delay_mode",
+          "delay_timer_entity_id": "timer.washer_delay",
+          "schedule_script_id": "script.washer_delay_schedule",
+          "cancel_script_id": "script.washer_delay_cancel",
+          "popup_hash": "#laundry-delay-washer",
+          "option_spin_entity_id": "select.pralnia_pralna_mashina_spin_level",
+          "option_water_entity_id": "select.pralnia_pralna_mashina_water_temperature",
+          "option_rinse_entity_id": "number.pralnia_pralna_mashina_rinse_cycles",
+          "option_bubble_entity_id": "switch.pralnia_pralna_mashina_bubble_soak"
+        }
+      },
+      {
+        "logical_id": "dryer_machine_select",
+        "template_ref": "laundry_machine",
+        "label": "Сушильна машина",
+        "custom_props": {
+          "machine_kind": "dryer",
+          "machine_state_entity_id": "sensor.pralnia_sushilna_mashina_machine_state",
+          "job_state_entity_id": "sensor.pralnia_sushilna_mashina_job_state",
+          "completion_entity_id": "sensor.pralnia_sushilna_mashina_completion_time",
+          "remote_entity_id": "binary_sensor.pralnia_sushilna_mashina_remote_control",
+          "power_entity_id": "binary_sensor.pralnia_sushilna_mashina_power",
+          "armed_entity_id": "input_boolean.dryer_delay_armed",
+          "cycle_duration_entity_id": "input_number.dryer_cycle_duration_minutes",
+          "delay_mode_entity_id": "input_select.dryer_delay_mode",
+          "delay_timer_entity_id": "timer.dryer_delay",
+          "schedule_script_id": "script.dryer_delay_schedule",
+          "cancel_script_id": "script.dryer_delay_cancel",
+          "popup_hash": "#laundry-delay-dryer",
+          "option_wrinkle_entity_id": "switch.pralnia_sushilna_mashina_wrinkle_prevent"
+        }
       }
     ]
   }

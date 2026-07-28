@@ -1,9 +1,7 @@
-{#- Klimat AC timer Bubble pop-up (duration + clock).
-   View Independence: phone Force Native wheels; desktop dual HACS sliders.
-   Docs: Clooos/Bubble-Card#pop-up; HA conditional screen; mattieha/slider-button-card.
-   analyzer.mdc §8: centered + hug-content + symmetric inset + panel glass + global focus backdrop.
-   Phone width: Bubble styles.css centered uses calc(100vw - 32px); token = calc(100vw - 2rem).
-   layout-card grid.ts ignores width/max-width/box-sizing — only grid*/margin/padding/height. -#}
+{#- RETIRED (ADR 0025): Klimat AC timer Bubble pop-up superseded by in-place
+   climate_timer_radial_panel. Kept dormant for reference; not wired in
+   local_content_map extra_cards. Do not re-enable without a new ADR.
+   Historical: phone Force Native wheels; desktop dual HACS sliders. -#}
 {%- set props = custom_props | default({}) -%}
 {%- set timer_id = props.timer_entity_id | default('') -%}
 {%- set clock_id = props.clock_entity_id | default('') -%}

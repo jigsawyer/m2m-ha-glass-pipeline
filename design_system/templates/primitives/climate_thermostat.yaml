@@ -14,6 +14,7 @@ variables:
   clock_hour_entity_id: "{{ custom_props.clock_hour_entity_id | default('') }}"
   clock_minute_entity_id: "{{ custom_props.clock_minute_entity_id | default('') }}"
   remove_script_id: "{{ custom_props.remove_script_id | default('') }}"
+  save_duration_script_id: "{{ custom_props.save_duration_script_id | default('') }}"
   pause_clock_script_id: "{{ custom_props.pause_clock_script_id | default('') }}"
   turbo_entity_id: "{{ custom_props.turbo_entity_id | default('') }}"
   quiet_entity_id: "{{ custom_props.quiet_entity_id | default('') }}"

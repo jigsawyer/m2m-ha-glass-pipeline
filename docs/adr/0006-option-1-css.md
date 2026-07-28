@@ -27,5 +27,5 @@ Injected HTML uses semantic classes only; repeated glass/liquid patterns become 
 - Retheming is a token-file operation, never a template sweep; a template needing a raw value signals a missing token.
 - A blank viewport after a template change is diagnosed as `color_type: blank-card` first.
 - Staged YAML with residual inline styles fails the build, so a violation cannot deploy.
-- Layout hypotheses are proven with `build/reports/*.js` probes, never with "temporary" inline styles.
+- Layout hypotheses are proven with `build/reports/runs/current_run/domains/*/probes/*.js` probes, never with "temporary" inline styles.
 - Any rule is locatable by kind: physical → tokens, structural → `extra_styles`. There is no third place.

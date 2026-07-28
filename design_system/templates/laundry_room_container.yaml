@@ -1,8 +1,6 @@
-{# Room glass card — centered 1-column switch stack (equal L/R gutters) #}
-{# Width via room_container :host tokens — grid-layout ignores flex view_layout #}
-{# Optional corner: room-off on title axis (build_engine corner_card). #}
+{# Laundry room — 2-col desktop / 1-col phone for washer|dryer (ADR 0026 rework) #}
 type: custom:button-card
-template: room_container
+template: laundry_room_container
 name: {{ name }}
 custom_fields:
   content:
@@ -11,10 +9,13 @@ custom_fields:
       layout_type: custom:grid-layout
       layout:
         grid-template-columns: "1fr"
-        place-items: start center
-        grid-gap: "var(--lg_space_gap_sm)"
+        place-items: stretch stretch
+        grid-gap: "var(--lg_space_laundry_col_gap)"
         margin: "0"
         padding: "0"
+        mediaquery:
+          "(min-width: 48.0625rem)":
+            grid-template-columns: "1fr 1fr"
       cards:
 {{ cards | yaml_cards(8) }}
 {%- if corner_card %}
