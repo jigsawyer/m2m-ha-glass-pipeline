@@ -1,8 +1,6 @@
-{# ADR 0036 — TIMER_ACTIVE drain = 60-tick clock-face (continuous fuse retired).
+{# ADR 0044 — TIMER_ACTIVE drain = Ambient Conic Track + static tick track.
    Call from climate_global_wheel extra_styles AFTER __lgDrainT / running / armed /
-   tEnt / __lgWantManage / __lgWantRadial / __lgClockRemSec are in scope.
-   Tick outer radius clears segment annulus (seg_gap + half stroke). Opacity follows
-   remaining t with linear fade on the boundary tick (SoT §1.3). #}
+   tEnt / __lgWantManage / __lgWantRadial / __lgClockRemSec are in scope. #}
 {% macro lg_climate_timer_drain_sync_js() -%}
         this.style.setProperty('--lg_timer_drain_t', String(__lgDrainT));
         const __lgParseCssLen = (raw, hostPx) => {
@@ -75,18 +73,30 @@
             if (!g) return false;
             __lgEnsureDrainTicks(g, host, outerR);
             const geo = __lgReadDrainTickGeo(host);
-            const tt = Math.max(0, Math.min(1, Number(t) || 0));
-            const frac = tt * __lgTickN;
             const lines = g.querySelectorAll('.lg-timer-drain-tick');
             for (let i = 0; i < lines.length; i += 1) {
-              let op = geo.opInactive;
-              if ((i + 1) <= frac) op = geo.opActive;
-              else if (i < frac) {
-                const u = frac - i;
-                op = geo.opInactive + (geo.opActive - geo.opInactive) * u;
-              }
-              lines[i].style.opacity = String(op);
+              lines[i].style.opacity = String(geo.opInactive);
             }
+            const tt = Math.max(0, Math.min(1, Number(t) || 0));
+            host.style.setProperty('--lg_timer_drain_t', String(tt));
+            const fill = root.querySelector('#timer_drain .lg-timer-conic-fill');
+            const edge = root.querySelector('#timer_drain .lg-timer-conic-edge');
+            if (fill) fill.style.setProperty('--lg_timer_drain_t', String(tt));
+            if (edge) {
+              edge.style.setProperty('--lg_timer_edge_deg', `${tt * 360}deg`);
+              edge.style.opacity = tt > 0.001 ? '1' : '0';
+            }
+            /* Threshold_Warning: remaining < 10% or < 5 minutes. */
+            const remSec = (host.__lgTimerDrainDurSec || 0) * tt;
+            const warn = tt > 0 && (tt < 0.1 || remSec < 300);
+            host.classList.toggle('lg-timer-threshold-warn', !!warn);
+            if (tt <= 0.001 && host.__lgTimerDrainWasPositive) {
+              host.classList.add('lg-timer-completion');
+              setTimeout(() => {
+                try { host.classList.remove('lg-timer-completion'); } catch (e) {}
+              }, 700);
+            }
+            host.__lgTimerDrainWasPositive = tt > 0.001;
             return true;
           } catch (e) { return false; }
         };

@@ -1,13 +1,48 @@
-{# ADR 0035 — Klimat power load sticky SoT (INIT_LOAD / SHUTDOWN_LOAD). #}
-{% macro lg_climate_power_load_timeout_ms() -%}20000{%- endmacro %}
+{# ADR 0044 — Klimat optimistic power sticky SoT (Optimistic_On / Optimistic_Off). #}
+{% macro lg_climate_power_load_timeout_ms() -%}5000{%- endmacro %}
 
-{% macro lg_climate_power_load_sticky_set_js(wheel_expr='wheelHost', phase_expr="'init'", prev_stable_expr="'idle_off'") -%}
+{% macro lg_haptic_light_js() -%}
+          try {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+          } catch (e) {}
+{%- endmacro %}
+
+{% macro lg_haptic_medium_js() -%}
+          try {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
+          } catch (e) {}
+{%- endmacro %}
+
+{% macro lg_haptic_error_js() -%}
+          try {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([35, 55, 35]);
+          } catch (e) {}
+{%- endmacro %}
+
+{% macro lg_haptic_selection_js() -%}
+          try {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(8);
+          } catch (e) {}
+{%- endmacro %}
+
+{% macro lg_climate_power_phase_normalize_js(raw_expr) -%}
+            (() => {
+              const __lgR = {{ raw_expr }};
+              if (__lgR === 'optimistic_on' || __lgR === 'init') return 'optimistic_on';
+              if (__lgR === 'optimistic_off' || __lgR === 'shutdown') return 'optimistic_off';
+              return null;
+            })()
+{%- endmacro %}
+
+{% macro lg_climate_power_load_sticky_set_js(wheel_expr='wheelHost', phase_expr="'optimistic_on'", prev_stable_expr="'idle_off'") -%}
           (() => {
             const __lgW = {{ wheel_expr }};
             if (!__lgW) return;
             const __lgPhaseRaw = {{ phase_expr }};
-            const __lgPhase = (__lgPhaseRaw === 'init' || __lgPhaseRaw === 'shutdown')
-              ? __lgPhaseRaw : null;
+            const __lgPhase = (__lgPhaseRaw === 'optimistic_on' || __lgPhaseRaw === 'init')
+              ? 'optimistic_on'
+              : ((__lgPhaseRaw === 'optimistic_off' || __lgPhaseRaw === 'shutdown')
+                ? 'optimistic_off' : null);
             const __lgPrev = ({{ prev_stable_expr }} === 'active_on') ? 'active_on' : 'idle_off';
             const __lgEid = String((__lgW.__lgWheelEntityId)
               || (__lgW._config && __lgW._config.entity)
@@ -25,33 +60,42 @@
               __lgW.__lgPowerLoadStartedAt = Date.now();
               try {
                 __lgW.setAttribute('data-lg-power-load', __lgPhase);
-                __lgW.classList.add('lg-power-load', 'lg-power-load--' + __lgPhase);
+                __lgW.classList.add('lg-power-load', 'lg-power-optimistic', 'lg-power-optimistic--' + (__lgPhase === 'optimistic_on' ? 'on' : 'off'));
                 __lgW.classList.remove(
-                  __lgPhase === 'init' ? 'lg-power-load--shutdown' : 'lg-power-load--init'
+                  'lg-power-load--init',
+                  'lg-power-load--shutdown',
+                  __lgPhase === 'optimistic_on' ? 'lg-power-optimistic--off' : 'lg-power-optimistic--on',
+                  'lg-power-rollback'
                 );
+                /* Legacy class aliases for existing CSS selectors during morph. */
+                __lgW.classList.add(__lgPhase === 'optimistic_on' ? 'lg-power-load--init' : 'lg-power-load--shutdown');
+                __lgW.classList.remove(__lgPhase === 'optimistic_on' ? 'lg-power-load--shutdown' : 'lg-power-load--init');
                 __lgW.style.setProperty('--lg_fsm_power_load', '1');
                 __lgW.style.setProperty('--lg_fsm_power_phase', __lgPhase);
               } catch (e) {}
-              /* Skeleton SoT runs on main annular slots — force main layer. */
               window.__lgKlimatWheelLayerByEntity = window.__lgKlimatWheelLayerByEntity || {};
               if (__lgEid) window.__lgKlimatWheelLayerByEntity[__lgEid] = 'main';
               __lgW.__lgWheelLayer = 'main';
               __lgW.classList.remove('lg-wheel-layer-fan', 'lg-wheel-layer-mode');
               __lgW.classList.add('lg-wheel-layer-main');
-              /* Close orthogonal surfaces — load owns the chrome. */
               {{ lg_climate_timer_radial_sticky_set_js(wheel_expr, 'false') }}
               {{ lg_climate_timer_manage_sticky_set_js(wheel_expr, 'false') }}
               try {
                 __lgW.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
                 __lgW.__lgTempOpenedAt = 0;
               } catch (e) {}
+              {{ lg_haptic_light_js() }}
             } else if (__lgEid) {
               delete window.__lgKlimatPowerLoadByEntity[__lgEid];
               __lgW.__lgPowerLoadPhase = null;
               __lgW.__lgPowerLoadStartedAt = 0;
               try {
                 __lgW.removeAttribute('data-lg-power-load');
-                __lgW.classList.remove('lg-power-load', 'lg-power-load--init', 'lg-power-load--shutdown');
+                __lgW.classList.remove(
+                  'lg-power-load', 'lg-power-load--init', 'lg-power-load--shutdown',
+                  'lg-power-optimistic', 'lg-power-optimistic--on', 'lg-power-optimistic--off',
+                  'lg-power-rollback'
+                );
                 __lgW.style.removeProperty('--lg_fsm_power_load');
                 __lgW.style.removeProperty('--lg_fsm_power_phase');
               } catch (e) {}
@@ -91,49 +135,67 @@
           const __lgIsOff = __lgMode === 'off';
           const __lgUnavail = __lgMode === 'unavailable' || __lgMode === 'unknown';
           const __lgMs = {{ lg_climate_power_load_timeout_ms() }};
+          const __lgNormPhase = (p) => {
+            if (p === 'optimistic_on' || p === 'init') return 'optimistic_on';
+            if (p === 'optimistic_off' || p === 'shutdown') return 'optimistic_off';
+            return null;
+          };
           let __lgPhase = null;
-          if (__lgRec && (__lgRec.phase === 'init' || __lgRec.phase === 'shutdown')) {
+          if (__lgRec && __lgNormPhase(__lgRec.phase)) {
             const __lgAge = Date.now() - (Number(__lgRec.startedAt) || 0);
             let __lgClear = false;
             let __lgTimedOut = false;
+            let __lgAck = false;
+            const __lgP = __lgNormPhase(__lgRec.phase);
             if (__lgAge > __lgMs) {
               __lgClear = true;
               __lgTimedOut = true;
-            } else if (__lgRec.phase === 'init' && __lgIsOn) {
+            } else if (__lgP === 'optimistic_on' && __lgIsOn) {
               __lgClear = true;
-            } else if (__lgRec.phase === 'shutdown' && __lgIsOff) {
+              __lgAck = true;
+            } else if (__lgP === 'optimistic_off' && __lgIsOff) {
               __lgClear = true;
+              __lgAck = true;
             }
             if (__lgClear) {
               if (__lgTimedOut) {
                 try {
-                  console.warn('[lg-klimat-power-load] timeout', {
+                  console.warn('[lg-klimat-power-optimistic] timeout rollback', {
                     eid: __lgEid,
-                    phase: __lgRec.phase,
+                    phase: __lgP,
                     prevStable: __lgRec.prevStable
                   });
                   window.dispatchEvent(new CustomEvent('lg-klimat-power-load-timeout', {
                     detail: {
                       eid: __lgEid,
-                      phase: __lgRec.phase,
+                      phase: __lgP,
                       prevStable: __lgRec.prevStable
                     }
                   }));
+                  __lgW.classList.add('lg-power-rollback');
+                  {{ lg_haptic_error_js() }}
+                  setTimeout(() => {
+                    try { __lgW.classList.remove('lg-power-rollback'); } catch (e) {}
+                  }, 600);
                 } catch (e) {}
+              } else if (__lgAck) {
+                {{ lg_haptic_medium_js() }}
               }
               if (__lgEid) delete window.__lgKlimatPowerLoadByEntity[__lgEid];
               __lgPhase = null;
             } else {
-              __lgPhase = __lgRec.phase;
+              __lgPhase = __lgP;
             }
           }
           __lgW.__lgPowerLoadPhase = __lgPhase;
           try {
             if (__lgPhase) {
               __lgW.setAttribute('data-lg-power-load', __lgPhase);
-              __lgW.classList.add('lg-power-load', 'lg-power-load--' + __lgPhase);
+              __lgW.classList.add('lg-power-load', 'lg-power-optimistic', 'lg-power-optimistic--' + (__lgPhase === 'optimistic_on' ? 'on' : 'off'));
+              __lgW.classList.add(__lgPhase === 'optimistic_on' ? 'lg-power-load--init' : 'lg-power-load--shutdown');
               __lgW.classList.remove(
-                __lgPhase === 'init' ? 'lg-power-load--shutdown' : 'lg-power-load--init'
+                __lgPhase === 'optimistic_on' ? 'lg-power-load--shutdown' : 'lg-power-load--init',
+                __lgPhase === 'optimistic_on' ? 'lg-power-optimistic--off' : 'lg-power-optimistic--on'
               );
               __lgW.style.setProperty('--lg_fsm_power_load', '1');
               __lgW.style.setProperty('--lg_fsm_power_phase', __lgPhase);
@@ -148,7 +210,10 @@
               }
             } else {
               __lgW.removeAttribute('data-lg-power-load');
-              __lgW.classList.remove('lg-power-load', 'lg-power-load--init', 'lg-power-load--shutdown');
+              __lgW.classList.remove(
+                'lg-power-load', 'lg-power-load--init', 'lg-power-load--shutdown',
+                'lg-power-optimistic', 'lg-power-optimistic--on', 'lg-power-optimistic--off'
+              );
               __lgW.style.removeProperty('--lg_fsm_power_load');
               __lgW.style.removeProperty('--lg_fsm_power_phase');
               if (__lgW.__lgPowerLoadTimer) {
@@ -160,6 +225,28 @@
             __lgW.classList.toggle('lg-power-unavailable', !!__lgUnavail);
             __lgW.style.setProperty('--lg_fsm_power_idle_off', (__lgIsOff && !__lgPhase) ? '1' : '0');
             __lgW.style.setProperty('--lg_fsm_power_unavailable', __lgUnavail ? '1' : '0');
+            /* Degraded offline — HA connection heartbeats (ADR 0044 §3.2). */
+            try {
+              const __lgHass = (typeof hass !== 'undefined' && hass) ? hass
+                : (typeof document !== 'undefined' && document.querySelector('home-assistant')
+                  && document.querySelector('home-assistant').hass) || null;
+              const __lgConn = __lgHass && __lgHass.connection;
+              const __lgConnected = !!(__lgConn && (__lgConn.connected !== false)
+                && !(__lgConn.reconnectPauser && __lgConn.reconnectPauser.reconnectTimer));
+              window.__lgKlimatWsMissByEntity = window.__lgKlimatWsMissByEntity || {};
+              if (__lgConnected) {
+                window.__lgKlimatWsMissByEntity[__lgEid] = 0;
+                __lgW.classList.remove('lg-power-degraded');
+                __lgW.style.setProperty('--lg_fsm_power_degraded', '0');
+              } else {
+                const __lgMiss = (window.__lgKlimatWsMissByEntity[__lgEid] || 0) + 1;
+                window.__lgKlimatWsMissByEntity[__lgEid] = __lgMiss;
+                if (__lgMiss >= 2) {
+                  __lgW.classList.add('lg-power-degraded');
+                  __lgW.style.setProperty('--lg_fsm_power_degraded', '1');
+                }
+              }
+            } catch (e) {}
           } catch (e) {}
         })();
 {%- endmacro %}
@@ -185,6 +272,8 @@
             }
             if (__lgW && (
               __lgW.classList.contains('lg-power-load')
+              || __lgW.classList.contains('lg-power-optimistic')
+              || __lgW.classList.contains('lg-power-degraded')
               || (__lgW.getAttribute && __lgW.getAttribute('data-lg-power-load'))
               || __lgW.classList.contains('lg-power-unavailable')
             )) {
@@ -224,18 +313,24 @@
         window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
         const __lgPowerRec = (__lgClimateEidPower
           && window.__lgKlimatPowerLoadByEntity[__lgClimateEidPower]) || null;
+        const __lgPowerPhase = __lgPowerRec && __lgPowerRec.phase;
         const __lgPowerLoad = !!(__lgWheel && (
-          (__lgWheel.classList && __lgWheel.classList.contains('lg-power-load'))
+          (__lgWheel.classList && (
+            __lgWheel.classList.contains('lg-power-load')
+            || __lgWheel.classList.contains('lg-power-optimistic')
+          ))
           || (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-power-load'))
-          || (__lgPowerRec && (__lgPowerRec.phase === 'init' || __lgPowerRec.phase === 'shutdown'))
+          || (__lgPowerPhase === 'optimistic_on' || __lgPowerPhase === 'optimistic_off'
+            || __lgPowerPhase === 'init' || __lgPowerPhase === 'shutdown')
         ));
         const __lgUnavailableKlimat = __lgClimateModePower === 'unavailable'
-          || __lgClimateModePower === 'unknown';
+          || __lgClimateModePower === 'unknown'
+          || !!(__lgWheel && __lgWheel.classList && __lgWheel.classList.contains('lg-power-degraded'));
         const __lgIdleOff = __lgClimateModePower === 'off' && !__lgPowerLoad;
         const __lgPeripheralDisabled = !!(__lgIdleOff || __lgPowerLoad || __lgUnavailableKlimat);
 {%- endmacro %}
 
-{# Early-return guard for layer switches (IDLE_OFF / load / unavailable). #}
+{# Early-return guard for layer switches (IDLE_OFF / optimistic / unavailable). #}
 {% macro lg_climate_power_layer_block_js() -%}
           (() => {
             const __lgCP0 = (el) => {
@@ -255,6 +350,8 @@
             }
             if (__lgW0 && (
               __lgW0.classList.contains('lg-power-load')
+              || __lgW0.classList.contains('lg-power-optimistic')
+              || __lgW0.classList.contains('lg-power-degraded')
               || (__lgW0.getAttribute && __lgW0.getAttribute('data-lg-power-load'))
               || __lgW0.classList.contains('lg-power-unavailable')
             )) return true;

@@ -152,6 +152,8 @@
         text-align: center;
         white-space: nowrap;
         pointer-events: none;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
       }
       #label::after {
         /* D1: floor is 5 minutes, not 0 — the dial can never seed below it. */

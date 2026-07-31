@@ -185,7 +185,7 @@
                 'lg-timer-radial-open', 'lg-timer-radial-arming',
                 'lg-wheel-timer-active'
               );
-              {{ lg_climate_power_load_sticky_set_js('wheelHost', "'shutdown'", "'active_on'") }}
+              {{ lg_climate_power_load_sticky_set_js('wheelHost', "'optimistic_off'", "'active_on'") }}
             }
             try { hass.callService('climate', 'turn_off', { entity_id: ids }); } catch (e) {}
           }
