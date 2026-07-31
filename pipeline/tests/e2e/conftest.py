@@ -27,8 +27,33 @@ SANDBOX_OWNER_ID = "a1b2c3d4e5f64789a0b1c2d3e4f50617"
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 STAGING_DIR = (PROJECT_ROOT / "build" / "staging").resolve()
 
+# Primary-stack custom cards required by generated YAML (ADR-0010 / ADR-0039).
+# Without these modules every ``custom:*`` root card collapses to ``hui-error-card``.
+SANDBOX_PLUGINS: tuple[tuple[str, str], ...] = (
+    (
+        "button-card.js",
+        "https://github.com/custom-cards/button-card/releases/download/v7.0.1/button-card.js",
+    ),
+    (
+        "layout-card.js",
+        "https://cdn.jsdelivr.net/gh/thomasloven/lovelace-layout-card@v2.4.7/layout-card.js",
+    ),
+    (
+        "bubble-card.js",
+        "https://cdn.jsdelivr.net/gh/Clooos/Bubble-Card@v3.2.5/dist/bubble-card.js",
+    ),
+    (
+        "mushroom.js",
+        "https://github.com/piitaya/lovelace-mushroom/releases/download/v5.2.1/mushroom.js",
+    ),
+    (
+        "slider-button-card.js",
+        "https://github.com/mattieha/slider-button-card/releases/download/v1.10.3/slider-button-card.js",
+    ),
+)
+
 # Written into staging so the mounted /config tree is a bootable HA config that
-# loads our generated dashboard.yaml in yaml mode (ADR-0038).
+# loads our generated dashboard.yaml in yaml mode (ADR-0038 / ADR-0039).
 SANDBOX_CONFIGURATION_YAML = f"""\
 # Ephemeral sandbox bootstrap — owned by pipeline/tests/e2e/conftest.py
 # Not a deploy artifact; regenerated on every e2e session.
@@ -54,7 +79,19 @@ homeassistant:
     - type: homeassistant
 
 lovelace:
-  mode: yaml
+  # HA 2026.2+: top-level mode: yaml is legacy; resource_mode loads YAML resources.
+  resource_mode: yaml
+  resources:
+    - url: /local/community/button-card.js
+      type: module
+    - url: /local/community/layout-card.js
+      type: module
+    - url: /local/community/bubble-card.js
+      type: module
+    - url: /local/community/mushroom.js
+      type: module
+    - url: /local/community/slider-button-card.js
+      type: module
   dashboards:
     dashboard-glass:
       mode: yaml
@@ -110,6 +147,30 @@ AUTH_STORE = {
 }
 
 
+def _ensure_sandbox_plugins(staging: Path) -> None:
+    """Download pinned primary-stack card bundles into ``www/community/``.
+
+    Generated dashboards use ``custom:button-card``, ``custom:layout-card``,
+    ``custom:bubble-card``, and laundry Mushroom cards. A stock HA image has
+    none of these; without the JS modules Lovelace renders ``hui-error-card``.
+    """
+    community = staging / "www" / "community"
+    community.mkdir(parents=True, exist_ok=True)
+
+    for filename, url in SANDBOX_PLUGINS:
+        dest = community / filename
+        if dest.is_file() and dest.stat().st_size > 1024:
+            continue
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        if len(response.content) < 1024:
+            raise RuntimeError(
+                f"Sandbox plugin download too small for {filename} from {url} "
+                f"({len(response.content)} bytes)"
+            )
+        dest.write_bytes(response.content)
+
+
 def _ensure_sandbox_bootstrap(staging: Path) -> None:
     """Make ``build/staging`` a bootable HA ``/config`` for the sandbox mount."""
     if not staging.is_dir():
@@ -124,6 +185,8 @@ def _ensure_sandbox_bootstrap(staging: Path) -> None:
             f"Missing generated dashboard at {dashboard}. "
             "Run `python pipeline/scripts/build_engine.py` before e2e tests."
         )
+
+    _ensure_sandbox_plugins(staging)
 
     (staging / "configuration.yaml").write_text(
         SANDBOX_CONFIGURATION_YAML,

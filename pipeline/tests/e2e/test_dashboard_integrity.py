@@ -23,6 +23,13 @@ _CONSOLE_NOISE = re.compile(
 # Custom element that always mounts once HA frontend has an authenticated session.
 _LOVELACE_SHELL = "home-assistant"
 
+# Primary-stack custom elements that must register before card inspection
+# (ADR-0010 / ADR-0039). Without them, root ``custom:layout-card`` → hui-error-card.
+_PRIMARY_CUSTOM_ELEMENTS = (
+    "button-card",
+    "layout-card",
+)
+
 
 @pytest.fixture(scope="session")
 def browser_context_args(browser_context_args):
@@ -81,16 +88,46 @@ def test_dashboard_integrity(page, ha_base_url: str) -> None:
         timeout=120_000,
         state="attached",
     )
+
+    # Custom card modules must finish defining before we trust error-card counts.
+    # Stock HA has no button-card/layout-card; missing resources → permanent
+    # hui-error-card on the view root.
+    try:
+        page.wait_for_function(
+            """(names) => names.every((n) => !!customElements.get(n))""",
+            arg=list(_PRIMARY_CUSTOM_ELEMENTS),
+            timeout=120_000,
+        )
+    except Exception as exc:
+        missing = page.evaluate(
+            """(names) => names.filter((n) => !customElements.get(n))""",
+            list(_PRIMARY_CUSTOM_ELEMENTS),
+        )
+        raise AssertionError(
+            "Primary-stack custom card modules did not register. Ensure "
+            "conftest downloads plugins into www/community/ and registers them "
+            f"under lovelace.resources (resource_mode: yaml). Missing: {missing}. "
+            f"Dashboard URL: {page.url}"
+        ) from exc
+
     # Allow card configs (including custom button-card) to settle.
     page.wait_for_load_state("networkidle", timeout=120_000)
 
     error_cards = page.locator("hui-error-card")
     error_count = error_cards.count()
-    assert error_count == 0, (
-        f"Found {error_count} <hui-error-card> element(s) — generated YAML is "
-        "invalid or crashed the Lovelace frontend. "
-        f"Dashboard URL: {target}"
-    )
+    if error_count != 0:
+        snippets: list[str] = []
+        for i in range(min(error_count, 5)):
+            try:
+                snippets.append(error_cards.nth(i).inner_text(timeout=5_000)[:500])
+            except Exception:
+                snippets.append("<unable to read error-card text>")
+        detail = " | ".join(snippets)
+        raise AssertionError(
+            f"Found {error_count} <hui-error-card> element(s) — generated YAML is "
+            "invalid, a custom card crashed, or a sandbox plugin is missing. "
+            f"Dashboard URL: {target}. Error card text: {detail}"
+        )
 
     assert not severe_js_errors, (
         "Severe frontend JavaScript errors while loading the dashboard:\n"
