@@ -31,7 +31,52 @@ jobs:
         run: python pipeline/scripts/build_engine.py
 
       - name: Run Tests
-        run: pytest pipeline/tests/e2e/ --browser chromium
+        run: |
+          set -o pipefail
+          pytest pipeline/tests/e2e/ --browser chromium 2>&1 | tee pytest-failure.log
+
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-failure-log
+          path: pytest-failure.log
+          if-no-files-found: ignore
+
+  agentic-fallback:
+    needs: build-and-test
+    if: failure() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r pipeline/scripts/requirements.txt
+
+      - name: Download failure logs
+        uses: actions/download-artifact@v4
+        with:
+          name: pytest-failure-log
+          path: .
+
+      - name: Run agentic repair orchestrator
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python pipeline/scripts/agentic_repair.py pytest-failure.log
 
   deploy:
     needs: build-and-test
