@@ -1,3 +1,7 @@
+Title: Zero Hallucination and the Evidence Gate
+Date: Unknown
+Status: Accepted
+
 # 0004. Zero Hallucination and the Evidence Gate
 
 ## Context

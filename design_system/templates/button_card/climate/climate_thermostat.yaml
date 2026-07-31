@@ -43,8 +43,17 @@
         this.classList.add('lg-thermostat-host');
         const __lgWheelEl = this.shadowRoot && this.shadowRoot.querySelector('.lg-wheel-host');
         const __lgTempOpen = !!(__lgWheelEl && __lgWheelEl.classList.contains('lg-wheel-temp-open'));
-        const __lgTimerOpen = !!(__lgWheelEl && __lgWheelEl.classList.contains('lg-timer-radial-open'));
-        this.classList.toggle('lg-temp-focus', __lgTempOpen || __lgTimerOpen);
+        const __lgTimerOpen = !!(__lgWheelEl && (
+          __lgWheelEl.classList.contains('lg-timer-radial-open')
+          || (__lgWheelEl.getAttribute && __lgWheelEl.getAttribute('data-lg-timer-radial') === '1')
+        ));
+        /* ADR 0032: TIMER_MANAGE also drives the same same-card chrome
+           (title/Cancel) as EDIT_TEMP / TIMER_CONFIG. */
+        const __lgTimerManageOpen = !!(__lgWheelEl && (
+          __lgWheelEl.classList.contains('lg-timer-manage-open')
+          || (__lgWheelEl.getAttribute && __lgWheelEl.getAttribute('data-lg-timer-manage') === '1')
+        ));
+        this.classList.toggle('lg-temp-focus', __lgTempOpen || __lgTimerOpen || __lgTimerManageOpen);
         return `
       :host {
         width: 100% !important;
@@ -74,11 +83,11 @@
       }
       #container {
         display: grid !important;
-        grid-template-areas:
-          "wheel"
-          "timer" !important;
+        /* ADR 0032: bottom timer bar retired from the live path — single
+           wheel row so masonry never reserves an empty "timer" row. */
+        grid-template-areas: "wheel" !important;
         grid-template-columns: minmax(0, 1fr) !important;
-        grid-template-rows: auto auto !important;
+        grid-template-rows: auto !important;
         justify-items: center !important;
         align-items: center !important;
         justify-content: center !important;
@@ -117,50 +126,15 @@
         display: flex !important;
         justify-content: center !important;
       }
+      /* ADR 0032 — the bottom liquid bar (climate_timer_active_bar) is
+         retired from the live Klimat path: TIMER_ACTIVE chrome now lives on
+         the wheel (outer drain ring + segment glow) and the setpoint trigger
+         center (off-at line). #timer_bar is no longer mounted as a
+         custom_field (see custom_fields below); this defensive rule keeps
+         it hidden even if a stale build still references the id.
+         climate_timer_active_bar.yaml may remain on disk unused. */
       #timer_bar {
-        grid-area: timer !important;
-        width: min(100%, var(--lg_size_climate_timer_bar_w)) !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        height: auto !important;
-        min-height: var(--lg_size_climate_timer_idle_w) !important;
-        justify-self: center !important;
-        align-self: center !important;
-        overflow: visible !important;
-        z-index: 1;
-        position: relative;
-        margin-top: 0 !important;
         display: none !important;
-        justify-content: center !important;
-        align-items: center !important;
-      }
-      :host(.lg-timer-active) #timer_bar {
-        display: flex !important;
-      }
-      #timer_bar > * {
-        width: auto !important;
-        max-width: 100% !important;
-        height: auto !important;
-        display: block !important;
-        margin: 0 auto !important;
-        box-sizing: border-box !important;
-        overflow: visible !important;
-      }
-      @media (max-width: 48rem) {
-        #timer_bar {
-          width: min(100%, var(--lg_size_climate_timer_bar_w_phone)) !important;
-          min-height: var(--lg_size_climate_timer_bar_h) !important;
-        }
-      }
-      /* TEMP / timer radial: hide under-wheel timer entirely (not merely dim). */
-      :host(.lg-temp-focus) #timer_bar,
-      #container:has(.lg-ring-trigger-expanded) #timer_bar,
-      #container:has(.lg-timer-radial-open) #timer_bar {
-        display: none !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        filter: none !important;
-        transition: none !important;
       }
         `;
       ]]]
@@ -178,23 +152,8 @@
             armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
             save_duration_script_id: "[[[ return (variables && variables.save_duration_script_id) || '' ]]]"
             remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
-            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
-            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
-            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
-            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"
-      timer_bar:
-        card:
-          type: custom:button-card
-          template: climate_timer_active_bar
-          entity: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
-          variables:
-            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
-            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
-            popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"
-            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"
-            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
-            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
-            clock_hour_entity_id: "[[[ return (variables && variables.clock_hour_entity_id) || '' ]]]"
-            clock_minute_entity_id: "[[[ return (variables && variables.clock_minute_entity_id) || '' ]]]"
-            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
             pause_clock_script_id: "[[[ return (variables && variables.pause_clock_script_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"

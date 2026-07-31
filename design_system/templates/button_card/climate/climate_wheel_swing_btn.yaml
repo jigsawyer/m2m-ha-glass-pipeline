@@ -112,28 +112,33 @@
           active = axisOn(a.swing_mode, axis);
         }
         const frost = active
-          ? 'var(--lg_color_climate_frost_other)'
+          ? 'var(--lg_gradient_climate_wheel_seg_on_wash), var(--lg_color_climate_wheel_seg_frost)'
           : 'var(--lg_color_climate_wheel_seg_frost)';
         return `
       {{ lg_climate_wheel_slot_position_css() }}
       /* Visibility owned by climate_global_wheel (.lg-wheel-swing-h-on) so
          sibling sectors can recompute N=count(visible) without a hole. */
       #card {
-        pointer-events: ${supported && __lgSegVisible ? 'auto' : 'none'} !important;
+        pointer-events: ${supported && __lgSegVisible && !__lgPeripheralDisabled ? 'auto' : 'none'} !important;
+        filter: ${active
+          ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour)'
+          : 'var(--lg_filter_climate_wheel_seg_idle_lift)'} !important;
+      }
+      #card:active {
+        filter: var(--lg_filter_climate_press) !important;
       }
       #liquid_clip {
         background: ${frost} !important;
-        /* Active State Illumination (hyper-glass refresh): see quiet_btn for
-           the overflow:hidden / mask-image rationale for inset-only glow. */
         box-shadow: ${active
           ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_wheel_seg_on_inset)'
           : 'var(--lg_shadow_climate_wheel_seg)'} !important;
-        filter: ${active ? 'var(--lg_filter_climate_wheel_seg_on)' : 'none'};
+        filter: none !important;
+        transition: var(--lg_transition_climate_node_state) !important;
       }
       #icon {
         color: var(--lg_color_text) !important;
-        filter: ${active ? 'var(--lg_filter_climate_other)' : 'none'};
-        opacity: ${active ? '1' : '0.72'};
+        filter: ${active ? 'var(--lg_filter_climate_other), var(--lg_filter_climate_wheel_seg_glow)' : 'none'};
+        opacity: ${active ? '1' : 'var(--lg_opacity_climate_wheel_seg_icon_idle)'};
       }
         `;
       ]]]

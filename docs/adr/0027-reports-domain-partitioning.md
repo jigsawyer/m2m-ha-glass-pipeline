@@ -1,3 +1,7 @@
+Title: Reports Domain-Driven Hierarchical Partitioning
+Date: Unknown
+Status: Accepted
+
 # 0027. Reports Domain-Driven Hierarchical Partitioning
 
 ## Context

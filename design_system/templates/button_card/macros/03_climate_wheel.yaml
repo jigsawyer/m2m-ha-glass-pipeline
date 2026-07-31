@@ -18,8 +18,159 @@
             if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
           } catch (e) {}
 {%- endmacro %}
+{# Persist / clear TIMER_CONFIG + TIMER_MANAGE sticky on window maps (survives
+   button-card host recreate — same SoT as __lgKlimatWheelLayerByEntity). #}
+{% macro lg_climate_timer_sticky_clear_js(wheel_expr='wheelHost') -%}
+          (() => {
+            const __lgW = {{ wheel_expr }};
+            if (!__lgW) return;
+            const __lgEid = String((__lgW.__lgWheelEntityId)
+              || (__lgW._config && __lgW._config.entity)
+              || (__lgW.config && __lgW.config.entity) || '');
+            window.__lgKlimatTimerRadialByEntity = window.__lgKlimatTimerRadialByEntity || {};
+            window.__lgKlimatTimerManageByEntity = window.__lgKlimatTimerManageByEntity || {};
+            if (__lgEid) {
+              window.__lgKlimatTimerRadialByEntity[__lgEid] = false;
+              window.__lgKlimatTimerManageByEntity[__lgEid] = false;
+            }
+            __lgW.__lgTimerStickyOpen = false;
+            __lgW.__lgTimerManageStickyOpen = false;
+            try {
+              __lgW.removeAttribute('data-lg-timer-radial');
+              __lgW.removeAttribute('data-lg-timer-manage');
+              /* Inline CSS vars survive button-card classList wipes. */
+              __lgW.style.removeProperty('--lg_fsm_manage_display');
+              __lgW.style.removeProperty('--lg_fsm_manage_pe');
+              __lgW.style.removeProperty('--lg_fsm_radial_display');
+              __lgW.style.removeProperty('--lg_fsm_radial_pe');
+              __lgW.style.removeProperty('--lg_fsm_seg_display');
+              __lgW.style.removeProperty('--lg_fsm_seg_opacity');
+              __lgW.style.removeProperty('--lg_fsm_seg_pe');
+              __lgW.style.removeProperty('--lg_fsm_trigger_display');
+            } catch (e) {}
+            __lgW.classList.remove(
+              'lg-timer-radial-open', 'lg-timer-radial-arming',
+              'lg-timer-manage-open', 'lg-timer-manage-arming'
+            );
+            {{ lg_climate_timer_surface_focus_js('false') }}
+          })();
+{%- endmacro %}
+{% macro lg_climate_timer_manage_sticky_set_js(wheel_expr='wheelHost', open_expr='true') -%}
+          (() => {
+            const __lgW = {{ wheel_expr }};
+            if (!__lgW) return;
+            const __lgOpen = !!({{ open_expr }});
+            const __lgEid = String((__lgW.__lgWheelEntityId)
+              || (__lgW._config && __lgW._config.entity)
+              || (__lgW.config && __lgW.config.entity)
+              || (typeof entity !== 'undefined' && entity && entity.entity_id) || '');
+            if (__lgEid) __lgW.__lgWheelEntityId = __lgEid;
+            window.__lgKlimatTimerManageByEntity = window.__lgKlimatTimerManageByEntity || {};
+            window.__lgKlimatTimerRadialByEntity = window.__lgKlimatTimerRadialByEntity || {};
+            if (__lgEid) window.__lgKlimatTimerManageByEntity[__lgEid] = __lgOpen;
+            __lgW.__lgTimerManageStickyOpen = __lgOpen;
+            try {
+              if (__lgOpen) {
+                __lgW.setAttribute('data-lg-timer-manage', '1');
+                /* Inline vars: survive classList wipe on timer ticks (H11). */
+                __lgW.style.setProperty('--lg_fsm_manage_display', 'block');
+                __lgW.style.setProperty('--lg_fsm_manage_pe', 'auto');
+                __lgW.style.setProperty('--lg_fsm_seg_display', 'none');
+                __lgW.style.setProperty('--lg_fsm_seg_opacity', '0');
+                __lgW.style.setProperty('--lg_fsm_seg_pe', 'none');
+                __lgW.style.setProperty('--lg_fsm_trigger_display', 'none');
+                __lgW.style.removeProperty('--lg_fsm_radial_display');
+                __lgW.style.removeProperty('--lg_fsm_radial_pe');
+                if (__lgEid) window.__lgKlimatTimerRadialByEntity[__lgEid] = false;
+                __lgW.__lgTimerStickyOpen = false;
+                __lgW.removeAttribute('data-lg-timer-radial');
+                __lgW.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+              } else {
+                __lgW.removeAttribute('data-lg-timer-manage');
+                __lgW.style.removeProperty('--lg_fsm_manage_display');
+                __lgW.style.removeProperty('--lg_fsm_manage_pe');
+                __lgW.style.removeProperty('--lg_fsm_seg_display');
+                __lgW.style.removeProperty('--lg_fsm_seg_opacity');
+                __lgW.style.removeProperty('--lg_fsm_seg_pe');
+                __lgW.style.removeProperty('--lg_fsm_trigger_display');
+              }
+            } catch (e) {}
+            if (__lgOpen) __lgW.classList.add('lg-timer-manage-open');
+            else __lgW.classList.remove('lg-timer-manage-open', 'lg-timer-manage-arming');
+            {{ lg_climate_timer_surface_focus_js('__lgOpen') }}
+          })();
+{%- endmacro %}
+{% macro lg_climate_timer_radial_sticky_set_js(wheel_expr='wheelHost', open_expr='true') -%}
+          (() => {
+            const __lgW = {{ wheel_expr }};
+            if (!__lgW) return;
+            const __lgOpen = !!({{ open_expr }});
+            const __lgEid = String((__lgW.__lgWheelEntityId)
+              || (__lgW._config && __lgW._config.entity)
+              || (__lgW.config && __lgW.config.entity)
+              || (typeof entity !== 'undefined' && entity && entity.entity_id) || '');
+            if (__lgEid) __lgW.__lgWheelEntityId = __lgEid;
+            window.__lgKlimatTimerRadialByEntity = window.__lgKlimatTimerRadialByEntity || {};
+            window.__lgKlimatTimerManageByEntity = window.__lgKlimatTimerManageByEntity || {};
+            if (__lgEid) window.__lgKlimatTimerRadialByEntity[__lgEid] = __lgOpen;
+            __lgW.__lgTimerStickyOpen = __lgOpen;
+            try {
+              if (__lgOpen) {
+                __lgW.setAttribute('data-lg-timer-radial', '1');
+                __lgW.style.setProperty('--lg_fsm_radial_display', 'block');
+                __lgW.style.setProperty('--lg_fsm_radial_pe', 'auto');
+                __lgW.style.setProperty('--lg_fsm_seg_display', 'none');
+                __lgW.style.setProperty('--lg_fsm_seg_opacity', '0');
+                __lgW.style.setProperty('--lg_fsm_seg_pe', 'none');
+                __lgW.style.setProperty('--lg_fsm_trigger_display', 'none');
+                __lgW.style.removeProperty('--lg_fsm_manage_display');
+                __lgW.style.removeProperty('--lg_fsm_manage_pe');
+                if (__lgEid) window.__lgKlimatTimerManageByEntity[__lgEid] = false;
+                __lgW.__lgTimerManageStickyOpen = false;
+                __lgW.removeAttribute('data-lg-timer-manage');
+                __lgW.classList.remove('lg-timer-manage-open', 'lg-timer-manage-arming');
+              } else {
+                __lgW.removeAttribute('data-lg-timer-radial');
+                __lgW.style.removeProperty('--lg_fsm_radial_display');
+                __lgW.style.removeProperty('--lg_fsm_radial_pe');
+                __lgW.style.removeProperty('--lg_fsm_seg_display');
+                __lgW.style.removeProperty('--lg_fsm_seg_opacity');
+                __lgW.style.removeProperty('--lg_fsm_seg_pe');
+                __lgW.style.removeProperty('--lg_fsm_trigger_display');
+              }
+            } catch (e) {}
+            if (__lgOpen) __lgW.classList.add('lg-timer-radial-open');
+            else __lgW.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+            {{ lg_climate_timer_surface_focus_js('__lgOpen') }}
+          })();
+{%- endmacro %}
+{# Arm optimistic pending illumination until HA entity confirms (Phase 1 §4.5). #}
+{% macro lg_climate_seg_pending_arm_js(snapshot_expr="'state:' + ((entity && entity.state) || '')") -%}
+          this.__lgSegPendingSnap = {{ snapshot_expr }};
+          this.__lgSegPending = true;
+          this.__lgSegPendingUntil = Date.now() + 5000;
+          try {
+            if (typeof this.requestUpdate === 'function') this.requestUpdate();
+          } catch (e) {}
+{%- endmacro %}
+{# Resolve pending flag for segment extra_styles. Pass current fingerprint string. #}
+{% macro lg_climate_seg_pending_resolve_js(snap_expr) -%}
+        let __lgSegPending = !!(this && this.__lgSegPending);
+        if (__lgSegPending) {
+          const __lgNowSnap = {{ snap_expr }};
+          const __lgExpired = !(this.__lgSegPendingUntil) || Date.now() > this.__lgSegPendingUntil;
+          if (__lgExpired || __lgNowSnap !== this.__lgSegPendingSnap) {
+            this.__lgSegPending = false;
+            this.__lgSegPendingSnap = undefined;
+            this.__lgSegPendingUntil = 0;
+            __lgSegPending = false;
+          }
+        }
+{%- endmacro %}
 {% macro lg_climate_wheel_set_layer_js(layer_expr) -%}
         (() => {
+          /* ADR 0035: lock layer switches during IDLE_OFF / load / unavailable. */
+          if ({{ lg_climate_power_layer_block_js() }}) return;
           {{ lg_haptic_press_js() }}
           const __lgCP = (el) => {
             if (!el) return null;
@@ -131,7 +282,11 @@
         let __lgSegVisible = true;
         let __lgSlots = [];
         let __lgLayer = 'none';
-        if (__lgWheel) {
+        /* TIMER_MANAGE radial sectors sit inside .lg-wheel-host but are NOT
+           main-layer slots — honor variables.seg_index/total and skip the
+           DynamicSegmentsGroup remap (otherwise pause/stop/edit go opacity:0). */
+        const __lgManageRadial = !!(variables && variables.manage_radial);
+        if (__lgWheel && !__lgManageRadial) {
           const __lgTimerActive = __lgWheel.classList.contains('lg-wheel-timer-active');
           const __lgSwingOn = __lgWheel.classList.contains('lg-wheel-swing-h-on');
           /* Property SoT: window map by entity (survives host recreate), then expando. */
@@ -159,9 +314,12 @@
             __lgSlots = ['mode_auto', 'mode_cool', 'mode_heat', 'mode_dry', 'mode_fan_only', 'back_mode'];
           } else {
             /* Main layer — MUST match climate_global_wheel CSS visibility.
-               ADR 0025: timer segment stays visible while armed/running so
-               re-tap can cancel — never drop it from the equal-sector list. */
-            __lgSlots = ['quiet', 'fan_entry', 'turbo', 'timer'];
+               ADR 0032 (B1): order is timer, fan_entry, turbo, quiet,
+               [swing_h], mode_entry — Quiet/Timer swapped vs prior ADR
+               0019/0025 order. Timer segment stays visible while
+               armed/running/active so retap opens TIMER_MANAGE (never
+               dropped from the equal-sector list; never cancel-on-retap). */
+            __lgSlots = ['timer', 'fan_entry', 'turbo', 'quiet'];
             if (__lgSwingOn) __lgSlots.push('swing_h');
             __lgSlots.push('mode_entry');
           }
@@ -181,6 +339,7 @@
         if (!(Number.isFinite(__lgSegIdx))) __lgSegIdx = 0;
         __lgSegTotal = Math.max(1, __lgSegTotal);
         const __lgNodeDisabled = !entity || entity.state === 'unavailable' || entity.state === 'unknown';
+        {{ lg_climate_power_seg_flags_js() }}
         const __lgSegSpan = 360 / __lgSegTotal;
         const __lgSegRot = __lgSegIdx * __lgSegSpan;
         /* closest-side % (token) → box-% from center: half of closest-side radius. */
@@ -216,11 +375,13 @@
         const __lgIconTop = (50 - ((__lgInnerR + __lgOuterR) / 2)).toFixed(3);
         const __lgA0 = (-0.5 * __lgSegFill) * Math.PI / 180;
         const __lgA1 = (0.5 * __lgSegFill) * Math.PI / 180;
-        /* Inflate hit clip slightly so vector-effect stroke on the true rim
-           is not half-clipped by #card clip-path. */
-        const __lgHitOuter = Math.min(50, __lgOuterR + 1.25);
-        const __lgHitInner = Math.max(0, __lgInnerR - 1.25);
-        const __lgHitFill = Math.min(__lgSegSpan - 0.01, __lgSegFill + 1.25);
+        /* Inflate hit clip (token lg_size_climate_wheel_seg_hit_inflate = 2.5).
+           Keep literal synced with that token — theme vars may not resolve
+           during button-card extra_styles eval. */
+        const __lgHitPad = 2.5;
+        const __lgHitOuter = Math.min(50, __lgOuterR + __lgHitPad);
+        const __lgHitInner = Math.max(0, __lgInnerR - __lgHitPad);
+        const __lgHitFill = Math.min(__lgSegSpan - 0.01, __lgSegFill + __lgHitPad);
         const __lgHitA0 = (-0.5 * __lgHitFill) * Math.PI / 180;
         const __lgHitA1 = (0.5 * __lgHitFill) * Math.PI / 180;
         const __lgAnnulusPts = (innerR, outerR, a0, a1) => {
@@ -291,18 +452,28 @@
         box-shadow: none !important;
         overflow: visible !important;
         cursor: pointer;
-        pointer-events: ${__lgSegVisible && !__lgNodeDisabled ? 'auto' : 'none'} !important;
+        pointer-events: ${__lgSegVisible && !__lgNodeDisabled && !__lgPeripheralDisabled ? 'auto' : 'none'} !important;
         background: transparent !important;
         /* clip-path = hit-test sector only (full span, so adjacent hit areas
            meet and the visual gap is never a dead tap zone); the visible fill
            and its constant-width separators live on #liquid_clip's mask. */
         clip-path: polygon(${__lgClipPts}) !important;
         -webkit-clip-path: polygon(${__lgClipPts}) !important;
-        transition: var(--lg_transition_climate_node_state), var(--lg_transition_climate_node_press);
-        filter: ${__lgNodeDisabled ? 'var(--lg_filter_climate_node_disabled)' : 'none'};
-        opacity: ${__lgNodeDisabled ? 'var(--lg_opacity_climate_node_disabled)' : '1'};
+        /* Idle/Active glow: release curve as default; :active swaps to press-down. */
+        transition: var(--lg_transition_climate_node_state), var(--lg_transition_climate_node_press_release);
+        filter: ${__lgNodeDisabled || (__lgPeripheralDisabled && !__lgPowerLoad)
+          ? 'var(--lg_filter_climate_node_disabled)'
+          : 'var(--lg_filter_climate_wheel_seg_idle_lift)'};
+        opacity: ${__lgNodeDisabled || (__lgPeripheralDisabled && !__lgPowerLoad)
+          ? 'var(--lg_opacity_climate_node_disabled)'
+          : '1'};
+        ${__lgPowerLoad && __lgSegVisible ? `animation: lg_power_skel_pass var(--lg_duration_climate_power_skel) ease-in-out infinite; animation-delay: calc(${__lgSegIdx} * var(--lg_delay_climate_power_skel_step));` : 'animation: none;'}
       }
-      /* Spring Press (ADR 0028): #card spans the FULL annulus box
+      @keyframes lg_power_skel_pass {
+        0%, 100% { opacity: var(--lg_opacity_climate_power_skel_dim); }
+        45%, 55% { opacity: var(--lg_opacity_climate_power_skel_lit); }
+      }
+      /* Spring Press (ADR 0028 / 0034): #card spans the FULL annulus box
          (inset:0 / 100%x100%, clip-path only trims the visible wedge), so its
          default transform-origin (center) IS the disk's own hub — scaling
          here reads as the wedge compressing toward the wheel center, the same
@@ -311,11 +482,26 @@
          is retained for the held pointer regardless of the shrink, per
          standard UA press-capture behavior — no separate JS pointer tracking
          needed. Own press-scale token (not lg_transform_climate_press_scale)
-         so this doesn't retune the already-shipped round-button feel. */
+         so this doesn't retune the already-shipped round-button feel.
+         Press-down ~100ms; release uses the default overshoot curve (~300ms). */
       #card:active {
+        transition: var(--lg_transition_climate_node_press_down);
         transform: var(--lg_transform_climate_wheel_seg_press_scale);
         opacity: var(--lg_opacity_climate_press);
         filter: var(--lg_filter_climate_press);
+      }
+      /* Press shadow reduce on the glass fill (not wrapper) — keeps ADR 0031
+         backdrop-filter ancestors free of transform/filter during morph. */
+      #card:active #liquid_clip {
+        box-shadow: var(--lg_shadow_climate_wheel_seg_press) !important;
+      }
+      /* Desktop hover: micro-elevation via inset highlight + lighter opacity
+         (filter/box-shadow on #liquid_clip itself — ADR 0031-safe). */
+      @media (hover: hover) and (pointer: fine) {
+        #card:hover:not(:active) #liquid_clip {
+          box-shadow: var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_wheel_seg_hover_inset) !important;
+          opacity: var(--lg_opacity_climate_wheel_seg_hover);
+        }
       }
       /* Switch-like liquid glass (climate-scoped frost + lg_shadow_liquid mirror)
          + annular mask. Single-layer fill — multi-layer + plus-lighter broke
@@ -451,6 +637,7 @@
         transform: none !important;
         color: var(--lg_color_climate_wheel_seg_icon) !important;
         filter: var(--lg_filter_climate_wheel_seg_icon);
+        opacity: var(--lg_opacity_climate_wheel_seg_icon_idle);
       }
       #icon ha-svg-icon svg {
         display: block !important;
@@ -469,11 +656,14 @@
       #name, #label, #state { display: none !important; }
 {%- endmacro %}
 
-{# Propagate / clear TEMP red-box focus on thermostat + room hosts (composed tree).
+{# Propagate / clear TEMP focus on thermostat + room hosts (composed tree).
    open_expr MUST be Jinja-emitted ({{ open_expr }}) — never ${open_expr}: that
    literal survives build and breaks button-card new Function (Unexpected token '{').
-   When opening: hide sibling .lg-climate-room-host under the same floor (ONLY
-   active room stays readable). When closing: restore siblings. #}
+   ADR 0030: the class ONLY drives same-card chrome (title hide, Power↔Cancel).
+   Sibling .lg-climate-room-host cards stay visible AND interactive — there is
+   no sibling-hide walk and no TEMP frost; abort is Cancel (X) only.
+   Also toggle .lg-temp-focus on the nested climate_room_off button-card host
+   so Power→X uses :host(.lg-temp-focus) (Safari/HA WebView has no :host-context). #}
 {% macro lg_climate_temp_focus_set_js(open_expr) -%}
         (() => {
           const __lgOpen = !!({{ open_expr }});
@@ -483,53 +673,43 @@
             const rn = el.getRootNode && el.getRootNode();
             return (rn && rn.host) || null;
           };
-          const __lgActiveRooms = [];
-          let __lgScope = __lgCP(this);
-          let __lgFloor = null;
-          for (let __i = 0; __i < 24 && __lgScope; __i++) {
-            if (__lgScope.classList) {
-              if (__lgScope.classList.contains('lg-thermostat-host')
-                  || __lgScope.classList.contains('lg-climate-room-host')) {
-                __lgScope.classList.toggle('lg-temp-focus', __lgOpen);
-                if (__lgScope.classList.contains('lg-climate-room-host')) {
-                  __lgActiveRooms.push(__lgScope);
-                }
+          const __lgFindButtonCard = (root, depth) => {
+            if (!root || depth > 8) return null;
+            if (root.querySelector) {
+              const direct = root.querySelector('button-card');
+              if (direct) return direct;
+            }
+            const kids = root.querySelectorAll ? root.querySelectorAll('*') : [];
+            for (const el of kids) {
+              if (el.shadowRoot) {
+                const found = __lgFindButtonCard(el.shadowRoot, depth + 1);
+                if (found) return found;
               }
-              if (__lgScope.classList.contains('lg-climate-floor-host')) {
-                __lgFloor = __lgScope;
+            }
+            return null;
+          };
+          const __lgSyncCorner = (roomHost) => {
+            if (!roomHost || !roomHost.shadowRoot) return;
+            const corner = roomHost.shadowRoot.querySelector('#corner');
+            if (!corner) return;
+            const offHost = __lgFindButtonCard(corner, 0)
+              || (corner.shadowRoot && __lgFindButtonCard(corner.shadowRoot, 0));
+            if (offHost && offHost.classList) {
+              offHost.classList.add('lg-room-off-host');
+              offHost.classList.toggle('lg-temp-focus', __lgOpen);
+            }
+          };
+          let __lgScope = __lgCP(this);
+          for (let __i = 0; __i < 24 && __lgScope; __i++) {
+            if (__lgScope.classList
+                && (__lgScope.classList.contains('lg-thermostat-host')
+                    || __lgScope.classList.contains('lg-climate-room-host'))) {
+              __lgScope.classList.toggle('lg-temp-focus', __lgOpen);
+              if (__lgScope.classList.contains('lg-climate-room-host')) {
+                __lgSyncCorner(__lgScope);
               }
             }
             __lgScope = __lgCP(__lgScope);
-          }
-          const __lgWalkRooms = (node, depth, out) => {
-            if (!node || depth > 18 || out.length > 12) return;
-            if (node.classList && node.classList.contains('lg-climate-room-host')) {
-              out.push(node);
-            }
-            if (node.shadowRoot) __lgWalkRooms(node.shadowRoot, depth + 1, out);
-            if (node.querySelectorAll) {
-              node.querySelectorAll('*').forEach((el) => {
-                if (el.shadowRoot) __lgWalkRooms(el.shadowRoot, depth + 1, out);
-              });
-            }
-          };
-          if (__lgFloor) {
-            const __lgAllRooms = [];
-            __lgWalkRooms(__lgFloor, 0, __lgAllRooms);
-            __lgAllRooms.forEach((__lgRoom) => {
-              const __lgIsActive = __lgActiveRooms.indexOf(__lgRoom) !== -1;
-              if (__lgOpen && !__lgIsActive) {
-                __lgRoom.classList.add('lg-temp-sibling-hidden');
-                __lgRoom.style.setProperty('opacity', '0');
-                __lgRoom.style.setProperty('visibility', 'hidden');
-                __lgRoom.style.setProperty('pointer-events', 'none');
-              } else {
-                __lgRoom.classList.remove('lg-temp-sibling-hidden');
-                __lgRoom.style.removeProperty('opacity');
-                __lgRoom.style.removeProperty('visibility');
-                __lgRoom.style.removeProperty('pointer-events');
-              }
-            });
           }
         })();
 {%- endmacro %}

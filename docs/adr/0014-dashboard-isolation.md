@@ -1,3 +1,7 @@
+Title: Dashboard Isolation
+Date: Unknown
+Status: Accepted
+
 # 0014. Dashboard Isolation
 
 ## Context

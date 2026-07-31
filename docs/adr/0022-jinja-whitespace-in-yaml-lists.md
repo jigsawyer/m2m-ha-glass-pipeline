@@ -1,3 +1,7 @@
+Title: Jinja Whitespace Control Is Forbidden in YAML List Bodies
+Date: Unknown
+Status: Accepted
+
 # 0022. Jinja Whitespace Control Is Forbidden in YAML List Bodies
 
 ## Context

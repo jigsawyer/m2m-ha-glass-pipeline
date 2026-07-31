@@ -1,3 +1,7 @@
+Title: Klimat Global Wheel — Mode and Fan Source of Truth
+Date: Unknown
+Status: Accepted
+
 # 0019. Klimat Global Wheel — Mode and Fan Source of Truth
 
 ## Context

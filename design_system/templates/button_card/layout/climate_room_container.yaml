@@ -5,7 +5,8 @@
         this.classList.add('lg-climate-room-host');
         /* Deep find across nested layout-card / button-card shadow roots.
            A shallow querySelector misses .lg-thermostat-host and used to
-           force-clear .lg-temp-focus every render (titles flash; frost fails). */
+           force-clear .lg-temp-focus every render (titles flash; the
+           Power↔Cancel corner reverts mid-edit). */
         const __lgDeepFind = (root, cls, depth) => {
           if (!root || depth > 12) return null;
           if (root.querySelector) {
@@ -22,15 +23,51 @@
           return null;
         };
         const __lgThermo = __lgDeepFind(this.shadowRoot, 'lg-thermostat-host', 0);
-        /* Wheel host is SoT for TEMP open — clear stale .lg-temp-focus when
-           the wheel is not open (avoids hidden title/power after render races). */
+        /* Wheel host is SoT for focus chrome — EDIT_TEMP, TIMER_CONFIG, and
+           TIMER_MANAGE all drive .lg-temp-focus (Power↔Cancel + title hide).
+           Clear stale focus when none of those surfaces are open (avoids
+           hidden title/power after render races; ADR 0030 + ADR 0032). */
         const __lgWheel = __lgThermo
           ? (__lgDeepFind(__lgThermo.shadowRoot, 'lg-wheel-host', 0)
             || (__lgThermo.shadowRoot && __lgThermo.shadowRoot.querySelector('.lg-wheel-host')))
           : null;
-        const __lgOpen = !!(__lgWheel && __lgWheel.classList.contains('lg-wheel-temp-open'));
+        const __lgOpen = !!(__lgWheel && (
+          __lgWheel.classList.contains('lg-wheel-temp-open')
+          || __lgWheel.classList.contains('lg-timer-radial-open')
+          || (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-timer-radial') === '1')
+          || __lgWheel.classList.contains('lg-timer-manage-open')
+          || (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-timer-manage') === '1')
+        ));
         if (__lgThermo) __lgThermo.classList.toggle('lg-temp-focus', __lgOpen);
         this.classList.toggle('lg-temp-focus', __lgOpen);
+        /* Sync Power↔X on nested room-off host (:host(.lg-temp-focus), not
+           :host-context — unsupported in Safari / HA WebView). */
+        const __lgFindButtonCard = (root, depth) => {
+          if (!root || depth > 8) return null;
+          if (root.querySelector) {
+            const direct = root.querySelector('button-card');
+            if (direct) return direct;
+          }
+          const kids = root.querySelectorAll ? root.querySelectorAll('*') : [];
+          for (const el of kids) {
+            if (el.shadowRoot) {
+              const found = __lgFindButtonCard(el.shadowRoot, depth + 1);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        const __lgCorner = this.shadowRoot && this.shadowRoot.querySelector('#corner');
+        if (__lgCorner) {
+          const __lgOff = __lgFindButtonCard(__lgCorner, 0)
+            || (__lgCorner.shadowRoot && __lgFindButtonCard(__lgCorner.shadowRoot, 0));
+          if (__lgOff && __lgOff.classList) {
+            __lgOff.classList.add('lg-room-off-host');
+            __lgOff.classList.toggle('lg-temp-focus', __lgOpen);
+          }
+        }
+        /* Defensive only: ADR 0030 never hides siblings, but a room left
+           hidden by a pre-0030 build must repair itself on first render. */
         if (!__lgOpen && this.classList.contains('lg-temp-sibling-hidden')) {
           this.classList.remove('lg-temp-sibling-hidden');
           this.style.removeProperty('opacity');
@@ -216,10 +253,13 @@
         margin-bottom: 0 !important;
         margin-left: 0 !important;
       }
-      /* TEMP red-box: promote the whole room host's stacking order so its
-         viewport-fixed frost overlay paints above SIBLING room cards in the
-         floor mosaic (masonry-layout siblings, not just this room's own
-         subtree — z-index only resolves within a shared stacking context). */
+      /* TEMP: promote the whole room host's stacking order so the expanded
+         temperature arc — which spills past the panel via #content
+         overflow:visible — paints above SIBLING room cards in the floor
+         mosaic (masonry-layout siblings, not just this room's own subtree;
+         z-index only resolves within a shared stacking context). ADR 0030:
+         siblings stay visible and interactive, so this is purely a paint-order
+         bump for the arc, no longer a frost carrier. */
       :host(.lg-temp-focus) {
         position: relative !important;
         z-index: var(--lg_z_climate_room_temp_focus) !important;
@@ -238,10 +278,11 @@
         z-index: 50 !important;
         position: relative !important;
       }
-      /* Keep #glass_layers + #content rim painted during TEMP focus — frost
-         obscures siblings; hiding room glass caused a white snap-back blink
-         on set_temperature commit (operator evidence). Header stays
-         room_title / room_panel (no collapse). */
+      /* Keep #glass_layers + #content rim painted during TEMP focus — the card
+         never leaves the mosaic (ADR 0030: no frost, no sibling-hide), and
+         hiding room glass caused a white snap-back blink on set_temperature
+         commit (operator evidence). Header stays room_title / room_panel
+         (no collapse), so card size/position is locked through the morph. */
       :host(.lg-temp-focus) #content {
         justify-content: flex-start !important;
       }

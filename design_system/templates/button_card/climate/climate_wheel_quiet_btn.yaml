@@ -1,7 +1,7 @@
   climate_wheel_quiet_btn:
     template: climate_quiet_btn
     variables:
-      seg_index: 0
+      seg_index: 3
       seg_total: 6
       seg_slot: quiet
     tap_action:
@@ -9,16 +9,19 @@
       javascript: |
         [[[
           {{ lg_haptic_press_js() }}
+          if ({{ lg_climate_power_interaction_guard_js('null') }}) return;
           const st = entity ? entity.state : '';
           if (!entity || st === 'unavailable' || st === 'unknown') return;
           const id = entity.entity_id;
           if (!id) return;
+          {{ lg_climate_seg_pending_arm_js() }}
           try { hass.callService('homeassistant', 'toggle', { entity_id: id }); } catch (e) {}
         ]]]
     extra_styles: |
       [[[
         {{ lg_climate_wheel_seg_math_js() }}
         const on = entity && entity.state === 'on';
+        {{ lg_climate_seg_pending_resolve_js("'state:' + ((entity && entity.state) || '')") }}
         const gateId = variables && variables.gate_entity_id;
         const gateStates = (variables && variables.gate_states) || [];
         let gated = false;
@@ -27,12 +30,49 @@
           const gState = gEnt && gEnt.state;
           gated = !gateStates.includes(gState);
         }
-        const frost = on
-          ? 'var(--lg_color_climate_frost_other)'
-          : 'var(--lg_color_climate_wheel_seg_frost)';
+        const climateId = (__lgWheel && __lgWheel.__lgWheelEntityId)
+          || (gateId || '');
+        const climateState = (climateId && states[climateId] && states[climateId].state) || '';
+        const climateModeCool = climateState === 'cool';
+        const climateModeHeat = climateState === 'heat';
         const hostOpacity = !__lgSegVisible
           ? '0'
           : (gated ? 'var(--lg_opacity_tab_side_disabled)' : '1');
+        /* Outer contour bloom on #card (follows wedge alpha); icon color unchanged. */
+        const cardGlow = !on
+          ? 'var(--lg_filter_climate_wheel_seg_idle_lift)'
+          : climateModeHeat
+            ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour_heat)'
+            : 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour_cool)';
+        const rim = !on
+          ? ''
+          : (climateModeHeat
+            ? ', var(--lg_glow_climate_wheel_seg_on_inset_heat)'
+            : ', var(--lg_glow_climate_wheel_seg_on_inset_cool)');
+        const pendingRim = __lgSegPending && !on
+          ? (climateModeHeat
+            ? ', var(--lg_glow_climate_wheel_seg_pending_inset_heat)'
+            : ', var(--lg_glow_climate_wheel_seg_pending_inset_cool)')
+          : '';
+        const clipShadow = 'var(--lg_shadow_climate_wheel_seg)' + (on ? rim : pendingRim);
+        const clipTransition = __lgSegPending && !on
+          ? 'var(--lg_transition_climate_wheel_seg_pending_pulse)'
+          : 'var(--lg_transition_climate_node_state)';
+        const clipBg = !on
+          ? 'var(--lg_color_climate_wheel_seg_frost)'
+          : climateModeHeat
+            ? 'var(--lg_gradient_climate_wheel_seg_on_wash_heat), var(--lg_color_climate_wheel_seg_frost)'
+            : 'var(--lg_gradient_climate_wheel_seg_on_wash_cool), var(--lg_color_climate_wheel_seg_frost)';
+        const iconColor = !on
+          ? 'var(--lg_color_text)'
+          : climateModeHeat
+            ? 'var(--lg_color_climate_heat)'
+            : 'var(--lg_color_climate_cool)';
+        const iconFilter = !on
+          ? 'none'
+          : climateModeHeat
+            ? 'var(--lg_filter_climate_heat), var(--lg_filter_climate_wheel_seg_glow_heat)'
+            : 'var(--lg_filter_climate_cool), var(--lg_filter_climate_wheel_seg_glow_cool)';
         return `
       {{ lg_climate_wheel_slot_position_css() }}
       :host {
@@ -40,23 +80,22 @@
         visibility: ${__lgSegVisible ? 'visible' : 'hidden'} !important;
       }
       #card {
-        pointer-events: ${gated || !__lgSegVisible ? 'none' : 'auto'} !important;
+        pointer-events: ${gated || !__lgSegVisible || __lgPeripheralDisabled ? 'none' : 'auto'} !important;
+        filter: ${cardGlow} !important;
+      }
+      #card:active {
+        filter: var(--lg_filter_climate_press) !important;
       }
       #liquid_clip {
-        background: ${frost} !important;
-        /* Active State Illumination (hyper-glass refresh): inset-only glow —
-           an outer box-shadow here would be clipped away by this element's
-           own overflow:hidden + mask-image (proven: see macro above), so the
-           "on" state must read as light FROM INSIDE the glass, not a flat
-           color swap. */
-        box-shadow: ${on
-          ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_wheel_seg_on_inset)'
-          : 'var(--lg_shadow_climate_wheel_seg)'} !important;
-        filter: ${on ? 'var(--lg_filter_climate_wheel_seg_on)' : 'none'};
+        background: ${clipBg} !important;
+        box-shadow: ${clipShadow} !important;
+        filter: none !important;
+        transition: ${clipTransition} !important;
       }
       #icon {
-        color: ${on ? 'var(--lg_color_climate_other)' : 'var(--lg_color_text)'} !important;
-        opacity: ${on ? '1' : '0.72'};
+        color: ${iconColor} !important;
+        filter: ${iconFilter};
+        opacity: ${on ? '1' : 'var(--lg_opacity_climate_wheel_seg_icon_idle)'};
       }
         `;
       ]]]

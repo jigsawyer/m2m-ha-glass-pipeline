@@ -1,3 +1,7 @@
+  # ADR 0032 (A1) — timer frost is permanently inert (TEMP mirror / ADR 0030).
+  # Mounted only so climate_global_wheel's custom_fields set stays stable;
+  # abort is Cancel (X) on climate_room_off_button, never a frost tap.
+  # Wheel CSS (macros/05_climate_timer_fsm.yaml) also pins this host 0×0.
   climate_timer_frost:
     show_icon: false
     show_name: false
@@ -5,76 +9,33 @@
     show_label: false
     show_ripple: false
     tap_action:
-      action: javascript
-      javascript: |
-        [[[
-          const composedParent = (el) => {
-            if (!el) return null;
-            if (el.parentElement) return el.parentElement;
-            const rn = el.getRootNode && el.getRootNode();
-            return (rn && rn.host) || null;
-          };
-          let wheelHost = null;
-          let scope = composedParent(this);
-          for (let i = 0; i < 16 && scope; i++) {
-            if (scope.classList && scope.classList.contains('lg-wheel-host')) {
-              wheelHost = scope;
-              break;
-            }
-            scope = composedParent(scope);
-          }
-          const openedAt = wheelHost && wheelHost.__lgTimerOpenedAt;
-          const arming = !!(wheelHost && wheelHost.classList.contains('lg-timer-radial-arming'));
-          if (!wheelHost || !wheelHost.classList.contains('lg-timer-radial-open')
-              || arming || (Date.now() - (openedAt || 0)) < 280) {
-            return;
-          }
-          wheelHost.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
-          wheelHost.__lgTimerOpenedAt = 0;
-          wheelHost.__lgTimerStickyOpen = false;
-          if (wheelHost.__lgTimerArmTimer) {
-            try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
-            wheelHost.__lgTimerArmTimer = 0;
-          }
-          {{ lg_climate_temp_focus_set_js('false') }}
-          {{ lg_climate_blur_kick_js() }}
-          const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
-          if (radial) {
-            radial.__lgTimerPending = undefined;
-            radial.__lgTimerLastProgress = 0;
-            radial.classList.remove('lg-timer-dragging');
-            radial.style.setProperty('--lg_timer_t', '0');
-            radial.style.setProperty('--lg_timer_knob_x', '50%');
-            radial.style.setProperty('--lg_timer_knob_y', '6%');
-            radial.style.setProperty('--lg_timer_label', '"0 хв"');
-          }
-        ]]]
+      action: none
     extra_styles: |
       [[[
         return `
       :host {
-        position: absolute !important;
-        inset: 0 !important;
-        display: block !important;
-        width: 100% !important;
-        height: 100% !important;
-        max-width: none !important;
-        max-height: none !important;
-        background: var(--lg_color_focus_viewport_fill) !important;
-        backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport));
-        -webkit-backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport));
-        opacity: 1 !important;
-        pointer-events: inherit !important;
-        transition: none !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        background: transparent !important;
         box-shadow: none !important;
-        overflow: hidden;
+        transition: none !important;
         z-index: 40 !important;
       }
       ha-card, #card, #container {
         background: transparent !important;
         box-shadow: none !important;
-        width: 100%;
-        height: 100%;
+        width: 0 !important;
+        height: 0 !important;
+        pointer-events: none !important;
       }
       #icon, #name, #label, #state { display: none !important; }
         `;

@@ -1,3 +1,7 @@
+Title: View Independence — iPhone ⟂ Desktop (GLOBAL)
+Date: Unknown
+Status: Accepted
+
 # 0013. View Independence — iPhone ⟂ Desktop (GLOBAL)
 
 ## Context

@@ -1,3 +1,7 @@
+Title: Design Principles and the Regression Gate
+Date: Unknown
+Status: Accepted
+
 # 0009. Design Principles and the Regression Gate
 
 ## Context

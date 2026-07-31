@@ -1,3 +1,7 @@
+Title: Universal Interactive Node State Machine
+Date: Unknown
+Status: Accepted
+
 # 0028. Universal Interactive Node State Machine
 
 ## Context

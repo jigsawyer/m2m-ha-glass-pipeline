@@ -1,3 +1,7 @@
+Title: Control Feedback and Destructive-Action Safety
+Date: Unknown
+Status: Accepted
+
 # 0016. Control Feedback and Destructive-Action Safety
 
 ## Context

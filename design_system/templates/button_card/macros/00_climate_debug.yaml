@@ -1,0 +1,49 @@
+{# Klimat timer Cancel surface focus helpers (ADR 0033).
+   Split from 03_climate_wheel.yaml to stay under ADR 0000 800-line cap. #}
+{# Toggle .lg-timer-surface-open on room-off host for Power↔Cancel during TIMER_*.
+   Expects __lgW (wheel host) in caller scope. open_expr is a JS bool expression. #}
+{% macro lg_climate_timer_surface_focus_js(open_expr='true') -%}
+            (() => {
+              const __lgSurfOpen = !!({{ open_expr }});
+              const __lgCP = (el) => {
+                if (!el) return null;
+                if (el.parentElement) return el.parentElement;
+                const rn = el.getRootNode && el.getRootNode();
+                return (rn && rn.host) || null;
+              };
+              const __lgFindButtonCard = (root, depth) => {
+                if (!root || depth > 8) return null;
+                if (root.querySelector) {
+                  const direct = root.querySelector('button-card');
+                  if (direct) return direct;
+                }
+                const kids = root.querySelectorAll ? root.querySelectorAll('*') : [];
+                for (const el of kids) {
+                  if (el.shadowRoot) {
+                    const found = __lgFindButtonCard(el.shadowRoot, depth + 1);
+                    if (found) return found;
+                  }
+                }
+                return null;
+              };
+              const __lgSyncCorner = (roomHost) => {
+                if (!roomHost || !roomHost.shadowRoot) return;
+                const corner = roomHost.shadowRoot.querySelector('#corner');
+                if (!corner) return;
+                const offHost = __lgFindButtonCard(corner, 0)
+                  || (corner.shadowRoot && __lgFindButtonCard(corner.shadowRoot, 0));
+                if (offHost && offHost.classList) {
+                  offHost.classList.add('lg-room-off-host');
+                  offHost.classList.toggle('lg-timer-surface-open', __lgSurfOpen);
+                }
+              };
+              let __lgScope = __lgCP(__lgW);
+              for (let __i = 0; __i < 24 && __lgScope; __i++) {
+                if (__lgScope.classList && __lgScope.classList.contains('lg-climate-room-host')) {
+                  __lgSyncCorner(__lgScope);
+                  break;
+                }
+                __lgScope = __lgCP(__lgScope);
+              }
+            })();
+{%- endmacro %}

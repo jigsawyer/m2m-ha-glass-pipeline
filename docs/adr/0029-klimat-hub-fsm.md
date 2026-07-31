@@ -1,3 +1,7 @@
+Title: Klimat Central Hub FSM — Power, Cancel, Container Frost, 270° Arc
+Date: Unknown
+Status: Accepted
+
 # 0029. Klimat Central Hub FSM — Power, Cancel, Container Frost, 270° Arc
 
 ## Context

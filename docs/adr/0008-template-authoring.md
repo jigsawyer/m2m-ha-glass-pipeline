@@ -1,3 +1,7 @@
+Title: Template Authoring — Taxonomy, Override-First, Thin Instances
+Date: Unknown
+Status: Accepted
+
 # 0008. Template Authoring — Taxonomy, Override-First, Thin Instances
 
 ## Context

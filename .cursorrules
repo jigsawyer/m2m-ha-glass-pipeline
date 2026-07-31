@@ -14,3 +14,16 @@ When you and the user finalize a NEW architectural rule, design pattern, or glob
    - **Context:** Why is this problem occurring?
    - **Decision:** What is the exact technical solution?
    - **Consequences:** What does this break, fix, or require?
+   - Standardized header at top: `Title` / `Date` / `Status` (Accepted | Deprecated | Superseded by ADR-XXXX).
+4. Always update `docs/adr/README.md`.
+
+---
+
+CONSTRAINT 1 (CRITICAL - ARCHITECTURE LOG): ADRs are APPEND-ONLY. You are strictly forbidden from deleting or altering the context/decision of old ADRs. To change a decision, create a NEW ADR with the next sequential number, and update the old ADR's Status to `Superseded by ADR-XXXX`. Always update `docs/adr/README.md`.
+CONSTRAINT 2 (CRITICAL - GITOPS DEPLOYMENT): You are strictly forbidden from initiating deployments, executing deployment scripts (e.g., `publish_edge.sh`), or using SSH. Your boundary ends at Git.
+Definition of Done for any task:
+1. Create or checkout the appropriate branch.
+2. Modify source files.
+3. Execute `python pipeline/scripts/build_engine.py` strictly for local build validation.
+4. Stage changes (`git add .`), commit (`git commit -m "..."`), and push to the remote branch (`git push`).
+5. Report completion to the user. DO NOT EXECUTE DEPLOY SCRIPTS.

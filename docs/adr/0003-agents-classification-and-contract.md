@@ -1,3 +1,7 @@
+Title: Agent Roster, Intent Classification, and Contract Schema
+Date: Unknown
+Status: Accepted
+
 # 0003. Agent Roster, Intent Classification, and Contract Schema
 
 ## Context

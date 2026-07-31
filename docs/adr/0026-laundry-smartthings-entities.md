@@ -1,3 +1,7 @@
+Title: Laundry SmartThings Entities and Delayed-Start FSM
+Date: Unknown
+Status: Accepted
+
 # 0026. Laundry SmartThings Entities and Delayed-Start FSM
 
 ## Context

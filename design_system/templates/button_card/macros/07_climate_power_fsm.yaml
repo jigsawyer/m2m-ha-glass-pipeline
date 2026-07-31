@@ -1,0 +1,277 @@
+{# ADR 0035 — Klimat power load sticky SoT (INIT_LOAD / SHUTDOWN_LOAD). #}
+{% macro lg_climate_power_load_timeout_ms() -%}20000{%- endmacro %}
+
+{% macro lg_climate_power_load_sticky_set_js(wheel_expr='wheelHost', phase_expr="'init'", prev_stable_expr="'idle_off'") -%}
+          (() => {
+            const __lgW = {{ wheel_expr }};
+            if (!__lgW) return;
+            const __lgPhaseRaw = {{ phase_expr }};
+            const __lgPhase = (__lgPhaseRaw === 'init' || __lgPhaseRaw === 'shutdown')
+              ? __lgPhaseRaw : null;
+            const __lgPrev = ({{ prev_stable_expr }} === 'active_on') ? 'active_on' : 'idle_off';
+            const __lgEid = String((__lgW.__lgWheelEntityId)
+              || (__lgW._config && __lgW._config.entity)
+              || (__lgW.config && __lgW.config.entity)
+              || (typeof entity !== 'undefined' && entity && entity.entity_id) || '');
+            if (__lgEid) __lgW.__lgWheelEntityId = __lgEid;
+            window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+            if (__lgPhase) {
+              window.__lgKlimatPowerLoadByEntity[__lgEid] = {
+                phase: __lgPhase,
+                startedAt: Date.now(),
+                prevStable: __lgPrev
+              };
+              __lgW.__lgPowerLoadPhase = __lgPhase;
+              __lgW.__lgPowerLoadStartedAt = Date.now();
+              try {
+                __lgW.setAttribute('data-lg-power-load', __lgPhase);
+                __lgW.classList.add('lg-power-load', 'lg-power-load--' + __lgPhase);
+                __lgW.classList.remove(
+                  __lgPhase === 'init' ? 'lg-power-load--shutdown' : 'lg-power-load--init'
+                );
+                __lgW.style.setProperty('--lg_fsm_power_load', '1');
+                __lgW.style.setProperty('--lg_fsm_power_phase', __lgPhase);
+              } catch (e) {}
+              /* Skeleton SoT runs on main annular slots — force main layer. */
+              window.__lgKlimatWheelLayerByEntity = window.__lgKlimatWheelLayerByEntity || {};
+              if (__lgEid) window.__lgKlimatWheelLayerByEntity[__lgEid] = 'main';
+              __lgW.__lgWheelLayer = 'main';
+              __lgW.classList.remove('lg-wheel-layer-fan', 'lg-wheel-layer-mode');
+              __lgW.classList.add('lg-wheel-layer-main');
+              /* Close orthogonal surfaces — load owns the chrome. */
+              {{ lg_climate_timer_radial_sticky_set_js(wheel_expr, 'false') }}
+              {{ lg_climate_timer_manage_sticky_set_js(wheel_expr, 'false') }}
+              try {
+                __lgW.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+                __lgW.__lgTempOpenedAt = 0;
+              } catch (e) {}
+            } else if (__lgEid) {
+              delete window.__lgKlimatPowerLoadByEntity[__lgEid];
+              __lgW.__lgPowerLoadPhase = null;
+              __lgW.__lgPowerLoadStartedAt = 0;
+              try {
+                __lgW.removeAttribute('data-lg-power-load');
+                __lgW.classList.remove('lg-power-load', 'lg-power-load--init', 'lg-power-load--shutdown');
+                __lgW.style.removeProperty('--lg_fsm_power_load');
+                __lgW.style.removeProperty('--lg_fsm_power_phase');
+              } catch (e) {}
+            }
+            if (__lgW.__lgPowerLoadTimer) {
+              try { clearTimeout(__lgW.__lgPowerLoadTimer); } catch (e) {}
+              __lgW.__lgPowerLoadTimer = 0;
+            }
+            if (__lgPhase) {
+              const __lgMs = {{ lg_climate_power_load_timeout_ms() }};
+              __lgW.__lgPowerLoadTimer = setTimeout(() => {
+                __lgW.__lgPowerLoadTimer = 0;
+                try {
+                  if (typeof __lgW.requestUpdate === 'function') __lgW.requestUpdate();
+                } catch (e) {}
+              }, __lgMs + 50);
+            }
+            try {
+              if (typeof __lgW.requestUpdate === 'function') __lgW.requestUpdate();
+            } catch (e) {}
+          })();
+{%- endmacro %}
+
+{% macro lg_climate_power_load_resolve_js(wheel_expr='this', entity_state_expr="(entity && entity.state) || 'off'") -%}
+        (() => {
+          const __lgW = {{ wheel_expr }};
+          if (!__lgW) return;
+          const __lgEid = String((__lgW.__lgWheelEntityId)
+            || (__lgW._config && __lgW._config.entity)
+            || (__lgW.config && __lgW.config.entity)
+            || (typeof entity !== 'undefined' && entity && entity.entity_id) || '');
+          if (__lgEid) __lgW.__lgWheelEntityId = __lgEid;
+          window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+          const __lgRec = (__lgEid && window.__lgKlimatPowerLoadByEntity[__lgEid]) || null;
+          const __lgMode = String({{ entity_state_expr }} || 'off');
+          const __lgIsOn = __lgMode !== 'off' && __lgMode !== 'unavailable' && __lgMode !== 'unknown';
+          const __lgIsOff = __lgMode === 'off';
+          const __lgUnavail = __lgMode === 'unavailable' || __lgMode === 'unknown';
+          const __lgMs = {{ lg_climate_power_load_timeout_ms() }};
+          let __lgPhase = null;
+          if (__lgRec && (__lgRec.phase === 'init' || __lgRec.phase === 'shutdown')) {
+            const __lgAge = Date.now() - (Number(__lgRec.startedAt) || 0);
+            let __lgClear = false;
+            let __lgTimedOut = false;
+            if (__lgAge > __lgMs) {
+              __lgClear = true;
+              __lgTimedOut = true;
+            } else if (__lgRec.phase === 'init' && __lgIsOn) {
+              __lgClear = true;
+            } else if (__lgRec.phase === 'shutdown' && __lgIsOff) {
+              __lgClear = true;
+            }
+            if (__lgClear) {
+              if (__lgTimedOut) {
+                try {
+                  console.warn('[lg-klimat-power-load] timeout', {
+                    eid: __lgEid,
+                    phase: __lgRec.phase,
+                    prevStable: __lgRec.prevStable
+                  });
+                  window.dispatchEvent(new CustomEvent('lg-klimat-power-load-timeout', {
+                    detail: {
+                      eid: __lgEid,
+                      phase: __lgRec.phase,
+                      prevStable: __lgRec.prevStable
+                    }
+                  }));
+                } catch (e) {}
+              }
+              if (__lgEid) delete window.__lgKlimatPowerLoadByEntity[__lgEid];
+              __lgPhase = null;
+            } else {
+              __lgPhase = __lgRec.phase;
+            }
+          }
+          __lgW.__lgPowerLoadPhase = __lgPhase;
+          try {
+            if (__lgPhase) {
+              __lgW.setAttribute('data-lg-power-load', __lgPhase);
+              __lgW.classList.add('lg-power-load', 'lg-power-load--' + __lgPhase);
+              __lgW.classList.remove(
+                __lgPhase === 'init' ? 'lg-power-load--shutdown' : 'lg-power-load--init'
+              );
+              __lgW.style.setProperty('--lg_fsm_power_load', '1');
+              __lgW.style.setProperty('--lg_fsm_power_phase', __lgPhase);
+              if (!__lgW.__lgPowerLoadTimer && __lgRec) {
+                const __lgRem = Math.max(0, __lgMs - (Date.now() - (Number(__lgRec.startedAt) || 0)));
+                __lgW.__lgPowerLoadTimer = setTimeout(() => {
+                  __lgW.__lgPowerLoadTimer = 0;
+                  try {
+                    if (typeof __lgW.requestUpdate === 'function') __lgW.requestUpdate();
+                  } catch (e) {}
+                }, __lgRem + 50);
+              }
+            } else {
+              __lgW.removeAttribute('data-lg-power-load');
+              __lgW.classList.remove('lg-power-load', 'lg-power-load--init', 'lg-power-load--shutdown');
+              __lgW.style.removeProperty('--lg_fsm_power_load');
+              __lgW.style.removeProperty('--lg_fsm_power_phase');
+              if (__lgW.__lgPowerLoadTimer) {
+                try { clearTimeout(__lgW.__lgPowerLoadTimer); } catch (e) {}
+                __lgW.__lgPowerLoadTimer = 0;
+              }
+            }
+            __lgW.classList.toggle('lg-power-idle-off', !!(__lgIsOff && !__lgPhase));
+            __lgW.classList.toggle('lg-power-unavailable', !!__lgUnavail);
+            __lgW.style.setProperty('--lg_fsm_power_idle_off', (__lgIsOff && !__lgPhase) ? '1' : '0');
+            __lgW.style.setProperty('--lg_fsm_power_unavailable', __lgUnavail ? '1' : '0');
+          } catch (e) {}
+        })();
+{%- endmacro %}
+
+{% macro lg_climate_power_interaction_guard_js(wheel_expr='null') -%}
+          (() => {
+            const __lgCP = (el) => {
+              if (!el) return null;
+              if (el.parentElement) return el.parentElement;
+              const rn = el.getRootNode && el.getRootNode();
+              return (rn && rn.host) || null;
+            };
+            let __lgW = {{ wheel_expr }};
+            if (!__lgW) {
+              let __lgScope = __lgCP(this);
+              for (let __i = 0; __i < 24 && __lgScope; __i++) {
+                if (__lgScope.classList && __lgScope.classList.contains('lg-wheel-host')) {
+                  __lgW = __lgScope;
+                  break;
+                }
+                __lgScope = __lgCP(__lgScope);
+              }
+            }
+            if (__lgW && (
+              __lgW.classList.contains('lg-power-load')
+              || (__lgW.getAttribute && __lgW.getAttribute('data-lg-power-load'))
+              || __lgW.classList.contains('lg-power-unavailable')
+            )) {
+              return true;
+            }
+            const __lgEid = String(
+              (__lgW && __lgW.__lgWheelEntityId)
+              || (__lgW && __lgW._config && __lgW._config.entity)
+              || (__lgW && __lgW.config && __lgW.config.entity)
+              || (typeof entity !== 'undefined' && entity && entity.entity_id)
+              || ''
+            );
+            window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+            if (__lgEid && window.__lgKlimatPowerLoadByEntity[__lgEid]
+                && window.__lgKlimatPowerLoadByEntity[__lgEid].phase) {
+              return true;
+            }
+            const __lgMode = (__lgEid && typeof states !== 'undefined' && states[__lgEid])
+              ? states[__lgEid].state
+              : (typeof entity !== 'undefined' && entity ? entity.state : '');
+            if (__lgMode === 'unavailable' || __lgMode === 'unknown') return true;
+            return false;
+          })()
+{%- endmacro %}
+
+{# Emits __lgPowerLoad / __lgIdleOff / __lgPeripheralDisabled for seg_math callers. #}
+{% macro lg_climate_power_seg_flags_js() -%}
+        const __lgClimateEidPower = String(
+          (__lgWheel && __lgWheel.__lgWheelEntityId)
+          || (__lgWheel && __lgWheel._config && __lgWheel._config.entity)
+          || (__lgWheel && __lgWheel.config && __lgWheel.config.entity)
+          || ''
+        );
+        const __lgClimateModePower = (__lgClimateEidPower && typeof states !== 'undefined'
+          && states[__lgClimateEidPower] && states[__lgClimateEidPower].state)
+          || '';
+        window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+        const __lgPowerRec = (__lgClimateEidPower
+          && window.__lgKlimatPowerLoadByEntity[__lgClimateEidPower]) || null;
+        const __lgPowerLoad = !!(__lgWheel && (
+          (__lgWheel.classList && __lgWheel.classList.contains('lg-power-load'))
+          || (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-power-load'))
+          || (__lgPowerRec && (__lgPowerRec.phase === 'init' || __lgPowerRec.phase === 'shutdown'))
+        ));
+        const __lgUnavailableKlimat = __lgClimateModePower === 'unavailable'
+          || __lgClimateModePower === 'unknown';
+        const __lgIdleOff = __lgClimateModePower === 'off' && !__lgPowerLoad;
+        const __lgPeripheralDisabled = !!(__lgIdleOff || __lgPowerLoad || __lgUnavailableKlimat);
+{%- endmacro %}
+
+{# Early-return guard for layer switches (IDLE_OFF / load / unavailable). #}
+{% macro lg_climate_power_layer_block_js() -%}
+          (() => {
+            const __lgCP0 = (el) => {
+              if (!el) return null;
+              if (el.parentElement) return el.parentElement;
+              const rn = el.getRootNode && el.getRootNode();
+              return (rn && rn.host) || null;
+            };
+            let __lgW0 = null;
+            let __lgS0 = __lgCP0(this);
+            for (let __i0 = 0; __i0 < 16 && __lgS0; __i0++) {
+              if (__lgS0.classList && __lgS0.classList.contains('lg-wheel-host')) {
+                __lgW0 = __lgS0;
+                break;
+              }
+              __lgS0 = __lgCP0(__lgS0);
+            }
+            if (__lgW0 && (
+              __lgW0.classList.contains('lg-power-load')
+              || (__lgW0.getAttribute && __lgW0.getAttribute('data-lg-power-load'))
+              || __lgW0.classList.contains('lg-power-unavailable')
+            )) return true;
+            const __lgEid0 = String(
+              (__lgW0 && __lgW0.__lgWheelEntityId)
+              || (__lgW0 && __lgW0._config && __lgW0._config.entity)
+              || (__lgW0 && __lgW0.config && __lgW0.config.entity)
+              || (typeof entity !== 'undefined' && entity && entity.entity_id)
+              || ''
+            );
+            window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+            if (__lgEid0 && window.__lgKlimatPowerLoadByEntity[__lgEid0]
+                && window.__lgKlimatPowerLoadByEntity[__lgEid0].phase) {
+              return true;
+            }
+            const __lgMode0 = (__lgEid0 && typeof states !== 'undefined' && states[__lgEid0])
+              ? states[__lgEid0].state : '';
+            return __lgMode0 === 'off' || __lgMode0 === 'unavailable' || __lgMode0 === 'unknown';
+          })()
+{%- endmacro %}

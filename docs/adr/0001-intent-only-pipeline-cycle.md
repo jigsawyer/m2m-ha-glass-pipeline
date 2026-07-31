@@ -1,3 +1,7 @@
+Title: Intent-Only Pipeline Cycle
+Date: Unknown
+Status: Accepted
+
 # 0001. Intent-Only Pipeline Cycle
 
 ## Context

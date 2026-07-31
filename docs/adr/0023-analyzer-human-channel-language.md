@@ -1,3 +1,7 @@
+Title: Analyzer Human Channel Is Ukrainian; Machine Channel Stays English
+Date: Unknown
+Status: Accepted
+
 # 0023. Analyzer Human Channel Is Ukrainian; Machine Channel Stays English
 
 ## Context

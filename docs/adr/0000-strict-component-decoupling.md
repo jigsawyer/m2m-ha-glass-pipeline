@@ -1,3 +1,7 @@
+Title: Strict Component Decoupling (No God Objects)
+Date: Unknown
+Status: Accepted
+
 # ADR: Strict Component Decoupling (No God Objects)
 
 ## Context

@@ -1,3 +1,7 @@
+Title: Klimat Sleep-Timer — In-Place Radial Duration Picker
+Date: Unknown
+Status: Accepted
+
 # 0025. Klimat Sleep-Timer — In-Place Radial Duration Picker
 
 ## Context
@@ -34,7 +38,7 @@ This **supersedes ADR 0021** for picker SoT. Bubble remains global popup SoT for
 
 **Interaction math:** pointer relative to center → `atan2(y, x)` → normalize so 12 o'clock = 0, clockwise to 1. Anti-jump clamp: crossing past 12 o'clock clockwise stops at 1.0; counter-clockwise stops at 0.0 — no snap wrap.
 
-**Visual layers (bottom → top):** inactive full track → active arc with dynamic cool-cyan → warm-orange/red gradient mapped to progress → central glass panel (backdrop blur, luminous inner stroke) → elevated knob. When `isDragging`, knob scales (~1.1×) and intensifies shadow/glow. Haptic tick (`navigator.vibrate` when available) each time `computedTime` crosses a 5- or 10-minute threshold during drag.
+**Visual layers (bottom → top):** 60-tick clock-face track (ADR 0036; continuous gradient arc retired) → central glass panel (backdrop blur, luminous inner stroke) → elevated knob. Active ticks follow remaining/selected duration with inactive ticks at ~15–20% opacity and linear fade on the boundary tick. When `isDragging`, knob scales (~1.15×) and intensifies shadow/glow. Haptic tick (`navigator.vibrate` when available) each time `computedTime` crosses a 5- or 10-minute threshold during drag.
 
 **Mode:** **Duration-only.** Clock mode chips/pickers are retired from picker UX. Existing clock helpers/scripts remain for already-armed clock timers and active-bar readout; new sets go through duration radial only. Edit of a clock-armed timer seeds the radial with remaining-to-off minutes.
 

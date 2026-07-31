@@ -2,32 +2,15 @@
   "target_dashboard": "svitlo",
   "intent_class": "STYLISTIC",
   "target_agent": "@stylist",
-  "constraints": {
+  "source_spec": "specs/global-climate-polish.md",
+  "summary": "Equal-gap timer drain vs room pad; outer contour drop-shadow on active wheel segments; hub sphere highlight only on hub press (not ring drag).",
+  "flags": {
     "allow_template_layout_edit": true,
-    "tokens_and_button_card_templates_only": false,
+    "allow_climate_timer_radial_control": true,
     "allow_climate_ring_control_deferred_commit": true
   },
-  "payload": {
-    "action_summary": "Implement Klimat Central Hub FSM per specs/climate_ui_adjustments.md and ADR 0029: OFF hub turn_on; DEFAULT_ON↔EDIT_TEMP; Power→Cancel abort; container-scoped TEMP blur; 270° horseshoe matching wheel outer; value cold→warm arc/thumb gradient; keep radial node press/haptic/glow (ADR 0028).",
-    "evidence": "specs/climate_ui_adjustments.md (operator-approved SoT); docs/adr/0029-klimat-hub-fsm.md",
-    "requested_entities": [
-      "climate_setpoint_trigger",
-      "climate_thermostat_ring_panel",
-      "climate_global_wheel",
-      "climate_wheel_temp_frost",
-      "climate_room_off_button",
-      "climate_thermostat"
-    ],
-    "preserve_behavior": [
-      "Deferred setpoint commit: climate.set_temperature once on hub commit while EDIT_TEMP; no on-drag HA spam",
-      "Cancel (X) and any non-commit dismiss revert pending temp/fill/thumb to live entity",
-      "Timer radial mutex with TEMP (.lg-timer-radial-open ⟂ .lg-wheel-temp-open) unchanged (ADR 0025)",
-      "Wheel layer segment counts and HA mode/fan payloads unchanged (ADR 0019)",
-      "Floor/house climate off remain hold-to-off; room off in DEFAULT_ON remains tap turn_off (ADR 0016)",
-      "No retune of shared light tokens (lg_size_switch_*, disable_room_button) — climate-scoped only (ADR 0014)",
-      "Option 1 CSS only: lg_* tokens + extra_styles; no inline style / native button-card styles (ADR 0006)",
-      "Fluid units only — no hardcoded px (ADR 0007)",
-      "Radial Interactive Node press/active/disabled parity with lighting pills retained (ADR 0028 §§1-4,6-7)"
-    ]
+  "constraints": {
+    "adr": ["0006", "0007", "0019", "0031", "0036"],
+    "deploy": ["build_engine.py", "publish_edge.sh"]
   }
 }

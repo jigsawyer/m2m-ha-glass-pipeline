@@ -4,6 +4,10 @@
     show_state: false
     show_label: false
     show_ripple: false
+    variables:
+      timer_entity_id: ""
+      armed_entity_id: ""
+      clock_entity_id: ""
     tap_action:
       action: javascript
       javascript: |
@@ -39,9 +43,23 @@
           };
           const id = (entity && entity.entity_id) || '';
           const modeNow = entity ? entity.state : 'off';
-          /* ADR 0029 FSM: OFF → hub tap → climate.turn_on → DEFAULT_ON (no EDIT). */
+          /* ADR 0035: UNAVAILABLE / power load → complete interaction lock. */
+          if (modeNow === 'unavailable' || modeNow === 'unknown' || !entity) return;
+          const wheelHostEarly = findWheelHost(this);
+          if (wheelHostEarly && (
+            wheelHostEarly.classList.contains('lg-power-load')
+            || (wheelHostEarly.getAttribute && wheelHostEarly.getAttribute('data-lg-power-load'))
+          )) return;
+          window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+          if (id && window.__lgKlimatPowerLoadByEntity[id]
+              && window.__lgKlimatPowerLoadByEntity[id].phase) return;
+          /* ADR 0035 / dual-surface: IDLE_OFF Hub = Main Power ON → INIT_LOAD. */
           if (!(this.classList.contains('lg-ring-trigger-expanded') || this.__lgTempStickyOpen)
               && modeNow === 'off' && id) {
+            const wheelHost = wheelHostEarly || findWheelHost(this);
+            if (wheelHost) {
+              {{ lg_climate_power_load_sticky_set_js('wheelHost', "'init'", "'idle_off'") }}
+            }
             try { hass.callService('climate', 'turn_on', { entity_id: id }); } catch (e) {}
             return;
           }
@@ -74,11 +92,12 @@
           this.__lgTempStickyOpen = true;
           const wheelHost = findWheelHost(this);
           if (wheelHost) {
-            /* Mutex with timer radial (ADR 0025). */
+            /* Mutex with timer radial config (ADR 0025) AND timer manage
+               (ADR 0032 / C1) — opening TEMP closes whichever timer surface
+               is open. */
             if (wheelHost.classList.contains('lg-timer-radial-open')) {
-              wheelHost.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+              {{ lg_climate_timer_radial_sticky_set_js('wheelHost', 'false') }}
               wheelHost.__lgTimerOpenedAt = 0;
-              wheelHost.__lgTimerStickyOpen = false;
               if (wheelHost.__lgTimerArmTimer) {
                 try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
                 wheelHost.__lgTimerArmTimer = 0;
@@ -87,6 +106,15 @@
               if (radial) {
                 radial.__lgTimerPending = undefined;
                 radial.classList.remove('lg-timer-dragging');
+              }
+            }
+            if (wheelHost.classList.contains('lg-timer-manage-open')
+                || (wheelHost.getAttribute && wheelHost.getAttribute('data-lg-timer-manage') === '1')) {
+              {{ lg_climate_timer_manage_sticky_set_js('wheelHost', 'false') }}
+              wheelHost.__lgTimerManageOpenedAt = 0;
+              if (wheelHost.__lgTimerManageArmTimer) {
+                try { clearTimeout(wheelHost.__lgTimerManageArmTimer); } catch (e) {}
+                wheelHost.__lgTimerManageArmTimer = 0;
               }
             }
             wheelHost.classList.add('lg-wheel-temp-open', 'lg-wheel-temp-arming');
@@ -135,10 +163,36 @@
           __lgWheel.classList.contains('lg-wheel-temp-arming')
           || (Date.now() - (Number(__lgWheel.__lgTempOpenedAt) || 0)) < 300
         ));
-        /* Only clear focus when wheel host is positively found AND closed
-           AND sticky/arming are not holding open. Null wheel (early remount)
-           must NOT wipe .lg-temp-focus. */
-        if (__lgWheelOpen || __lgSticky) {
+        /* ADR 0032 — TIMER_CONFIG / TIMER_MANAGE own Power↔Cancel focus.
+           H12: Do NOT call focus_set(true/false) from styles on every timer
+           tick — that morph-thrashed Cancel↔Power every ~1s. openManage /
+           openTimer / Cancel tap own focus transitions. Styles only SKIP
+           clearing focus while a timer surface is sticky/open/mapped. */
+        const __lgTimerManage = !!(__lgWheel && (
+          (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-timer-manage') === '1')
+          || __lgWheel.__lgTimerManageStickyOpen
+          || (() => {
+            const eid = String((__lgWheel.__lgWheelEntityId)
+              || (__lgWheel._config && __lgWheel._config.entity)
+              || (__lgWheel.config && __lgWheel.config.entity) || '');
+            window.__lgKlimatTimerManageByEntity = window.__lgKlimatTimerManageByEntity || {};
+            return !!(eid && window.__lgKlimatTimerManageByEntity[eid]);
+          })()
+        ));
+        const __lgTimerRadial = !!(__lgWheel && (
+          (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-timer-radial') === '1')
+          || __lgWheel.__lgTimerStickyOpen
+          || (() => {
+            const eid = String((__lgWheel.__lgWheelEntityId)
+              || (__lgWheel._config && __lgWheel._config.entity)
+              || (__lgWheel.config && __lgWheel.config.entity) || '');
+            window.__lgKlimatTimerRadialByEntity = window.__lgKlimatTimerRadialByEntity || {};
+            return !!(eid && window.__lgKlimatTimerRadialByEntity[eid]);
+          })()
+        ));
+        if (__lgTimerManage || __lgTimerRadial) {
+          /* Hold focus chrome; never clear while timer surface is open. */
+        } else if (__lgWheelOpen || __lgSticky) {
           this.classList.add('lg-ring-trigger-expanded');
           this.__lgTempStickyOpen = true;
           if (__lgWheel && !__lgWheelOpen) {
@@ -169,9 +223,20 @@
           : mode === 'heat'
             ? 'var(--lg_glow_climate_heat)'
             : 'none';
+        const hubReflect = mode === 'cool'
+          ? 'var(--lg_shadow_climate_hub_reflect_cool)'
+          : mode === 'heat'
+            ? 'var(--lg_shadow_climate_hub_reflect_heat)'
+            : 'none';
         const hubDepth = __lgHubActive
           ? 'var(--lg_shadow_climate_hub_active_sunken)'
           : 'var(--lg_shadow_climate_hub_idle)';
+        const hubShadow = (() => {
+          const parts = [hubDepth];
+          if (hubReflect !== 'none') parts.push(hubReflect);
+          if (glow !== 'none') parts.push(glow);
+          return parts.join(', ');
+        })();
         /* Seed mid target label from entity; ring drag overwrites via
            --lg_climate_mid_target on this host during pending. */
         const __lgAttrs = (entity && entity.attributes) || {};
@@ -205,21 +270,41 @@
         }
       }
       {{ lg_climate_round_btn_shell_extra_styles('--lg_size_climate_setpoint_trigger_w', '--lg_size_climate_setpoint_trigger_w_phone', '--lg_size_climate_chip_icon', '--lg_size_climate_chip_icon') }}
-      /* Compose mode glow ON TOP of glass rim — Active hub sinks (ADR 0028). */
+      /* Compose mode glow + Premium HVAC hub reflection ON TOP of glass rim.
+         Active hub sinks (ADR 0028); colored inset reflects active segment light. */
       #card {
-        box-shadow: ${glow === 'none' ? hubDepth : hubDepth + ', ' + glow};
-        transition: var(--lg_transition_climate_node_state), var(--lg_transition_climate_node_press);
+        box-shadow: ${hubShadow};
+        transition: var(--lg_transition_climate_node_state), var(--lg_transition_climate_node_press_release);
         filter: ${__lgHubDisabled ? 'var(--lg_filter_climate_node_disabled)' : 'none'};
         opacity: ${__lgHubDisabled ? 'var(--lg_opacity_climate_node_disabled)' : '1'};
-        pointer-events: ${__lgHubDisabled ? 'none' : 'auto'};
+        /* ADR 0035: unavailable / power-load lock swallows taps in javascript. */
       }
-      /* Convex Lens idle / sunken Active fill — soft highlight only when Idle. */
+      #card:active {
+        transition: var(--lg_transition_climate_node_press_down);
+      }
+      /* EDIT_TEMP: pressing the ring thumb must NOT scale the hub / horseshoe.
+         Only #thumb on climate_thermostat_ring_panel animates. */
+      :host(.lg-ring-trigger-expanded) #card:active,
+      :host(.lg-ring-dragging) #card:active {
+        transform: none !important;
+        opacity: 1 !important;
+        filter: none !important;
+        box-shadow: ${hubShadow} !important;
+      }
+      :host(.lg-ring-trigger-expanded) #card:active #liquid_clip,
+      :host(.lg-ring-dragging) #card:active #liquid_clip {
+        background: var(--lg_color_climate_arc_glass_fill) !important;
+        filter: none !important;
+      }
+      /* Flat hub fill by default — specular sphere only on hub press (not ring drag). */
       #liquid_clip {
-        background:
-          ${__lgHubActive
-            ? 'var(--lg_color_climate_arc_glass_fill)'
-            : 'var(--lg_gradient_climate_setpoint_sphere_highlight), var(--lg_color_climate_arc_glass_fill)'};
+        background: var(--lg_color_climate_arc_glass_fill);
         transition: var(--lg_transition_climate_node_state);
+      }
+      :host:not(.lg-ring-trigger-expanded):not(.lg-ring-dragging) #card:active #liquid_clip {
+        background:
+          var(--lg_gradient_climate_setpoint_sphere_highlight),
+          var(--lg_color_climate_arc_glass_fill);
       }
       /* CRITICAL FIX: never fade #container — #ring_overlay is a button-card
          custom_field INSIDE #container; parent opacity would multiply with
@@ -290,6 +375,33 @@
         white-space: normal;
         overflow-wrap: anywhere;
       }
+      .lg-setpoint-stack--idle .lg-setpoint-stack__ambient {
+        margin-bottom: var(--lg_space_climate_setpoint_stack_gap);
+      }
+      .lg-setpoint-stack--wait {
+        gap: 0.15em;
+        padding: var(--lg_space_climate_power_wait_pad);
+        box-sizing: border-box;
+        animation: lg_power_wait_pulse var(--lg_duration_climate_power_wait_pulse) ease-in-out infinite;
+      }
+      .lg-setpoint-stack__wait {
+        color: var(--lg_color_text);
+        font-size: var(--lg_font_climate_power_wait_size);
+        font-weight: var(--lg_font_label_weight);
+        line-height: 1.25;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        max-width: 100%;
+      }
+      @keyframes lg_power_wait_pulse {
+        0%, 100% { opacity: var(--lg_opacity_climate_power_wait_hi); }
+        50% { opacity: var(--lg_opacity_climate_power_wait_lo); }
+      }
+      @media (max-width: 48rem) {
+        .lg-setpoint-stack__wait {
+          font-size: var(--lg_font_climate_power_wait_size_phone);
+        }
+      }
       .lg-setpoint-stack__target {
         color: ${color} !important;
         font-weight: var(--lg_font_title_weight);
@@ -311,6 +423,36 @@
         font-weight: var(--lg_font_title_weight);
         white-space: normal;
         overflow-wrap: anywhere;
+      }
+      /* ADR 0032 (item 10) — TIMER_ACTIVE bottom line: clock + "Вимкнеться о
+         HH:MM" in the current mode color (spec §4.1 Timer Layer). Only
+         rendered by status_stack when the wheel is timer-active and neither
+         TIMER_CONFIG nor TIMER_MANAGE owns the center (those hide #trigger
+         entirely). */
+      .lg-setpoint-stack__timer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_setpoint_stack_gap);
+        color: ${color} !important;
+        opacity: 0.92;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_off_at_size);
+        font-weight: var(--lg_font_body_weight, 400);
+        white-space: nowrap;
+      }
+      .lg-setpoint-stack__timer-icon {
+        --mdc-icon-size: var(--lg_font_climate_timer_off_at_size);
+        width: var(--lg_font_climate_timer_off_at_size);
+        height: var(--lg_font_climate_timer_off_at_size);
+        color: inherit !important;
+      }
+      .lg-setpoint-stack__error-icon {
+        --mdc-icon-size: var(--lg_font_climate_setpoint_target_size);
+        width: var(--lg_font_climate_setpoint_target_size);
+        height: var(--lg_font_climate_setpoint_target_size);
+        color: var(--lg_color_text);
+        opacity: 0.9;
       }
       @media (max-width: 48rem) {
         .lg-setpoint-stack__ambient { font-size: var(--lg_font_climate_setpoint_ambient_size_phone); }
@@ -377,7 +519,90 @@
           const ambient = (cur === 0 || cur) ? `${cur}° зараз` : '—';
           const targetLabel = (target === 0 || target) ? `${target}°` : '--°';
           const modeLabel = modeLabels[mode] || mode;
-          return `<div class="lg-setpoint-stack"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__target">${targetLabel}</div><div class="lg-setpoint-stack__mode">${modeLabel}</div></div>`;
+          if (mode === 'unavailable' || mode === 'unknown' || !entity) {
+            return `<div class="lg-setpoint-stack lg-setpoint-stack--error"><div class="lg-setpoint-stack__mode">Офлайн</div></div>`;
+          }
+          /* ADR 0032 (item 10) — TIMER_ACTIVE bottom line. Only shown when the
+             ancestor wheel is timer-active and neither TIMER_CONFIG nor
+             TIMER_MANAGE is open (both hide #trigger already; this is a
+             belt-and-suspenders guard against a stale render in between). */
+          const __lgComposedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          let __lgWheel = null;
+          let __lgScope = __lgComposedParent(this);
+          for (let i = 0; i < 16 && __lgScope; i++) {
+            if (__lgScope.classList && __lgScope.classList.contains('lg-wheel-host')) {
+              __lgWheel = __lgScope;
+              break;
+            }
+            __lgScope = __lgComposedParent(__lgScope);
+          }
+          const __lgEid = String((entity && entity.entity_id) || '');
+          window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+          const __lgPowerRec = (__lgEid && window.__lgKlimatPowerLoadByEntity[__lgEid]) || null;
+          const __lgPowerLoad = !!(__lgWheel && (
+            __lgWheel.classList.contains('lg-power-load')
+            || (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-power-load'))
+            || (__lgPowerRec && (__lgPowerRec.phase === 'init' || __lgPowerRec.phase === 'shutdown'))
+          ));
+          if (__lgPowerLoad) {
+            return `<div class="lg-setpoint-stack lg-setpoint-stack--wait"><div class="lg-setpoint-stack__wait">Будь ласка,</div><div class="lg-setpoint-stack__wait">зачекайте</div></div>`;
+          }
+          /* ADR 0035 IDLE_OFF: ambient + Вимк only (hide target). */
+          if (mode === 'off') {
+            return `<div class="lg-setpoint-stack lg-setpoint-stack--idle"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__mode">${modeLabels.off}</div></div>`;
+          }
+          const __lgTimerActive = !!(__lgWheel && __lgWheel.classList.contains('lg-wheel-timer-active'));
+          const __lgTimerConfigOpen = !!(__lgWheel && __lgWheel.classList.contains('lg-timer-radial-open'));
+          const __lgTimerManageOpen = !!(__lgWheel && (
+            __lgWheel.classList.contains('lg-timer-manage-open')
+            || (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-timer-manage') === '1')
+          ));
+          const __lgShowTimerLine = __lgTimerActive && !__lgTimerConfigOpen && !__lgTimerManageOpen;
+          let __lgTimerLine = '';
+          if (__lgShowTimerLine) {
+            const __lgParseDur = (raw) => {
+              const parts = String(raw || '').split(':').map((p) => parseInt(p, 10) || 0);
+              if (parts.length >= 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+              if (parts.length === 2) return parts[0] * 60 + parts[1];
+              return 0;
+            };
+            const __lgFmtOffAt = (dateOrMs) => {
+              const d = (dateOrMs instanceof Date) ? dateOrMs : new Date(dateOrMs);
+              if (!Number.isFinite(d.getTime())) return '';
+              const hh = String(d.getHours()).padStart(2, '0');
+              const mm = String(d.getMinutes()).padStart(2, '0');
+              return `Вимкнеться о ${hh}:${mm}`;
+            };
+            const timerId = (variables && variables.timer_entity_id) || '';
+            const armedId = (variables && variables.armed_entity_id) || '';
+            const clockId = (variables && variables.clock_entity_id) || '';
+            const tEnt = timerId ? states[timerId] : null;
+            const running = tEnt && (tEnt.state === 'active' || tEnt.state === 'paused');
+            const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+            let __lgOffLabel = '';
+            if (running) {
+              if (tEnt.state === 'active' && tEnt.attributes && tEnt.attributes.finishes_at) {
+                __lgOffLabel = __lgFmtOffAt(tEnt.attributes.finishes_at);
+              } else if (tEnt.state === 'paused') {
+                const rem = __lgParseDur(tEnt.attributes && tEnt.attributes.remaining);
+                if (rem > 0) __lgOffLabel = __lgFmtOffAt(Date.now() + rem * 1000);
+              }
+            } else if (armed && clockId && states[clockId] && states[clockId].state) {
+              const parts = String(states[clockId].state).split(':');
+              const hh = String(parseInt(parts[0], 10) || 0).padStart(2, '0');
+              const mm = String(parseInt(parts[1], 10) || 0).padStart(2, '0');
+              __lgOffLabel = `Вимкнеться о ${hh}:${mm}`;
+            }
+            if (__lgOffLabel) {
+              __lgTimerLine = `<div class="lg-setpoint-stack__timer"><ha-icon class="lg-setpoint-stack__timer-icon" icon="mdi:clock-outline"></ha-icon><span>${__lgOffLabel}</span></div>`;
+            }
+          }
+          return `<div class="lg-setpoint-stack"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__target">${targetLabel}</div><div class="lg-setpoint-stack__mode">${modeLabel}</div>${__lgTimerLine}</div>`;
         ]]]
       ring_overlay:
         card:

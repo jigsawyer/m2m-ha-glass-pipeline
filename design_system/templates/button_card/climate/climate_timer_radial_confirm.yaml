@@ -41,10 +41,14 @@
             }
           }
           const maxMin = (radial && radial.__lgTimerMaxMin) || 720;
+          const minMin = (radial && radial.__lgTimerMinMin) || 5;
+          const stepMin = (radial && radial.__lgTimerStepMin) || 5;
+          /* D1: quantize to step, clamp up to the 5-minute floor — a commit
+             always yields a valid duration (never a no-op below minMin). */
           let mins = (radial && typeof radial.__lgTimerPending === 'number')
-            ? radial.__lgTimerPending : 0;
-          mins = Math.max(0, Math.min(maxMin, Math.round(mins)));
-          if (mins < 1) return;
+            ? radial.__lgTimerPending : minMin;
+          mins = Math.round(mins / stepMin) * stepMin;
+          mins = Math.max(minMin, Math.min(maxMin, mins));
           const hh = Math.floor(mins / 60);
           const mm = mins % 60;
           const duration = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`;
@@ -65,9 +69,9 @@
             radial.classList.remove('lg-timer-dragging');
           }
           if (wheelHost) {
+            {{ lg_climate_timer_radial_sticky_set_js('wheelHost', 'false') }}
             wheelHost.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
             wheelHost.__lgTimerOpenedAt = 0;
-            wheelHost.__lgTimerStickyOpen = false;
             if (wheelHost.__lgTimerArmTimer) {
               try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
               wheelHost.__lgTimerArmTimer = 0;
@@ -98,37 +102,47 @@
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: var(--lg_stroke_climate_timer_radial_glass) solid var(--lg_color_climate_timer_radial_glass_stroke);
-        box-shadow: var(--lg_shadow_climate_arc_sphere);
+        /* Same hub chrome as DEFAULT setpoint display (commit = hub press). */
+        border: none;
+        box-shadow: var(--lg_shadow_climate_hub_idle);
         cursor: pointer;
-        transition: var(--lg_transition_press);
+        transition: var(--lg_transition_climate_node_state), var(--lg_transition_climate_node_press);
       }
       #card:active {
         transform: var(--lg_transform_climate_press_scale);
         opacity: var(--lg_opacity_climate_press);
         filter: var(--lg_filter_climate_press);
+        box-shadow: var(--lg_shadow_climate_hub_press);
       }
       #container {
-        display: grid !important;
-        place-items: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: var(--lg_space_climate_setpoint_stack_gap);
         width: 100%;
         height: 100%;
+        box-sizing: border-box;
+        padding: 0 var(--lg_space_gap_xs);
+        overflow: hidden;
       }
       #liquid_clip {
         position: absolute;
         inset: 0;
         border-radius: 50%;
         overflow: hidden;
-        background: var(--lg_color_climate_timer_radial_glass_fill);
+        background:
+          var(--lg_gradient_climate_setpoint_sphere_highlight),
+          var(--lg_color_climate_arc_glass_fill);
         backdrop-filter: blur(var(--lg_blur_climate_timer_radial_glass)) saturate(var(--lg_saturate_glass));
         -webkit-backdrop-filter: blur(var(--lg_blur_climate_timer_radial_glass)) saturate(var(--lg_saturate_glass));
-        box-shadow: inset 0 0 0 0.0625rem rgba(255, 255, 255, 0.35), inset 0 0.25rem 0.75rem rgba(255, 255, 255, 0.12);
         pointer-events: none;
         z-index: 0;
       }
       #label {
         position: relative;
         z-index: 1;
+        order: 1;
         color: var(--lg_color_text) !important;
         font-family: var(--lg_font_label_family);
         font-size: var(--lg_font_climate_timer_radial_size);
@@ -140,7 +154,29 @@
         pointer-events: none;
       }
       #label::after {
-        content: var(--lg_timer_label, "0 хв");
+        /* D1: floor is 5 minutes, not 0 — the dial can never seed below it. */
+        content: var(--lg_timer_label, "5 хв");
+      }
+      /* ADR 0032 (item 7) — secondary line under the duration: absolute
+         off-at time, live-updated by the radial panel's applyProgress /
+         seed pass via --lg_timer_off_at (spec §4.2 Configuration Typography). */
+      #off_at {
+        position: relative;
+        z-index: 1;
+        order: 2;
+        color: var(--lg_color_text) !important;
+        opacity: 0.82;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_off_at_size);
+        font-weight: var(--lg_font_body_weight, 400);
+        letter-spacing: var(--lg_font_body_tracking);
+        line-height: 1.1;
+        text-align: center;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      #off_at::after {
+        content: var(--lg_timer_off_at, '');
       }
       #icon, #name, #state { display: none !important; }
       @media (max-width: 48rem) {
@@ -151,6 +187,7 @@
     custom_fields:
       liquid_clip: >
         {{ lg_liquid_clip_shell_html() }}
+      off_at: ""
 
   # Dual-state Klimat timer control:
   # idle → round timer icon (opens in-place radial, ADR 0025);

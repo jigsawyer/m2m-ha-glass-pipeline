@@ -1,3 +1,7 @@
+Title: Bubble Pop-ups — Authorization, Geometry, and Glass
+Date: Unknown
+Status: Accepted
+
 # 0020. Bubble Pop-ups — Authorization, Geometry, and Glass
 
 ## Context

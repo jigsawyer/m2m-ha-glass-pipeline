@@ -1,3 +1,7 @@
+Title: Klimat Sleep-Timer Picker — Per-Breakpoint Controls
+Date: Unknown
+Status: Superseded by ADR-0025
+
 # 0021. Klimat Sleep-Timer Picker — Per-Breakpoint Controls (SUPERSEDED)
 
 ## Context

@@ -1,7 +1,7 @@
   climate_wheel_timer_btn:
     template: climate_timer_idle_btn
     variables:
-      seg_index: 3
+      seg_index: 0
       seg_total: 6
       seg_slot: timer
       armed_entity_id: ""
@@ -14,7 +14,7 @@
         const armedId = (variables && variables.armed_entity_id) || '';
         const running = entity && (entity.state === 'active' || entity.state === 'paused');
         const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
-        return (running || armed) ? 'mdi:close' : 'mdi:timer-outline';
+        return (running || armed) ? 'mdi:timer-edit-outline' : 'mdi:timer-outline';
       ]]]
     tap_action:
       action: javascript
@@ -35,6 +35,18 @@
             }
             return null;
           };
+          const minStepFrom = (el) => {
+            let minMin = 5;
+            let stepMin = 5;
+            if (el) {
+              const cs = getComputedStyle(el);
+              const rawMin = parseFloat(cs.getPropertyValue('--lg_size_climate_timer_min_minutes'));
+              const rawStep = parseFloat(cs.getPropertyValue('--lg_size_climate_timer_step_minutes'));
+              if (Number.isFinite(rawMin) && rawMin > 0) minMin = rawMin;
+              if (Number.isFinite(rawStep) && rawStep > 0) stepMin = rawStep;
+            }
+            return { minMin, stepMin };
+          };
           const closeTemp = (wheelHost) => {
             if (!wheelHost || !wheelHost.classList.contains('lg-wheel-temp-open')) return;
             let triggerHost = null;
@@ -53,14 +65,42 @@
               wheelHost.__lgTempArmTimer = 0;
             }
           };
-          const openTimer = (wheelHost, seedMinutes) => {
-            closeTemp(wheelHost);
+          const closeManage = (wheelHost) => {
+            if (!wheelHost) return;
+            {{ lg_climate_timer_manage_sticky_set_js('wheelHost', 'false') }}
+            wheelHost.__lgTimerManageOpenedAt = 0;
+            if (wheelHost.__lgTimerManageArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerManageArmTimer); } catch (e) {}
+              wheelHost.__lgTimerManageArmTimer = 0;
+            }
+          };
+          const closeRadial = (wheelHost) => {
+            if (!wheelHost) return;
+            {{ lg_climate_timer_radial_sticky_set_js('wheelHost', 'false') }}
+            wheelHost.__lgTimerOpenedAt = 0;
+            if (wheelHost.__lgTimerArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+              wheelHost.__lgTimerArmTimer = 0;
+            }
             const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
             if (radial) {
-              const maxMin = radial.__lgTimerMaxMin || 720;
-              const mins = Math.max(0, Math.min(maxMin, Math.round(seedMinutes || 0)));
+              radial.__lgTimerPending = undefined;
+              radial.classList.remove('lg-timer-dragging');
+            }
+          };
+          const openTimer = (wheelHost, seedMinutes) => {
+            closeTemp(wheelHost);
+            closeManage(wheelHost);
+            const { minMin, stepMin } = minStepFrom(wheelHost);
+            const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+            const maxMin = (radial && radial.__lgTimerMaxMin) || 720;
+            /* D1: floor(max(min, seed)) with step snap — mirrors the panel's own quantize. */
+            let mins = Math.max(0, Math.round(seedMinutes || 0));
+            mins = Math.round(mins / stepMin) * stepMin;
+            mins = Math.max(minMin, Math.min(maxMin, mins));
+            if (radial) {
               radial.__lgTimerSeedMinutes = mins;
-              radial.__lgTimerPending = mins > 0 ? mins : undefined;
+              radial.__lgTimerPending = mins;
               const p = maxMin > 0 ? mins / maxMin : 0;
               radial.__lgTimerLastProgress = p;
               const theta = p * Math.PI * 2;
@@ -77,9 +117,9 @@
               }
               radial.style.setProperty('--lg_timer_label', label);
             }
-            wheelHost.classList.add('lg-timer-radial-open', 'lg-timer-radial-arming');
+            wheelHost.classList.add('lg-timer-radial-arming');
+            {{ lg_climate_timer_radial_sticky_set_js('wheelHost', 'true') }}
             wheelHost.__lgTimerOpenedAt = Date.now();
-            wheelHost.__lgTimerStickyOpen = true;
             if (wheelHost.__lgTimerArmTimer) {
               try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
             }
@@ -92,18 +132,50 @@
             {{ lg_climate_temp_focus_set_js('true') }}
             {{ lg_climate_blur_kick_js() }}
           };
+          const openManage = (wheelHost) => {
+            closeTemp(wheelHost);
+            closeRadial(wheelHost);
+            wheelHost.classList.add('lg-timer-manage-arming');
+            {{ lg_climate_timer_manage_sticky_set_js('wheelHost', 'true') }}
+            wheelHost.__lgTimerManageOpenedAt = Date.now();
+            if (wheelHost.__lgTimerManageArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerManageArmTimer); } catch (e) {}
+            }
+            wheelHost.__lgTimerManageArmTimer = setTimeout(() => {
+              if (wheelHost && wheelHost.classList) {
+                wheelHost.classList.remove('lg-timer-manage-arming');
+              }
+              wheelHost.__lgTimerManageArmTimer = 0;
+            }, 300);
+            {{ lg_climate_temp_focus_set_js('true') }}
+            {{ lg_climate_blur_kick_js() }}
+          };
+          const wheelHost = findWheelHost(this);
+          if (!wheelHost) return;
+          if ({{ lg_climate_power_interaction_guard_js('wheelHost') }}) return;
+          /* C1 — TIMER_* only from hub DEFAULT_ON; OFF hub never enters a
+             timer state (neither TIMER_CONFIG nor TIMER_MANAGE). */
+          const climateId = wheelHost.__lgWheelEntityId
+            || (wheelHost._config && wheelHost._config.entity)
+            || (wheelHost.config && wheelHost.config.entity)
+            || '';
+          const climateState = climateId && states[climateId] ? states[climateId].state : '';
+          if (climateState === 'off' || climateState === 'unavailable' || climateState === 'unknown') {
+            return;
+          }
           const armedId = (variables && variables.armed_entity_id) || '';
-          const removeId = (variables && variables.remove_script_id) || '';
           const running = entity && (entity.state === 'active' || entity.state === 'paused');
           const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
           if (running || armed) {
-            if (removeId) {
-              try { hass.callService('script', 'turn_on', { entity_id: removeId }); } catch (e) {}
+            /* ADR 0032: TIMER_ACTIVE — retap opens TIMER_MANAGE (never a
+               cancel-on-retap / *_ac_timer_remove call from here). */
+            if (wheelHost.classList.contains('lg-timer-manage-open')
+                || (wheelHost.getAttribute && wheelHost.getAttribute('data-lg-timer-manage') === '1')) {
+              return;
             }
+            openManage(wheelHost);
             return;
           }
-          const wheelHost = findWheelHost(this);
-          if (!wheelHost) return;
           if (wheelHost.classList.contains('lg-timer-radial-open')) return;
           let seed = 30;
           const hoursId = (variables && variables.hours_entity_id) || '';
@@ -120,18 +192,71 @@
         const running = entity && (entity.state === 'active' || entity.state === 'paused');
         const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
         const active = !!(running || armed);
+        const climateId = (__lgWheel && __lgWheel.__lgWheelEntityId)
+          || (__lgWheel && __lgWheel._config && __lgWheel._config.entity)
+          || (__lgWheel && __lgWheel.config && __lgWheel.config.entity)
+          || '';
+        const climateState = (climateId && states[climateId] && states[climateId].state) || '';
+        const climateOff = climateState === 'off' || !climateState
+          || climateState === 'unavailable' || climateState === 'unknown'
+          || __lgPeripheralDisabled;
+        const glowTok = climateState === 'cool'
+          ? 'var(--lg_glow_climate_timer_seg_on_cool)'
+          : climateState === 'heat'
+            ? 'var(--lg_glow_climate_timer_seg_on_heat)'
+            : 'var(--lg_glow_climate_timer_seg_on)';
+        const cardGlow = !active
+          ? 'var(--lg_filter_climate_wheel_seg_idle_lift)'
+          : climateState === 'cool'
+            ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour_cool)'
+            : climateState === 'heat'
+              ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour_heat)'
+              : 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour)';
+        const iconFilter = !active
+          ? 'none'
+          : climateState === 'cool'
+            ? 'var(--lg_filter_climate_cool), var(--lg_filter_climate_wheel_seg_glow_cool)'
+            : climateState === 'heat'
+              ? 'var(--lg_filter_climate_heat), var(--lg_filter_climate_wheel_seg_glow_heat)'
+              : 'var(--lg_filter_climate_other), var(--lg_filter_climate_wheel_seg_glow)';
+        const iconColor = !active
+          ? 'var(--lg_color_text)'
+          : climateState === 'cool'
+            ? 'var(--lg_color_climate_cool)'
+            : climateState === 'heat'
+              ? 'var(--lg_color_climate_heat)'
+              : 'var(--lg_color_text)';
+        const clipBg = !active
+          ? 'var(--lg_color_climate_wheel_seg_frost)'
+          : climateState === 'cool'
+            ? 'var(--lg_gradient_climate_wheel_seg_on_wash_cool), var(--lg_color_climate_wheel_seg_frost)'
+            : climateState === 'heat'
+              ? 'var(--lg_gradient_climate_wheel_seg_on_wash_heat), var(--lg_color_climate_wheel_seg_frost)'
+              : 'var(--lg_gradient_climate_wheel_seg_on_wash), var(--lg_color_climate_wheel_seg_frost)';
         return `
       {{ lg_climate_wheel_slot_position_css() }}
+      :host {
+        opacity: ${climateOff ? 'var(--lg_opacity_climate_node_disabled)' : (__lgSegVisible ? '1' : '0')} !important;
+      }
+      #card {
+        pointer-events: ${climateOff || !__lgSegVisible ? 'none' : 'auto'} !important;
+        filter: ${climateOff ? 'var(--lg_filter_climate_node_disabled)' : cardGlow} !important;
+      }
+      #card:active {
+        filter: var(--lg_filter_climate_press) !important;
+      }
       #icon {
-        color: var(--lg_color_text) !important;
-        opacity: ${active ? '1' : '0.92'};
-        filter: ${active ? 'var(--lg_filter_climate_other)' : 'none'};
+        color: ${iconColor} !important;
+        opacity: ${active ? '1' : (climateOff ? '0.55' : 'var(--lg_opacity_climate_wheel_seg_icon_idle)')};
+        filter: ${iconFilter};
       }
       #liquid_clip {
+        background: ${clipBg} !important;
         box-shadow: ${active
-          ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_timer_seg_on)'
+          ? 'var(--lg_shadow_climate_wheel_seg), ' + glowTok
           : 'var(--lg_shadow_climate_wheel_seg)'} !important;
-        filter: ${active ? 'var(--lg_filter_climate_wheel_seg_on)' : 'none'};
+        filter: none !important;
+        transition: var(--lg_transition_climate_node_state) !important;
       }
         `;
       ]]]

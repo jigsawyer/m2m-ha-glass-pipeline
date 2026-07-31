@@ -1,3 +1,7 @@
+Title: Klimat Thermostat Setpoint — In-Place Ring with Deferred Commit
+Date: Unknown
+Status: Accepted
+
 # 0017. Klimat Thermostat Setpoint — In-Place Ring with Deferred Commit
 
 ## Context

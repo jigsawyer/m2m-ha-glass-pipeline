@@ -1,3 +1,7 @@
+Title: Approved Plugin Stack
+Date: Unknown
+Status: Accepted
+
 # 0010. Approved Plugin Stack
 
 ## Context

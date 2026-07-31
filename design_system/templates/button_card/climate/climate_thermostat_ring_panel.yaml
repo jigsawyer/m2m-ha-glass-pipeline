@@ -21,11 +21,11 @@
         const tol = (stepT / 2) || 0.05;
         const fracFromTemp = (t) => (!(span > 0) || !Number.isFinite(t)) ? 0 : Math.max(0, Math.min(1, (t - minT) / span));
 
-        /* Sweep/gap + path radius SoT: ring sweep token + wheel inner/outer pct
-           so stroke/outer match the Radial Menu annulus (ADR 0029). */
+        /* ADR 0036 — path_r / stroke unified with timer tick Delta R (track inner
+           = 44 − 8 = 36; centerline = 36 + stroke/2 → 40). Sweep stays 270°. */
         const CX = 50, CY = 50;
         let sweepDeg = 270;
-        let pathR = 37.5;
+        let pathR = 40;
         if (this) {
           const cs = getComputedStyle(this);
           const rawSweep = parseFloat(cs.getPropertyValue('--lg_size_climate_ring_sweep_deg'));
@@ -33,10 +33,6 @@
           const rawPathR = parseFloat(cs.getPropertyValue('--lg_size_climate_ring_path_r'));
           if (Number.isFinite(rawPathR) && rawPathR > 0) {
             pathR = rawPathR;
-          } else {
-            const outerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_outer_pct')) || 96;
-            const innerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_inner_pct')) || 54;
-            pathR = (outerPct + innerPct) / 4;
           }
         }
         const R = pathR;
@@ -51,19 +47,55 @@
         };
         const lerpChan = (a, b, t) => Math.round(a + (b - a) * t);
         const thumbColorAt = (t) => {
+          /* Purple/deep-blue at min → cyan → amber → red at max (ADR 0036). */
           const x = Math.max(0, Math.min(1, t));
-          const cold = [100, 210, 255];
+          const deep = [88, 52, 180];
+          const cold = [70, 150, 235];
           const mid = [255, 176, 90];
-          const hot = [255, 90, 70];
+          const hot = [255, 72, 58];
           let rgb;
-          if (x <= 0.55) {
-            const u = x / 0.55;
+          if (x <= 0.35) {
+            const u = x / 0.35;
+            rgb = [lerpChan(deep[0], cold[0], u), lerpChan(deep[1], cold[1], u), lerpChan(deep[2], cold[2], u)];
+          } else if (x <= 0.65) {
+            const u = (x - 0.35) / 0.3;
             rgb = [lerpChan(cold[0], mid[0], u), lerpChan(cold[1], mid[1], u), lerpChan(cold[2], mid[2], u)];
           } else {
-            const u = (x - 0.55) / 0.45;
+            const u = (x - 0.65) / 0.35;
             rgb = [lerpChan(mid[0], hot[0], u), lerpChan(mid[1], hot[1], u), lerpChan(mid[2], hot[2], u)];
           }
           return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.96)`;
+        };
+        const ensureRingTicks = (g, host, geo) => {
+          if (!g || !(geo.span > 0) || !(geo.step > 0)) return;
+          const steps = Math.round(geo.span / geo.step);
+          if (steps < 1) return;
+          const tickCount = steps + 1;
+          const key = `${geo.pathR}|${geo.onStart}|${geo.onLen}|${tickCount}`;
+          if (g.getAttribute('data-key') === key && g.childElementCount === tickCount) return;
+          while (g.firstChild) g.removeChild(g.firstChild);
+          g.setAttribute('data-key', key);
+          const cs = host ? getComputedStyle(host) : null;
+          const tickLen = (cs && parseFloat(cs.getPropertyValue('--lg_size_climate_ring_tick_len'))) || 3.5;
+          const tickThick = (cs && parseFloat(cs.getPropertyValue('--lg_size_climate_ring_tick_thick'))) || 1.25;
+          const ns = 'http://www.w3.org/2000/svg';
+          for (let i = 0; i < tickCount; i += 1) {
+            const snap = i / steps;
+            const p = geo.onStart + snap * geo.onLen;
+            const theta = (p / 100) * Math.PI * 2;
+            const cos = Math.cos(theta);
+            const sin = Math.sin(theta);
+            const rOut = geo.pathR + tickLen * 0.55;
+            const rIn = geo.pathR - tickLen * 0.45;
+            const line = document.createElementNS(ns, 'line');
+            line.setAttribute('class', 'lg-ring-tick');
+            line.setAttribute('x1', String(r4(CX + rIn * sin)));
+            line.setAttribute('y1', String(r4(CY - rIn * cos)));
+            line.setAttribute('x2', String(r4(CX + rOut * sin)));
+            line.setAttribute('y2', String(r4(CY - rOut * cos)));
+            line.setAttribute('stroke-width', String(tickThick));
+            g.appendChild(line);
+          }
         };
 
         /* Clear stale pending once HA has caught up to (or past) it. */
@@ -87,7 +119,7 @@
         if (this) {
           this.classList.add('lg-ring-host');
           this.__lgRingRange = { min: minT, max: maxT, step: stepT, span, mode, setT };
-          this.__lgRingGeo = { onStart, onLen };
+          this.__lgRingGeo = { onStart, onLen, pathR: R, span, step: stepT };
           this.__lgRingPathR = R;
           /* Sync mid label from current display temp on each render. */
           let __lgTrigSync = null;
@@ -122,6 +154,8 @@
             temp = Math.round(temp / r.step) * r.step;
             temp = clamp(Math.round(temp * 10) / 10, r.min, r.max);
             const snap = clamp((temp - r.min) / r.span, 0, 1);
+            const atEdge = snap <= 0.001 || snap >= 0.999;
+            const prevPending = typeof card.__lgRingPending === 'number' ? card.__lgRingPending : null;
             card.__lgRingPending = temp;
             const theta = ((geo.onStart + snap * geo.onLen) / 100) * Math.PI * 2;
             const pos = {
@@ -133,6 +167,23 @@
             setVar('--lg_ring_thumb_y', `${pos.y}%`);
             setVar('--lg_ring_thumb_fill', thumbColorAt(snap));
             setVar('--lg_climate_pending_label', `"${temp}°"`);
+            /* Haptic on magnetic snap (ADR 0036 / polish §2.3). */
+            if (prevPending !== null && temp !== prevPending
+                && typeof navigator !== 'undefined' && navigator.vibrate) {
+              try { navigator.vibrate(8); } catch (e) {}
+            }
+            /* Phase 5: elastic bump visual when thumb hits min/max wall. */
+            if (atEdge && card.classList) {
+              card.classList.remove('lg-ring-bump');
+              void card.offsetWidth;
+              card.classList.add('lg-ring-bump');
+              if (card.__lgRingBumpTimer) {
+                try { clearTimeout(card.__lgRingBumpTimer); } catch (e) {}
+              }
+              card.__lgRingBumpTimer = setTimeout(() => {
+                try { card.classList.remove('lg-ring-bump'); } catch (e) {}
+              }, 160);
+            }
             const changed = Number.isFinite(r.setT) && Math.abs(temp - r.setT) >= ((r.step / 2) || 0.05);
             setVar('--lg_climate_action_shadow', changed
               ? 'var(--lg_shadow_climate_thermostat_action_pending)'
@@ -180,13 +231,34 @@
               if (!ring || card.__lgRingBound) return;
               const track = ring.querySelector('.lg-ring__track');
               const fill = ring.querySelector('.lg-ring__fill');
-              const targets = [track, fill].filter(Boolean);
+              const hit = ring.querySelector('.lg-ring__hit');
+              const tickG = ring.querySelector('.lg-ring-ticks');
+              const targets = [hit, track, fill].filter(Boolean);
               if (!targets.length) return;
               card.__lgRingBound = true;
+              ensureRingTicks(tickG, card, card.__lgRingGeo || { onStart, onLen, pathR: R, span, step: stepT });
+              const findTrigger = () => {
+                let scope = card.parentElement || (card.getRootNode && card.getRootNode().host) || null;
+                for (let i = 0; i < 16 && scope; i++) {
+                  if (scope.classList && scope.classList.contains('lg-ring-trigger-host')) return scope;
+                  scope = scope.parentElement
+                    || (scope.getRootNode && scope.getRootNode().host)
+                    || null;
+                }
+                return null;
+              };
+              const setTriggerDragging = (on) => {
+                const trig = findTrigger();
+                if (!trig || !trig.classList) return;
+                if (on) trig.classList.add('lg-ring-dragging');
+                else trig.classList.remove('lg-ring-dragging');
+              };
               const down = (ev) => {
                 const r = card.__lgRingRange || {};
                 if (r.mode !== 'heat' && r.mode !== 'cool') return;
                 card.__lgRingDragging = true;
+                card.classList.add('lg-ring-dragging');
+                setTriggerDragging(true);
                 if (ring.setPointerCapture && ev.pointerId !== undefined) {
                   try { ring.setPointerCapture(ev.pointerId); } catch (e) {}
                 }
@@ -199,7 +271,11 @@
                 applyFraction(fractionFromEvent(ev, ring));
                 ev.preventDefault();
               };
-              const up = () => { card.__lgRingDragging = false; };
+              const up = () => {
+                card.__lgRingDragging = false;
+                card.classList.remove('lg-ring-dragging');
+                setTriggerDragging(false);
+              };
               targets.forEach((el) => {
                 el.addEventListener('pointerdown', down);
               });
@@ -208,6 +284,11 @@
               ring.addEventListener('pointercancel', up);
             };
             card.updateComplete.then(() => { bind(); setTimeout(bind, 60); setTimeout(bind, 240); });
+          } else {
+            card.updateComplete.then(() => {
+              const tickG = card.shadowRoot && card.shadowRoot.querySelector('#ring .lg-ring-ticks');
+              ensureRingTicks(tickG, card, card.__lgRingGeo || { onStart, onLen, pathR: R, span, step: stepT });
+            });
           }
         }
         return `
@@ -279,6 +360,15 @@
         transform: rotate(-90deg);
         transform-origin: 50% 50%;
       }
+      #ring .lg-ring__hit {
+        fill: none;
+        stroke: transparent;
+        stroke-width: var(--lg_size_climate_ring_hit_stroke_u);
+        stroke-linecap: round;
+        stroke-dasharray: ${onLen} ${gapPct};
+        stroke-dashoffset: ${dashOffsetBase};
+        pointer-events: ${tempPointer} !important;
+      }
       #ring .lg-ring__track {
         fill: none;
         stroke: var(--lg_color_climate_ring_track);
@@ -286,17 +376,27 @@
         stroke-linecap: round;
         stroke-dasharray: ${onLen} ${gapPct};
         stroke-dashoffset: ${dashOffsetBase};
+        opacity: var(--lg_opacity_climate_ring_track);
         pointer-events: ${tempPointer} !important;
       }
       #ring .lg-ring__fill {
         fill: none;
-        stroke: url(#lgRingGrad);
+        /* Solid setpoint color — spatial linearGradient fought CSS rotate and
+           painted warm-at-min. Purple/deep-blue at low t → red at high t. */
+        stroke: var(--lg_ring_thumb_fill, rgba(88, 52, 180, 0.96));
         stroke-width: var(--lg_size_climate_ring_stroke_u);
         stroke-linecap: round;
         stroke-dasharray: calc(var(--lg_ring_t, 0) * ${onLen}) calc(100 - (var(--lg_ring_t, 0) * ${onLen}));
         stroke-dashoffset: ${dashOffsetBase};
-        transition: var(--lg_transition_climate_ring_fill);
+        transition: var(--lg_transition_climate_ring_fill), stroke 0.12s ease-out;
         pointer-events: ${tempPointer} !important;
+      }
+      #ring .lg-ring-tick {
+        stroke: var(--lg_color_climate_ring_tick);
+        stroke-linecap: round;
+        fill: none;
+        opacity: var(--lg_opacity_climate_ring_tick);
+        pointer-events: none !important;
       }
       /* Mid is the commit affordance — hide duplicate approve chrome. */
       #action_btn {
@@ -320,13 +420,26 @@
         box-shadow: var(--lg_shadow_climate_ring_thumb) !important;
         pointer-events: none !important;
         opacity: ${tempOpacity};
+        transition: var(--lg_transition_climate_ring_thumb_release), var(--lg_transition_climate_ring_bump);
+        transform: translate(-50%, -50%) scale(1) !important;
+      }
+      :host(.lg-ring-dragging) #thumb {
+        transform: translate(-50%, -50%) var(--lg_transform_climate_ring_thumb_drag) !important;
         transition: var(--lg_transition_climate_ring_thumb);
-        transform: translate(-50%, -50%) !important;
+      }
+      :host(.lg-ring-bump) #thumb {
+        transform: translate(-50%, -50%) var(--lg_transform_climate_ring_bump_scale) !important;
+      }
+      :host(.lg-ring-dragging.lg-ring-bump) #thumb {
+        transform: translate(-50%, -50%) scale(calc(var(--lg_size_climate_ring_thumb_hit_scale) * 1.05)) !important;
       }
       @media (max-width: 48rem) {
         #container, #ring {
           width: var(--lg_size_climate_ring_w_phone) !important;
           height: var(--lg_size_climate_ring_w_phone) !important;
+        }
+        #ring .lg-ring__hit {
+          stroke-width: var(--lg_size_climate_ring_hit_stroke_u_phone);
         }
         #ring .lg-ring__track, #ring .lg-ring__fill {
           stroke-width: var(--lg_size_climate_ring_stroke_u_phone);
@@ -341,27 +454,17 @@
     custom_fields:
       ring: |
         [[[
-          let pathR = 37.5;
+          let pathR = 40;
           if (this) {
             const cs = getComputedStyle(this);
             const raw = parseFloat(cs.getPropertyValue('--lg_size_climate_ring_path_r'));
             if (Number.isFinite(raw) && raw > 0) pathR = raw;
-            else {
-              const outerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_outer_pct')) || 96;
-              const innerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_inner_pct')) || 54;
-              pathR = (outerPct + innerPct) / 4;
-            }
           }
           return `<svg class="lg-ring__svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          <defs>
-            <linearGradient id="lgRingGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="rgba(100, 210, 255, 0.95)"/>
-              <stop offset="55%" stop-color="rgba(255, 176, 90, 0.95)"/>
-              <stop offset="100%" stop-color="rgba(255, 90, 70, 0.95)"/>
-            </linearGradient>
-          </defs>
+          <circle class="lg-ring__hit" cx="50" cy="50" r="${pathR}" pathLength="100"></circle>
           <circle class="lg-ring__track" cx="50" cy="50" r="${pathR}" pathLength="100"></circle>
           <circle class="lg-ring__fill" cx="50" cy="50" r="${pathR}" pathLength="100"></circle>
+          <g class="lg-ring-ticks" transform="rotate(90 50 50)"></g>
         </svg>`;
         ]]]
       thumb: ""

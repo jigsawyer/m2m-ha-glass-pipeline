@@ -1,0 +1,273 @@
+  # ADR 0032 / vol2 visual_defects — TIMER_MANAGE actions are annular radial
+  # sectors (full closed ring, seg_total=3), not round chips in a row.
+  climate_timer_manage_action_chip:
+    show_icon: true
+    show_name: false
+    show_state: false
+    show_label: false
+    show_ripple: false
+    variables:
+      seg_index: 0
+      seg_total: 3
+      seg_slot: manage
+      manage_radial: true
+    tap_action:
+      action: none
+    extra_styles: |
+      [[[
+        {{ lg_climate_wheel_seg_math_js() }}
+        return `
+      {{ lg_climate_wheel_slot_position_css() }}
+      #icon {
+        color: var(--lg_color_text) !important;
+        opacity: 0.92;
+      }
+        `;
+      ]]]
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
+
+  # E1 — Pause/Resume inside TIMER_MANAGE; same service matrix as
+  # climate_timer_pause_btn (timer.pause/timer.start, or the pause-clock
+  # script when clock-armed and not yet running).
+  climate_timer_manage_pause_btn:
+    template: climate_timer_manage_action_chip
+    variables:
+      seg_index: 0
+      seg_total: 3
+      seg_slot: manage_pause
+      manage_radial: true
+      armed_entity_id: ""
+      pause_clock_script_id: ""
+    icon: |
+      [[[
+        return (entity && entity.state === 'paused') ? 'mdi:play' : 'mdi:pause';
+      ]]]
+    tap_action: |
+      [[[
+        {{ lg_haptic_press_js() }}
+        const id = (entity && entity.entity_id) || '';
+        const armedId = (variables && variables.armed_entity_id) || '';
+        const pauseClockId = (variables && variables.pause_clock_script_id) || '';
+        const armed = armedId && states[armedId] && states[armedId].state === 'on';
+        const running = entity && (entity.state === 'active' || entity.state === 'paused');
+        if (!running && armed && pauseClockId) {
+          return {
+            action: 'call-service',
+            service: 'script.turn_on',
+            target: { entity_id: pauseClockId },
+          };
+        }
+        if (!id) return { action: 'none' };
+        if (entity.state === 'paused') {
+          return { action: 'call-service', service: 'timer.start', target: { entity_id: id } };
+        }
+        if (entity.state === 'active') {
+          return { action: 'call-service', service: 'timer.pause', target: { entity_id: id } };
+        }
+        return { action: 'none' };
+      ]]]
+
+  # Stop — ends the timer outright (runs remove_script), then closes TIMER_MANAGE.
+  # CRITICAL: tap_action MUST be action:javascript (tap-only). A `tap_action: | [[[ ... ]]]`
+  # template that returns an action object is RE-EVALUATED on every timer entity
+  # tick (~1s) and was calling sticky_set(false) — that caused TIMER_MANAGE flicker.
+  climate_timer_manage_stop_btn:
+    template: climate_timer_manage_action_chip
+    variables:
+      seg_index: 1
+      seg_total: 3
+      seg_slot: manage_stop
+      manage_radial: true
+      remove_script_id: ""
+    icon: mdi:stop
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_haptic_press_js() }}
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          let wheelHost = null;
+          let scope = composedParent(this);
+          for (let i = 0; i < 16 && scope; i++) {
+            if (scope.classList && scope.classList.contains('lg-wheel-host')) {
+              wheelHost = scope;
+              break;
+            }
+            scope = composedParent(scope);
+          }
+          const scriptId = (variables && variables.remove_script_id) || '';
+          if (wheelHost) {
+            {{ lg_climate_timer_manage_sticky_set_js('wheelHost', 'false') }}
+            wheelHost.__lgTimerManageOpenedAt = 0;
+            if (wheelHost.__lgTimerManageArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerManageArmTimer); } catch (e) {}
+              wheelHost.__lgTimerManageArmTimer = 0;
+            }
+          }
+          {{ lg_climate_temp_focus_set_js('false') }}
+          {{ lg_climate_blur_kick_js() }}
+          if (scriptId && typeof hass !== 'undefined' && hass.callService) {
+            hass.callService('script', 'turn_on', { entity_id: scriptId });
+          }
+        ]]]
+
+  # Edit — closes TIMER_MANAGE and re-opens TIMER_CONFIG seeded from remaining.
+  climate_timer_manage_edit_btn:
+    template: climate_timer_manage_action_chip
+    variables:
+      seg_index: 2
+      seg_total: 3
+      seg_slot: manage_edit
+      manage_radial: true
+      armed_entity_id: ""
+      hours_entity_id: ""
+      minutes_entity_id: ""
+      clock_entity_id: ""
+      mode_entity_id: ""
+    icon: mdi:timer-edit-outline
+    tap_action:
+      action: javascript
+      javascript: |
+        [[[
+          {{ lg_haptic_press_js() }}
+          const composedParent = (el) => {
+            if (!el) return null;
+            if (el.parentElement) return el.parentElement;
+            const rn = el.getRootNode && el.getRootNode();
+            return (rn && rn.host) || null;
+          };
+          const parseDur = (raw) => {
+            const parts = String(raw || '').split(':').map((p) => parseInt(p, 10) || 0);
+            if (parts.length >= 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            if (parts.length === 2) return parts[0] * 60 + parts[1];
+            return 0;
+          };
+          const remSec = (ent) => {
+            if (!ent) return 0;
+            if (ent.state === 'paused') return parseDur(ent.attributes && ent.attributes.remaining);
+            if (ent.state === 'active') {
+              const fin = ent.attributes && ent.attributes.finishes_at;
+              if (!fin) return 0;
+              const ms = new Date(fin).getTime() - Date.now();
+              return Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
+            }
+            return 0;
+          };
+          const clockRemSec = (clockState) => {
+            const parts = String(clockState || '').split(':').map((p) => parseInt(p, 10) || 0);
+            const hh = parts[0] || 0;
+            const mm = parts[1] || 0;
+            const ss = parts[2] || 0;
+            const now = new Date();
+            const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss, 0);
+            if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+            return Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
+          };
+          const minStepFrom = (el) => {
+            let minMin = 5;
+            let stepMin = 5;
+            if (el) {
+              const cs = getComputedStyle(el);
+              const rawMin = parseFloat(cs.getPropertyValue('--lg_size_climate_timer_min_minutes'));
+              const rawStep = parseFloat(cs.getPropertyValue('--lg_size_climate_timer_step_minutes'));
+              if (Number.isFinite(rawMin) && rawMin > 0) minMin = rawMin;
+              if (Number.isFinite(rawStep) && rawStep > 0) stepMin = rawStep;
+            }
+            return { minMin, stepMin };
+          };
+          let wheelHost = null;
+          let scope = composedParent(this);
+          for (let i = 0; i < 16 && scope; i++) {
+            if (scope.classList && scope.classList.contains('lg-wheel-host')) {
+              wheelHost = scope;
+              break;
+            }
+            scope = composedParent(scope);
+          }
+          if (!wheelHost) return;
+          const hoursId = (variables && variables.hours_entity_id) || '';
+          const minutesId = (variables && variables.minutes_entity_id) || '';
+          const clockId = (variables && variables.clock_entity_id) || '';
+          const armedId = (variables && variables.armed_entity_id) || '';
+          const modeId = (variables && variables.mode_entity_id) || '';
+          const running = entity && (entity.state === 'active' || entity.state === 'paused');
+          const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
+          let seedMin = 30;
+          try {
+            if (running) {
+              if (modeId) hass.callService('input_select', 'select_option', { entity_id: modeId, option: 'duration' });
+              seedMin = Math.max(1, Math.round(remSec(entity) / 60));
+            } else if (armed && clockId && states[clockId]) {
+              if (modeId) hass.callService('input_select', 'select_option', { entity_id: modeId, option: 'duration' });
+              seedMin = Math.max(1, Math.min(720, Math.round(clockRemSec(states[clockId].state) / 60)));
+            }
+            const hh = Math.floor(seedMin / 60);
+            const mm = seedMin % 60;
+            if (hoursId) hass.callService('input_number', 'set_value', { entity_id: hoursId, value: hh });
+            if (minutesId) hass.callService('input_number', 'set_value', { entity_id: minutesId, value: mm });
+          } catch (e) {}
+          /* Close TIMER_MANAGE, then open TIMER_CONFIG (same seed path as
+             climate_wheel_timer_btn.openTimer). */
+          {{ lg_climate_timer_manage_sticky_set_js('wheelHost', 'false') }}
+          wheelHost.__lgTimerManageOpenedAt = 0;
+          if (wheelHost.__lgTimerManageArmTimer) {
+            try { clearTimeout(wheelHost.__lgTimerManageArmTimer); } catch (e) {}
+            wheelHost.__lgTimerManageArmTimer = 0;
+          }
+          if (wheelHost.classList.contains('lg-wheel-temp-open')) {
+            const triggerHost = wheelHost.shadowRoot && (
+              wheelHost.shadowRoot.querySelector('.lg-ring-trigger-host.lg-ring-trigger-expanded')
+              || wheelHost.shadowRoot.querySelector('.lg-ring-trigger-expanded')
+            );
+            if (triggerHost) {
+              triggerHost.classList.remove('lg-ring-trigger-expanded');
+              triggerHost.__lgTempStickyOpen = false;
+            }
+            wheelHost.classList.remove('lg-wheel-temp-open', 'lg-wheel-temp-arming');
+            wheelHost.__lgTempOpenedAt = 0;
+          }
+          const { minMin, stepMin } = minStepFrom(wheelHost);
+          const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+          const maxMin = (radial && radial.__lgTimerMaxMin) || 720;
+          let mins = Math.max(0, Math.round(seedMin || 0));
+          mins = Math.round(mins / stepMin) * stepMin;
+          mins = Math.max(minMin, Math.min(maxMin, mins));
+          if (radial) {
+            radial.__lgTimerSeedMinutes = mins;
+            radial.__lgTimerPending = mins;
+            const p = maxMin > 0 ? mins / maxMin : 0;
+            radial.__lgTimerLastProgress = p;
+            const theta = p * Math.PI * 2;
+            const r4 = (n) => Math.round(n * 10000) / 10000;
+            radial.style.setProperty('--lg_timer_t', String(p));
+            radial.style.setProperty('--lg_timer_knob_x', `${r4(50 + 44 * Math.sin(theta))}%`);
+            radial.style.setProperty('--lg_timer_knob_y', `${r4(50 - 44 * Math.cos(theta))}%`);
+            let label;
+            if (mins < 60) label = `"${mins} хв"`;
+            else {
+              const h = Math.floor(mins / 60);
+              const mm = mins % 60;
+              label = mm === 0 ? `"${h} год"` : `"${h} год ${mm} хв"`;
+            }
+            radial.style.setProperty('--lg_timer_label', label);
+          }
+          wheelHost.classList.add('lg-timer-radial-arming');
+          {{ lg_climate_timer_radial_sticky_set_js('wheelHost', 'true') }}
+          wheelHost.__lgTimerOpenedAt = Date.now();
+          if (wheelHost.__lgTimerArmTimer) {
+            try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+          }
+          wheelHost.__lgTimerArmTimer = setTimeout(() => {
+            if (wheelHost && wheelHost.classList) wheelHost.classList.remove('lg-timer-radial-arming');
+            wheelHost.__lgTimerArmTimer = 0;
+          }, 300);
+          {{ lg_climate_temp_focus_set_js('true') }}
+          {{ lg_climate_blur_kick_js() }}
+        ]]]

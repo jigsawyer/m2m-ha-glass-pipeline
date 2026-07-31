@@ -1,3 +1,7 @@
+Title: Option 1 CSS — Tokens + `extra_styles`, and the Inline Bans
+Date: Unknown
+Status: Accepted
+
 # 0006. Option 1 CSS — Tokens + `extra_styles`, and the Inline Bans
 
 ## Context

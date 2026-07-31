@@ -344,37 +344,65 @@
         box-shadow: var(--lg_glow_climate_room_off_press);
         transform: var(--lg_transform_climate_room_off_press_scale);
       }
-      #icon {
+      /* Dual glyph: Power idle / Close under EDIT_TEMP or TIMER_CONFIG/MANAGE.
+         .lg-temp-focus is toggled on THIS host (room_off button-card) by
+         lg_climate_temp_focus_set_js — use :host(), not :host-context
+         (unsupported in Safari / HA WebView). .lg-timer-surface-open is a
+         parallel class set by timer sticky macros so Cancel stays visible
+         even if temp-focus briefly clears while TIMER_* is sticky. */
+      #icon, #img-cell {
+        display: none !important;
+      }
+      #corner_glyph {
+        grid-area: i !important;
         position: relative;
         z-index: 1;
-        color: var(--lg_color_text) !important;
-        width: var(--lg_size_climate_room_off_icon) !important;
-        height: var(--lg_size_climate_room_off_icon) !important;
-        max-width: var(--lg_size_climate_room_off_icon) !important;
-        max-height: var(--lg_size_climate_room_off_icon) !important;
-        --mdc-icon-size: var(--lg_size_climate_room_off_icon);
-      }
-      #card:active #icon {
-        color: var(--lg_color_climate_room_off_press) !important;
-        filter: var(--lg_filter_climate_room_off_icon);
-      }
-      @media (max-width: 48rem) {
-        #icon {
-          width: var(--lg_size_climate_room_off_icon_phone) !important;
-          height: var(--lg_size_climate_room_off_icon_phone) !important;
-          max-width: var(--lg_size_climate_room_off_icon_phone) !important;
-          max-height: var(--lg_size_climate_room_off_icon_phone) !important;
-          --mdc-icon-size: var(--lg_size_climate_room_off_icon_phone);
-        }
-      }
-      #img-cell {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         justify-self: center !important;
         align-self: center !important;
         place-self: center !important;
-        overflow: hidden !important;
+        width: var(--lg_size_climate_room_off_icon) !important;
+        height: var(--lg_size_climate_room_off_icon) !important;
+        max-width: var(--lg_size_climate_room_off_icon) !important;
+        max-height: var(--lg_size_climate_room_off_icon) !important;
+        pointer-events: none;
+      }
+      #corner_glyph .lg-room-off-glyph {
+        position: absolute;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+        --mdc-icon-size: var(--lg_size_climate_room_off_icon);
+        color: var(--lg_color_text) !important;
+        display: block;
+      }
+      #corner_glyph .lg-room-off-glyph--close {
+        display: none;
+      }
+      :host(.lg-temp-focus) #corner_glyph .lg-room-off-glyph--power,
+      :host(.lg-timer-surface-open) #corner_glyph .lg-room-off-glyph--power {
+        display: none;
+      }
+      :host(.lg-temp-focus) #corner_glyph .lg-room-off-glyph--close,
+      :host(.lg-timer-surface-open) #corner_glyph .lg-room-off-glyph--close {
+        display: block;
+      }
+      #card:active #corner_glyph .lg-room-off-glyph {
+        color: var(--lg_color_climate_room_off_press) !important;
+        filter: var(--lg_filter_climate_room_off_icon);
+      }
+      @media (max-width: 48rem) {
+        #corner_glyph {
+          width: var(--lg_size_climate_room_off_icon_phone) !important;
+          height: var(--lg_size_climate_room_off_icon_phone) !important;
+          max-width: var(--lg_size_climate_room_off_icon_phone) !important;
+          max-height: var(--lg_size_climate_room_off_icon_phone) !important;
+        }
+        #corner_glyph .lg-room-off-glyph {
+          --mdc-icon-size: var(--lg_size_climate_room_off_icon_phone);
+        }
       }
       {{ lg_round_icon_only_center_extra_styles() }}
       #name, #label, #state {
@@ -446,6 +474,7 @@
         transform: var(--lg_transform_climate_press_scale);
         opacity: var(--lg_opacity_climate_press);
         filter: var(--lg_filter_climate_press);
+        box-shadow: var(--lg_shadow_climate_hub_press);
       }
       #container {
         display: grid !important;

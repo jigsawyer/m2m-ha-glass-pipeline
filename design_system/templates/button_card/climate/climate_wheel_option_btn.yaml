@@ -17,12 +17,19 @@
       action: javascript
       javascript: |
         [[[
+          {{ lg_haptic_press_js() }}
+          if ({{ lg_climate_power_interaction_guard_js('null') }}) return;
           {{ lg_climate_wheel_set_layer_js("'main'") }}
           const key = (variables && variables.data_key) || 'hvac_mode';
           const id = (entity && entity.entity_id) || '';
           const svc = (variables && variables.service) || 'climate.set_hvac_mode';
           const val = variables && variables.value;
           if (id && val !== undefined && val !== null && val !== '') {
+            {{ lg_climate_seg_pending_arm_js(
+              "(variables.check === 'attrib'
+                ? ('attrib:' + ((entity && entity.attributes && entity.attributes[variables.attrib]) || ''))
+                : ('state:' + ((entity && entity.state) || '')))"
+            ) }}
             try {
               const parts = String(svc).split('.');
               const domain = parts[0];
@@ -40,6 +47,11 @@
         const active = variables.check === 'attrib'
           ? a[variables.attrib] === variables.value
           : entity && entity.state === variables.value;
+        {{ lg_climate_seg_pending_resolve_js(
+          "(variables.check === 'attrib'
+            ? ('attrib:' + ((entity && entity.attributes && entity.attributes[variables.attrib]) || ''))
+            : ('state:' + ((entity && entity.state) || '')))"
+        ) }}
         const mode = variables.value;
         const color = mode === 'cool'
           ? 'var(--lg_color_climate_cool)'
@@ -47,35 +59,59 @@
             ? 'var(--lg_color_climate_heat)'
             : 'var(--lg_color_text)';
         const glow = !active
-          ? 'none'
+          ? 'var(--lg_filter_climate_wheel_seg_idle_lift)'
           : mode === 'cool'
-            ? 'var(--lg_glow_climate_cool)'
+            ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour_cool)'
             : mode === 'heat'
-              ? 'var(--lg_glow_climate_heat)'
-              : 'var(--lg_glow_climate_other)';
+              ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour_heat)'
+              : 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour)';
         const iconFilter = !active
           ? 'none'
           : mode === 'cool'
-            ? 'var(--lg_filter_climate_cool)'
+            ? 'var(--lg_filter_climate_cool), var(--lg_filter_climate_wheel_seg_glow_cool)'
             : mode === 'heat'
-              ? 'var(--lg_filter_climate_heat)'
-              : 'var(--lg_filter_climate_other)';
+              ? 'var(--lg_filter_climate_heat), var(--lg_filter_climate_wheel_seg_glow_heat)'
+              : 'var(--lg_filter_climate_other), var(--lg_filter_climate_wheel_seg_glow)';
+        const rim = !active
+          ? ''
+          : mode === 'cool'
+            ? ', var(--lg_glow_climate_wheel_seg_on_inset_cool)'
+            : mode === 'heat'
+              ? ', var(--lg_glow_climate_wheel_seg_on_inset_heat)'
+              : ', var(--lg_glow_climate_wheel_seg_on_inset)';
+        const clipShadow = active
+          ? 'var(--lg_shadow_climate_wheel_seg)' + rim
+          : (__lgSegPending
+            ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_wheel_seg_pending_inset)'
+            : 'var(--lg_shadow_climate_wheel_seg)');
+        const clipTransition = __lgSegPending && !active
+          ? 'var(--lg_transition_climate_wheel_seg_pending_pulse)'
+          : 'var(--lg_transition_climate_node_state)';
+        const clipBg = !active
+          ? 'var(--lg_color_climate_wheel_seg_frost)'
+          : mode === 'cool'
+            ? 'var(--lg_gradient_climate_wheel_seg_on_wash_cool), var(--lg_color_climate_wheel_seg_frost)'
+            : mode === 'heat'
+              ? 'var(--lg_gradient_climate_wheel_seg_on_wash_heat), var(--lg_color_climate_wheel_seg_frost)'
+              : 'var(--lg_gradient_climate_wheel_seg_on_wash), var(--lg_color_climate_wheel_seg_frost)';
         return `
       {{ lg_climate_wheel_slot_position_css() }}
-      /* Active State Illumination (hyper-glass refresh): see
-         climate_wheel_quiet_btn for the overflow:hidden / mask-image
-         rationale for inset-only glow (the outer glow variable computed
-         above would be silently clipped as a #liquid_clip box-shadow). */
+      #card {
+        filter: ${glow} !important;
+      }
+      #card:active {
+        filter: var(--lg_filter_climate_press) !important;
+      }
       #liquid_clip {
-        box-shadow: ${active
-          ? 'var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_wheel_seg_on_inset)'
-          : 'var(--lg_shadow_climate_wheel_seg)'} !important;
-        filter: ${active ? 'var(--lg_filter_climate_wheel_seg_on)' : 'none'};
+        background: ${clipBg} !important;
+        box-shadow: ${clipShadow} !important;
+        filter: none !important;
+        transition: ${clipTransition} !important;
       }
       #icon {
         color: ${active ? color : 'var(--lg_color_text)'} !important;
         filter: ${iconFilter};
-        opacity: ${active ? '1' : '0.78'};
+        opacity: ${active ? '1' : 'var(--lg_opacity_climate_wheel_seg_icon_idle)'};
       }
         `;
       ]]]

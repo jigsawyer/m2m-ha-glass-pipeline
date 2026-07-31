@@ -39,24 +39,72 @@
         const layer = (variables && variables.wheel_layer) || 'fan';
         let active = false;
         let color = 'var(--lg_color_text)';
-        let glow = 'none';
+        let cardGlow = 'var(--lg_filter_climate_wheel_seg_idle_lift)';
         let iconFilter = 'none';
+        let clipBg = 'var(--lg_color_climate_wheel_seg_frost)';
+        let rim = '';
         if (layer === 'mode') {
           const mode = entity ? entity.state : 'off';
           active = mode === 'cool' || mode === 'heat' || mode === 'dry' || mode === 'fan_only' || mode === 'auto' || mode === 'heat_cool';
           color = mode === 'cool' ? 'var(--lg_color_climate_cool)' : mode === 'heat' ? 'var(--lg_color_climate_heat)' : 'var(--lg_color_text)';
-          glow = mode === 'cool' ? 'var(--lg_glow_climate_cool)' : mode === 'heat' ? 'var(--lg_glow_climate_heat)' : active ? 'var(--lg_glow_climate_other)' : 'none';
-          iconFilter = mode === 'cool' ? 'var(--lg_filter_climate_cool)' : mode === 'heat' ? 'var(--lg_filter_climate_heat)' : active ? 'var(--lg_filter_climate_other)' : 'none';
+          iconFilter = mode === 'cool'
+            ? 'var(--lg_filter_climate_cool), var(--lg_filter_climate_wheel_seg_glow_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_filter_climate_heat), var(--lg_filter_climate_wheel_seg_glow_heat)'
+              : active
+                ? 'var(--lg_filter_climate_other), var(--lg_filter_climate_wheel_seg_glow)'
+                : 'none';
+          cardGlow = mode === 'cool'
+            ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour_cool)'
+            : mode === 'heat'
+              ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour_heat)'
+              : active
+                ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour)'
+                : 'var(--lg_filter_climate_wheel_seg_idle_lift)';
+          rim = mode === 'cool'
+            ? ', var(--lg_glow_climate_wheel_seg_on_inset_cool)'
+            : mode === 'heat'
+              ? ', var(--lg_glow_climate_wheel_seg_on_inset_heat)'
+              : active
+                ? ', var(--lg_glow_climate_wheel_seg_on_inset)'
+                : '';
+          clipBg = mode === 'cool'
+            ? 'var(--lg_gradient_climate_wheel_seg_on_wash_cool), var(--lg_color_climate_wheel_seg_frost)'
+            : mode === 'heat'
+              ? 'var(--lg_gradient_climate_wheel_seg_on_wash_heat), var(--lg_color_climate_wheel_seg_frost)'
+              : active
+                ? 'var(--lg_gradient_climate_wheel_seg_on_wash), var(--lg_color_climate_wheel_seg_frost)'
+                : 'var(--lg_color_climate_wheel_seg_frost)';
         } else {
           const fm = entity && entity.attributes ? String(entity.attributes.fan_mode || '').toLowerCase() : '';
           active = !!fm;
-          glow = active ? 'var(--lg_glow_climate_other)' : 'none';
-          iconFilter = active ? 'var(--lg_filter_climate_other)' : 'none';
-          color = active ? 'var(--lg_color_climate_other)' : 'var(--lg_color_text)';
+          iconFilter = active ? 'var(--lg_filter_climate_other), var(--lg_filter_climate_wheel_seg_glow)' : 'none';
+          cardGlow = active
+            ? 'var(--lg_filter_climate_wheel_seg_idle_lift), var(--lg_filter_climate_wheel_seg_contour)'
+            : 'var(--lg_filter_climate_wheel_seg_idle_lift)';
+          rim = active ? ', var(--lg_glow_climate_wheel_seg_on_inset)' : '';
+          clipBg = active
+            ? 'var(--lg_gradient_climate_wheel_seg_on_wash), var(--lg_color_climate_wheel_seg_frost)'
+            : 'var(--lg_color_climate_wheel_seg_frost)';
         }
         return `
       {{ lg_climate_wheel_slot_position_css() }}
-      #icon { color: ${color} !important; filter: ${iconFilter}; opacity: ${active ? '1' : '0.85'}; }
+      #card {
+        filter: ${cardGlow} !important;
+      }
+      #card:active {
+        filter: var(--lg_filter_climate_press) !important;
+      }
+      #liquid_clip {
+        background: ${clipBg} !important;
+        box-shadow: var(--lg_shadow_climate_wheel_seg)${rim} !important;
+        transition: var(--lg_transition_climate_node_state) !important;
+      }
+      #icon {
+        color: ${color} !important;
+        filter: ${iconFilter};
+        opacity: ${active ? '1' : 'var(--lg_opacity_climate_wheel_seg_icon_idle)'};
+      }
         `;
       ]]]
     custom_fields:

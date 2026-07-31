@@ -8,6 +8,10 @@
       action: javascript
       javascript: |
         [[[
+          /* ADR 0030: unreachable by design — the host #temp_frost stays 0×0 /
+             hidden / pointer-events:none, so this abort path never fires for
+             Klimat TEMP (Cancel (X) is the only abort). Kept intact, not
+             deleted, so re-enabling frost stays a one-rule change. */
           const composedParent = (el) => {
             if (!el) return null;
             if (el.parentElement) return el.parentElement;

@@ -1,3 +1,7 @@
+Title: Directory Domain Boundaries
+Date: Unknown
+Status: Accepted
+
 # 0002. Directory Domain Boundaries
 
 ## Context

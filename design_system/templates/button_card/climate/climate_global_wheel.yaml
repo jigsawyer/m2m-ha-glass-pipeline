@@ -12,6 +12,7 @@
       armed_entity_id: ""
       save_duration_script_id: ""
       remove_script_id: ""
+      pause_clock_script_id: ""
       hours_entity_id: ""
       minutes_entity_id: ""
       clock_entity_id: ""
@@ -37,45 +38,131 @@
         const running = tEnt && (tEnt.state === 'active' || tEnt.state === 'paused');
         const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
         this.classList.toggle('lg-wheel-timer-active', !!(running || armed));
-        /* Persist timer radial open across re-renders (mirror TEMP sticky). */
-        if (this.__lgTimerStickyOpen || this.classList.contains('lg-timer-radial-open')) {
+        /* Persist TIMER_CONFIG / TIMER_MANAGE across host recreate (same SoT
+           pattern as __lgKlimatWheelLayerByEntity). Do NOT call services or
+           clear sticky from extra_styles — that caused manage open→close
+           flicker (~1s) when styles re-ran. AC-off timer reset stays on
+           climate_room_off_button tap only. */
+        /* Sticky SoT = window entity maps (+ instance flag only while eid empty
+           during host recreate). Do NOT OR class/attr/cssVar into want — nested
+           panel re-assert used to resurrect class→want→map loops (flicker).
+           Styles only RE-APPLY chrome from map; never clear without sticky_set(false). */
+        window.__lgKlimatTimerRadialByEntity = window.__lgKlimatTimerRadialByEntity || {};
+        window.__lgKlimatTimerManageByEntity = window.__lgKlimatTimerManageByEntity || {};
+        const __lgMapRadial = !!(__lgEidHost && window.__lgKlimatTimerRadialByEntity[__lgEidHost]);
+        const __lgMapManage = !!(__lgEidHost && window.__lgKlimatTimerManageByEntity[__lgEidHost]);
+        const __lgWantRadial = !!(__lgMapRadial
+          || (!__lgEidHost && (this.__lgTimerStickyOpen
+            || (this.getAttribute && this.getAttribute('data-lg-timer-radial') === '1'))));
+        const __lgWantManage = !!(__lgMapManage
+          || (!__lgEidHost && (this.__lgTimerManageStickyOpen
+            || (this.getAttribute && this.getAttribute('data-lg-timer-manage') === '1'))));
+        if (__lgWantRadial && !__lgWantManage) {
           this.classList.add('lg-timer-radial-open');
           this.__lgTimerStickyOpen = true;
+          if (__lgEidHost) window.__lgKlimatTimerRadialByEntity[__lgEidHost] = true;
+          try {
+            this.setAttribute('data-lg-timer-radial', '1');
+            this.style.setProperty('--lg_fsm_radial_display', 'block');
+            this.style.setProperty('--lg_fsm_radial_pe', 'auto');
+            this.style.setProperty('--lg_fsm_seg_display', 'none');
+            this.style.setProperty('--lg_fsm_seg_opacity', '0');
+            this.style.setProperty('--lg_fsm_seg_pe', 'none');
+            this.style.setProperty('--lg_fsm_trigger_display', 'none');
+            this.style.removeProperty('--lg_fsm_manage_display');
+            this.style.removeProperty('--lg_fsm_manage_pe');
+            this.removeAttribute('data-lg-timer-manage');
+            this.classList.remove('lg-timer-manage-open', 'lg-timer-manage-arming');
+            this.__lgTimerManageStickyOpen = false;
+          } catch (e) {}
+        } else if (__lgWantManage) {
+          this.classList.add('lg-timer-manage-open');
+          this.__lgTimerManageStickyOpen = true;
+          if (__lgEidHost) window.__lgKlimatTimerManageByEntity[__lgEidHost] = true;
+          try {
+            this.setAttribute('data-lg-timer-manage', '1');
+            this.style.setProperty('--lg_fsm_manage_display', 'block');
+            this.style.setProperty('--lg_fsm_manage_pe', 'auto');
+            this.style.setProperty('--lg_fsm_seg_display', 'none');
+            this.style.setProperty('--lg_fsm_seg_opacity', '0');
+            this.style.setProperty('--lg_fsm_seg_pe', 'none');
+            this.style.setProperty('--lg_fsm_trigger_display', 'none');
+            this.style.removeProperty('--lg_fsm_radial_display');
+            this.style.removeProperty('--lg_fsm_radial_pe');
+            this.removeAttribute('data-lg-timer-radial');
+            this.classList.remove('lg-timer-radial-open', 'lg-timer-radial-arming');
+            this.__lgTimerStickyOpen = false;
+          } catch (e) {}
         }
+        /* ADR 0032 — TIMER_ACTIVE outer drain ring: remaining-time fraction
+           (1 = full remaining, 0 = done), mirroring climate_timer_active_bar's
+           remaining-seconds math. Recomputed every render + a light interval
+           (drain is cosmetic — no need for 1s precision on a 5..720min ring). */
+        const __lgParseDur = (raw) => {
+          const parts = String(raw || '').split(':').map((p) => parseInt(p, 10) || 0);
+          if (parts.length >= 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+          if (parts.length === 2) return parts[0] * 60 + parts[1];
+          return 0;
+        };
+        const __lgRemSec = (ent) => {
+          if (!ent) return 0;
+          if (ent.state === 'paused') return __lgParseDur(ent.attributes && ent.attributes.remaining);
+          if (ent.state === 'active') {
+            const fin = ent.attributes && ent.attributes.finishes_at;
+            if (!fin) return 0;
+            const ms = new Date(fin).getTime() - Date.now();
+            return Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
+          }
+          return 0;
+        };
+        const __lgClockRemSec = (clockState) => {
+          const parts = String(clockState || '').split(':').map((p) => parseInt(p, 10) || 0);
+          const hh = parts[0] || 0;
+          const mm = parts[1] || 0;
+          const ss = parts[2] || 0;
+          const now = new Date();
+          const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, ss, 0);
+          if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+          return Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
+        };
+        let __lgDrainT = 1;
+        if (running) {
+          const __lgDur = __lgParseDur(tEnt.attributes && tEnt.attributes.duration);
+          const __lgRem = __lgRemSec(tEnt);
+          __lgDrainT = __lgDur > 0 ? Math.max(0, Math.min(1, __lgRem / __lgDur)) : 1;
+          this.__lgTimerDrainDurSec = __lgDur;
+          this.__lgTimerDrainFinishesAt = tEnt.state === 'active' ? (tEnt.attributes && tEnt.attributes.finishes_at) : null;
+          this.__lgTimerDrainPausedRemaining = tEnt.state === 'paused' ? __lgRem : 0;
+        } else if (armed) {
+          const __lgClockId = variables && variables.clock_entity_id;
+          const __lgClockState = (__lgClockId && states[__lgClockId] && states[__lgClockId].state) || '';
+          const __lgRem = __lgClockRemSec(__lgClockState);
+          let __lgInitial = this.__lgTimerDrainClockInitial;
+          if (!__lgInitial || __lgRem > __lgInitial) {
+            __lgInitial = Math.max(__lgRem, 1);
+            this.__lgTimerDrainClockInitial = __lgInitial;
+          }
+          __lgDrainT = Math.max(0, Math.min(1, __lgRem / __lgInitial));
+          this.__lgTimerDrainClockState = __lgClockState;
+        } else {
+          this.__lgTimerDrainClockInitial = 0;
+        }
+        this.style.setProperty('--lg_timer_drain_t', String(__lgDrainT));
+        {{ lg_climate_timer_drain_sync_js() }}
         const a = (entity && entity.attributes) || {};
         const modes = Array.isArray(a.swing_modes) ? a.swing_modes : [];
         const hModes = Array.isArray(a.swing_horizontal_modes) ? a.swing_horizontal_modes : null;
         const swingH = !!(hModes && hModes.length)
           || modes.some((m) => /^(horizontal|both)$/i.test(String(m)));
         this.classList.toggle('lg-wheel-swing-h-on', swingH);
-        /* ADR 0029: TEMP frost covers parent room container bounds (not viewport). */
-        const __lgCPFrost = (el) => {
-          if (!el) return null;
-          if (el.parentElement) return el.parentElement;
-          const rn = el.getRootNode && el.getRootNode();
-          return (rn && rn.host) || null;
-        };
-        let __lgRoomFrost = null;
-        let __lgFrostScope = __lgCPFrost(this);
-        for (let __i = 0; __i < 24 && __lgFrostScope; __i++) {
-          if (__lgFrostScope.classList && __lgFrostScope.classList.contains('lg-climate-room-host')) {
-            __lgRoomFrost = __lgFrostScope;
-            break;
-          }
-          __lgFrostScope = __lgCPFrost(__lgFrostScope);
-        }
-        if (this.classList.contains('lg-wheel-temp-open') && __lgRoomFrost) {
-          const __lgRR = __lgRoomFrost.getBoundingClientRect();
-          this.style.setProperty('--lg_temp_frost_top', `${__lgRR.top}px`);
-          this.style.setProperty('--lg_temp_frost_left', `${__lgRR.left}px`);
-          this.style.setProperty('--lg_temp_frost_w', `${__lgRR.width}px`);
-          this.style.setProperty('--lg_temp_frost_h', `${__lgRR.height}px`);
-        } else {
-          this.style.removeProperty('--lg_temp_frost_top');
-          this.style.removeProperty('--lg_temp_frost_left');
-          this.style.removeProperty('--lg_temp_frost_w');
-          this.style.removeProperty('--lg_temp_frost_h');
-        }
+        /* ADR 0030: no TEMP frost — no room-bounds measurement here. Any
+           --lg_temp_frost_* left by an older build is dropped so #temp_frost
+           can never re-expand from a stale inline value. */
+        this.style.removeProperty('--lg_temp_frost_top');
+        this.style.removeProperty('--lg_temp_frost_left');
+        this.style.removeProperty('--lg_temp_frost_w');
+        this.style.removeProperty('--lg_temp_frost_h');
+        {{ lg_climate_power_load_resolve_js('this', "(entity && entity.state) || 'off'") }}
         return `
       :host {
         position: relative !important;
@@ -94,9 +181,16 @@
            filter:drop-shadow follows rendered alpha (not the box edges), so it
            correctly hugs the ring shape instead of a square bounding box, and
            :host's own overflow:visible lets it paint past the host bounds.
-           MUST be cleared while TEMP is open — see :host(.lg-wheel-temp-open)
-           below (analyzer.mdc §6 frost containing-block contract). */
-        filter: var(--lg_shadow_climate_wheel_host_float);
+           Cleared while TEMP is open (ADR 0030): the annulus is fading out, so
+           its float shadow must fade with it instead of outliving the segments
+           — hence the morph transition on filter here. */
+        filter: ${this.classList.contains('lg-power-unavailable')
+          ? 'var(--lg_filter_climate_node_disabled)'
+          : 'var(--lg_shadow_climate_wheel_host_float)'};
+        opacity: ${this.classList.contains('lg-power-unavailable')
+          ? 'var(--lg_opacity_climate_node_disabled)'
+          : '1'};
+        transition: var(--lg_transition_climate_radial_morph);
         margin: 0 auto !important;
         z-index: 1;
         --lg_wheel_inner_pct: var(--lg_size_climate_wheel_inner_pct);
@@ -125,14 +219,68 @@
         overflow: visible !important;
       }
       #name, #icon, #label, #state { display: none !important; }
+      /* Z=20 recessed Radial Track (ADR 0034) — groove visible in segment
+         gutters; below segment hosts (z:2) and below #trigger / timer chrome. */
+      #radial_track {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: var(--lg_z_climate_wheel_track) !important;
+        pointer-events: none !important;
+        display: block !important;
+        overflow: visible !important;
+        opacity: 1;
+        transition: var(--lg_transition_climate_radial_morph);
+      }
+      :host(.lg-wheel-temp-open) #radial_track {
+        opacity: var(--lg_opacity_climate_radial_morph_exit);
+      }
+      /* Hide recessed track while TIMER_CONFIG / TIMER_MANAGE own the
+         annulus — otherwise the groove reads as a broken ring behind
+         the picker (segments already hidden). */
+      :host(.lg-timer-radial-open) #radial_track,
+      :host([data-lg-timer-radial="1"]) #radial_track,
+      :host(.lg-timer-manage-open) #radial_track,
+      :host([data-lg-timer-manage="1"]) #radial_track {
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+      #radial_track .lg-radial-track {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 50% !important;
+        box-sizing: border-box !important;
+        background: var(--lg_color_climate_wheel_track) !important;
+        box-shadow: var(--lg_shadow_climate_wheel_track_groove) !important;
+        -webkit-mask-image: radial-gradient(
+          closest-side,
+          transparent var(--lg_wheel_inner_pct),
+          #000 calc(var(--lg_wheel_inner_pct) + 0.05%),
+          #000 var(--lg_wheel_outer_pct),
+          transparent calc(var(--lg_wheel_outer_pct) + 0.05%)
+        );
+        mask-image: radial-gradient(
+          closest-side,
+          transparent var(--lg_wheel_inner_pct),
+          #000 calc(var(--lg_wheel_inner_pct) + 0.05%),
+          #000 var(--lg_wheel_outer_pct),
+          transparent calc(var(--lg_wheel_outer_pct) + 0.05%)
+        );
+      }
       #trigger {
         position: absolute !important;
         left: 50% !important;
         top: 50% !important;
         transform: translate(-50%, -50%) !important;
         z-index: 3 !important;
+        display: var(--lg_fsm_trigger_display, block) !important;
       }
-      /* Segment wrappers fill the wheel so annular hosts share one ring. */
+      /* Segment wrappers fill the wheel so annular hosts share one ring.
+         Idle opacity is stated here so the TEMP morph (ADR 0030) has an
+         explicit from-value to animate out of and back into. */
       #quiet_btn, #fan_entry, #turbo_btn, #timer_slot, #swing_h, #swing_v, #mode_entry,
       #back_fan, #fan_auto, #fan_low, #fan_med, #fan_high,
       #back_mode, #mode_cool, #mode_heat, #mode_dry, #mode_fan_only, #mode_auto {
@@ -142,6 +290,8 @@
         height: 100% !important;
         margin: 0 !important;
         box-sizing: border-box !important;
+        opacity: 1;
+        transition: var(--lg_transition_climate_radial_morph);
       }
       :host(.lg-wheel-temp-open) #trigger,
       :host:has(.lg-ring-trigger-expanded) #trigger {
@@ -159,12 +309,15 @@
       :host(.lg-wheel-layer-main) #turbo_btn,
       :host(.lg-wheel-layer-main) #timer_slot,
       :host(.lg-wheel-layer-main) #mode_entry {
-        display: block !important;
-        pointer-events: auto !important;
+        /* --lg_fsm_seg_display set inline by sticky_set — survives classList wipe */
+        display: var(--lg_fsm_seg_display, block) !important;
+        pointer-events: var(--lg_fsm_seg_pe, auto) !important;
+        opacity: var(--lg_fsm_seg_opacity, 1);
       }
       :host(.lg-wheel-layer-main.lg-wheel-swing-h-on) #swing_h {
-        display: block !important;
-        pointer-events: auto !important;
+        display: var(--lg_fsm_seg_display, block) !important;
+        pointer-events: var(--lg_fsm_seg_pe, auto) !important;
+        opacity: var(--lg_fsm_seg_opacity, 1);
       }
       :host(.lg-wheel-layer-fan) #back_fan,
       :host(.lg-wheel-layer-fan) #fan_auto,
@@ -185,19 +338,26 @@
       }
       /* TEMP focus gated by the single lg-wheel-temp-open flag (set
          synchronously by climate_setpoint_trigger's tap_action).
-         Segments MUST NOT display — not merely dimmed.
-         Snap frost (visibility) — no opacity fade over backdrop-filter.
-         Wrapper is also position:fixed so it is not trapped by wheel layout. */
-      /* ADR 0029: container-scoped TEMP frost (room bounds via --lg_temp_frost_*).
-         Still position:fixed to escape filter containing-block (ADR 0018 recipe).
-         Idle: collapse to 0×0 (overflow contract). */
+         ADR 0030: EDIT_TEMP is a frost-free in-place morph — the radial menu
+         fades out inside the same footprint while the arc scales in
+         (--lg_ring_expand_t on climate_setpoint_trigger). No overlay, no
+         sibling-hide, so the wheel float shadow is the only thing that has to
+         leave with the segments. */
       :host(.lg-wheel-temp-open) {
         filter: none !important;
       }
-      #temp_frost {
+      /* ADR 0030: #temp_frost is permanently inert — 0×0, hidden, untappable,
+         and it NEVER expands on .lg-wheel-temp-open. The custom_field stays
+         mounted only so the wheel's field set is unchanged; abort is Cancel (X)
+         (climate_room_off_button), never a frost tap. Timer frost below is
+         untouched and keeps its full-viewport ADR 0018 placement. */
+      #temp_frost,
+      :host(.lg-wheel-temp-open) #temp_frost {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
+        right: auto !important;
+        bottom: auto !important;
         width: 0 !important;
         height: 0 !important;
         max-width: 0 !important;
@@ -210,33 +370,43 @@
         pointer-events: none !important;
         transition: none !important;
       }
-      :host(.lg-wheel-temp-open) #temp_frost {
-        top: var(--lg_temp_frost_top, 0) !important;
-        left: var(--lg_temp_frost_left, 0) !important;
-        width: var(--lg_temp_frost_w, 100%) !important;
-        height: var(--lg_temp_frost_h, 100%) !important;
-        max-width: none !important;
-        max-height: none !important;
-        right: auto !important;
-        bottom: auto !important;
-        overflow: hidden !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        pointer-events: auto !important;
-        transition: none !important;
-      }
-      /* Arming window: frost paints (blur samples) but cannot steal the
-         same-gesture pointer that opened TEMP — pairs with JS debounce. */
-      :host(.lg-wheel-temp-open.lg-wheel-temp-arming) #temp_frost,
-      :host(.lg-wheel-temp-open.lg-wheel-temp-arming) #temp_frost > * {
-        pointer-events: none !important;
-      }
+      #temp_frost > *,
       :host(.lg-wheel-temp-open) #temp_frost > * {
-        pointer-events: auto !important;
-      }
-      :host(.lg-wheel-temp-open.lg-wheel-temp-arming) #temp_frost > * {
         pointer-events: none !important;
       }
+      /* Idle: opacity morph ready (ADR 0031). Stagger applies on TEMP exit. */
+      #quiet_btn,
+      #fan_entry,
+      #turbo_btn,
+      #timer_slot,
+      #swing_h,
+      #swing_v,
+      #mode_entry,
+      #back_fan,
+      #fan_auto,
+      #fan_low,
+      #fan_med,
+      #fan_high,
+      #back_mode,
+      #mode_cool,
+      #mode_heat,
+      #mode_dry,
+      #mode_fan_only,
+      #mode_auto {
+        transition: var(--lg_transition_climate_radial_morph);
+        transition-delay: 0s;
+      }
+      /* Radial menu exit — opacity morph, NOT display:none: a display flip
+         cannot animate, and the segments must read as dissolving into the arc.
+         Opacity only, no scale: every segment paints its glass with
+         backdrop-filter on #liquid_clip, and a transform (or filter) on this
+         wrapper turns it into a backdrop root, flattening that blur at full
+         opacity — a visible pop on the first frame. Segment geometry (rotate +
+         annular mask/clip radii) is also per-segment, so a wrapper scale would
+         drift the wedges off the shared ring SoT. Hit-testing is stopped by the
+         shield below, not here: each segment's own #card declares
+         pointer-events:auto !important inside its shadow tree.
+         Phase 2: stagger exit via transition-delay on wrappers (not clip hosts). */
       :host(.lg-wheel-temp-open) #quiet_btn,
       :host(.lg-wheel-temp-open) #fan_entry,
       :host(.lg-wheel-temp-open) #turbo_btn,
@@ -255,90 +425,63 @@
       :host(.lg-wheel-temp-open) #mode_dry,
       :host(.lg-wheel-temp-open) #mode_fan_only,
       :host(.lg-wheel-temp-open) #mode_auto {
-        display: none !important;
+        opacity: var(--lg_opacity_climate_radial_morph_exit) !important;
         pointer-events: none !important;
-        opacity: 0 !important;
+        transition: var(--lg_transition_climate_radial_morph);
       }
-      /* ADR 0025 — timer radial open: frost + hide segments; mutex with TEMP. */
-      :host(.lg-timer-radial-open) {
-        filter: none !important;
+      /* ADR 0032 (B1): stagger groups follow the new main-layer seg_index
+         order (timer=0, fan_entry=1, turbo=2, quiet=3) so the exit ripple
+         still reads left-to-right / index-ordered instead of drifting out
+         of sync with the swapped Quiet/Timer positions. */
+      :host(.lg-wheel-temp-open) #timer_slot,
+      :host(.lg-wheel-temp-open) #back_fan,
+      :host(.lg-wheel-temp-open) #back_mode {
+        transition-delay: calc(0 * var(--lg_climate_radial_stagger_step));
       }
-      #timer_frost {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        pointer-events: none !important;
-        visibility: hidden !important;
-        z-index: 40 !important;
-        transition: none !important;
+      :host(.lg-wheel-temp-open) #fan_entry,
+      :host(.lg-wheel-temp-open) #fan_auto,
+      :host(.lg-wheel-temp-open) #mode_cool {
+        transition-delay: calc(1 * var(--lg_climate_radial_stagger_step));
       }
-      :host(.lg-timer-radial-open) #timer_frost {
-        width: 100vw !important;
-        height: 100vh !important;
-        overflow: visible !important;
-        pointer-events: auto !important;
-        visibility: visible !important;
+      :host(.lg-wheel-temp-open) #turbo_btn,
+      :host(.lg-wheel-temp-open) #fan_low,
+      :host(.lg-wheel-temp-open) #mode_heat {
+        transition-delay: calc(2 * var(--lg_climate_radial_stagger_step));
       }
-      :host(.lg-timer-radial-open.lg-timer-radial-arming) #timer_frost,
-      :host(.lg-timer-radial-open.lg-timer-radial-arming) #timer_frost > * {
-        pointer-events: none !important;
+      :host(.lg-wheel-temp-open) #quiet_btn,
+      :host(.lg-wheel-temp-open) #fan_med,
+      :host(.lg-wheel-temp-open) #mode_dry {
+        transition-delay: calc(3 * var(--lg_climate_radial_stagger_step));
       }
-      :host(.lg-timer-radial-open) #timer_frost > * {
-        pointer-events: auto !important;
+      :host(.lg-wheel-temp-open) #swing_h,
+      :host(.lg-wheel-temp-open) #fan_high,
+      :host(.lg-wheel-temp-open) #mode_fan_only {
+        transition-delay: calc(4 * var(--lg_climate_radial_stagger_step));
       }
-      #timer_radial {
-        position: absolute !important;
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: var(--lg_size_climate_timer_radial_w) !important;
-        height: var(--lg_size_climate_timer_radial_w) !important;
-        z-index: 47 !important;
-        display: none !important;
-        pointer-events: none !important;
+      :host(.lg-wheel-temp-open) #swing_v,
+      :host(.lg-wheel-temp-open) #mode_entry,
+      :host(.lg-wheel-temp-open) #mode_auto {
+        transition-delay: calc(5 * var(--lg_climate_radial_stagger_step));
       }
-      :host(.lg-timer-radial-open) #timer_radial {
-        display: block !important;
-        pointer-events: auto !important;
+      /* Transparent hit shield over the fading annulus (replaces what
+         display:none used to do for hit-testing). It sits above the segment
+         hosts (their :host z-index is 2) and below #trigger / #timer_radial
+         (z 46/47), so mid-commit taps and arc drag still land; the wheel's own
+         tap_action is none, so swallowed taps are inert. */
+      :host(.lg-wheel-temp-open) #container::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        background: transparent;
+        pointer-events: auto;
       }
-      @media (max-width: 48rem) {
-        #timer_radial {
-          width: var(--lg_size_climate_timer_radial_w_phone) !important;
-          height: var(--lg_size_climate_timer_radial_w_phone) !important;
-        }
-      }
-      :host(.lg-timer-radial-open) #quiet_btn,
-      :host(.lg-timer-radial-open) #fan_entry,
-      :host(.lg-timer-radial-open) #turbo_btn,
-      :host(.lg-timer-radial-open) #timer_slot,
-      :host(.lg-timer-radial-open) #swing_h,
-      :host(.lg-timer-radial-open) #swing_v,
-      :host(.lg-timer-radial-open) #mode_entry,
-      :host(.lg-timer-radial-open) #back_fan,
-      :host(.lg-timer-radial-open) #fan_auto,
-      :host(.lg-timer-radial-open) #fan_low,
-      :host(.lg-timer-radial-open) #fan_med,
-      :host(.lg-timer-radial-open) #fan_high,
-      :host(.lg-timer-radial-open) #back_mode,
-      :host(.lg-timer-radial-open) #mode_cool,
-      :host(.lg-timer-radial-open) #mode_heat,
-      :host(.lg-timer-radial-open) #mode_dry,
-      :host(.lg-timer-radial-open) #mode_fan_only,
-      :host(.lg-timer-radial-open) #mode_auto,
-      :host(.lg-timer-radial-open) #trigger {
-        display: none !important;
-        pointer-events: none !important;
-        opacity: 0 !important;
-      }
-      :host(.lg-wheel-timer-active) #timer_slot #liquid_clip {
-        box-shadow: var(--lg_shadow_climate_wheel_seg), var(--lg_glow_climate_timer_seg_on) !important;
-        filter: var(--lg_filter_climate_wheel_seg_on);
-      }
+      {{ lg_climate_wheel_timer_fsm_extra_styles() }}
         `;
       ]]]
     custom_fields:
+      radial_track: >
+        <div class="lg-radial-track" aria-hidden="true"></div>
       temp_frost:
         card:
           type: custom:button-card
@@ -358,18 +501,39 @@
             save_duration_script_id: "[[[ return (variables && variables.save_duration_script_id) || '' ]]]"
             hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
             minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+      timer_manage:
+        card:
+          type: custom:button-card
+          template: climate_timer_manage_panel
+          entity: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
+          variables:
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            pause_clock_script_id: "[[[ return (variables && variables.pause_clock_script_id) || '' ]]]"
+            remove_script_id: "[[[ return (variables && variables.remove_script_id) || '' ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
+            hours_entity_id: "[[[ return (variables && variables.hours_entity_id) || '' ]]]"
+            minutes_entity_id: "[[[ return (variables && variables.minutes_entity_id) || '' ]]]"
+            mode_entity_id: "[[[ return (variables && variables.mode_entity_id) || '' ]]]"
+      timer_drain: >
+        <svg class="lg-timer-drain__svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <g class="lg-timer-drain-ticks"></g>
+        </svg>
       trigger:
         card:
           type: custom:button-card
           template: climate_setpoint_trigger
           entity: "[[[ return (entity && entity.entity_id) || '' ]]]"
+          variables:
+            timer_entity_id: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
+            armed_entity_id: "[[[ return (variables && variables.armed_entity_id) || '' ]]]"
+            clock_entity_id: "[[[ return (variables && variables.clock_entity_id) || '' ]]]"
       quiet_btn:
         card:
           type: custom:button-card
           template: climate_wheel_quiet_btn
           entity: "[[[ return (variables && variables.quiet_entity_id) || '' ]]]"
           variables:
-            seg_index: 0
+            seg_index: 3
             seg_total: 6
             seg_slot: quiet
       fan_entry:
@@ -399,7 +563,7 @@
           template: climate_wheel_timer_btn
           entity: "[[[ return (variables && variables.timer_entity_id) || '' ]]]"
           variables:
-            seg_index: 3
+            seg_index: 0
             seg_total: 6
             seg_slot: timer
             popup_hash: "[[[ return (variables && variables.popup_hash) || '' ]]]"

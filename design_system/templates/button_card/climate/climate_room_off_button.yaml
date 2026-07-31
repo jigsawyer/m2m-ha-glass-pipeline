@@ -1,47 +1,8 @@
   climate_room_off_button:
     show_name: false
-    show_icon: true
+    show_icon: false
     show_state: false
     show_ripple: false
-    icon: |
-      [[[
-        const composedParent = (el) => {
-          if (!el) return null;
-          if (el.parentElement) return el.parentElement;
-          const rn = el.getRootNode && el.getRootNode();
-          return (rn && rn.host) || null;
-        };
-        const deepFind = (root, cls, depth) => {
-          if (!root || depth > 12) return null;
-          if (root.querySelector) {
-            const hit = root.querySelector('.' + cls);
-            if (hit) return hit;
-          }
-          const kids = root.querySelectorAll ? root.querySelectorAll('*') : [];
-          for (const el of kids) {
-            if (el.shadowRoot) {
-              const found = deepFind(el.shadowRoot, cls, depth + 1);
-              if (found) return found;
-            }
-          }
-          return null;
-        };
-        let roomHost = null;
-        let scope = composedParent(this);
-        for (let i = 0; i < 24 && scope; i++) {
-          if (scope.classList && scope.classList.contains('lg-climate-room-host')) {
-            roomHost = scope;
-            break;
-          }
-          scope = composedParent(scope);
-        }
-        const wheel = roomHost
-          ? (deepFind(roomHost.shadowRoot, 'lg-wheel-host', 0)
-            || (roomHost.shadowRoot && roomHost.shadowRoot.querySelector('.lg-wheel-host')))
-          : null;
-        if (wheel && wheel.classList.contains('lg-wheel-temp-open')) return 'mdi:close';
-        return 'mdi:power';
-      ]]]
     variables:
       ha_entity_ids: []
     tap_action:
@@ -83,6 +44,20 @@
             ? (deepFind(roomHost.shadowRoot, 'lg-wheel-host', 0)
               || (roomHost.shadowRoot && roomHost.shadowRoot.querySelector('.lg-wheel-host')))
             : null;
+          /* ADR 0035 — complete lock during INIT/SHUTDOWN / unavailable. */
+          if (wheelHost && (
+            wheelHost.classList.contains('lg-power-load')
+            || (wheelHost.getAttribute && wheelHost.getAttribute('data-lg-power-load'))
+            || wheelHost.classList.contains('lg-power-unavailable')
+          )) return;
+          const __lgIdsEarly = variables.ha_entity_ids;
+          const __lgEidEarly = (Array.isArray(__lgIdsEarly) && __lgIdsEarly[0]) || '';
+          window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+          if (__lgEidEarly && window.__lgKlimatPowerLoadByEntity[__lgEidEarly]
+              && window.__lgKlimatPowerLoadByEntity[__lgEidEarly].phase) return;
+          if (__lgEidEarly && states[__lgEidEarly]
+              && (states[__lgEidEarly].state === 'unavailable'
+                || states[__lgEidEarly].state === 'unknown')) return;
           const editTemp = !!(wheelHost && wheelHost.classList.contains('lg-wheel-temp-open'));
           if (editTemp) {
             /* ADR 0029: Cancel (X) aborts EDIT_TEMP — revert pending, no set_temperature. */
@@ -135,18 +110,154 @@
             }
             return;
           }
-          /* DEFAULT_ON: room tap-off (ADR 0016). */
+          /* ADR 0032 (A1) — Cancel (X) aborts TIMER_CONFIG (same revert as
+             climate_timer_frost.yaml: clear pending/knob/label, remove the
+             radial-open classes, drop focus). Never calls the remove script —
+             an abandoned TIMER_CONFIG never leaves a phantom timer because
+             nothing was committed yet. */
+          const timerRadialOpen = !!(wheelHost && (
+            wheelHost.classList.contains('lg-timer-radial-open')
+            || (wheelHost.getAttribute && wheelHost.getAttribute('data-lg-timer-radial') === '1')
+          ));
+          if (timerRadialOpen) {
+            {{ lg_climate_timer_radial_sticky_set_js('wheelHost', 'false') }}
+            wheelHost.__lgTimerOpenedAt = 0;
+            if (wheelHost.__lgTimerArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerArmTimer); } catch (e) {}
+              wheelHost.__lgTimerArmTimer = 0;
+            }
+            {{ lg_climate_temp_focus_set_js('false') }}
+            {{ lg_climate_blur_kick_js() }}
+            const radial = wheelHost.shadowRoot && wheelHost.shadowRoot.querySelector('.lg-timer-radial-host');
+            if (radial) {
+              radial.__lgTimerPending = undefined;
+              radial.__lgTimerLastProgress = 0;
+              radial.classList.remove('lg-timer-dragging');
+              radial.style.setProperty('--lg_timer_t', String(5 / 720));
+              radial.style.setProperty('--lg_timer_knob_x', '50%');
+              radial.style.setProperty('--lg_timer_knob_y', '6%');
+              radial.style.setProperty('--lg_timer_label', '"5 хв"');
+              radial.__lgTimerLastProgress = 5 / 720;
+            }
+            return;
+          }
+          /* ADR 0032 — Cancel (X) in TIMER_MANAGE closes the manage surface
+             only; the running/paused timer keeps going (Stop is the only way
+             to remove it, from inside climate_timer_manage_panel). */
+          const timerManageOpen = !!(wheelHost && (
+            wheelHost.classList.contains('lg-timer-manage-open')
+            || (wheelHost.getAttribute && wheelHost.getAttribute('data-lg-timer-manage') === '1')
+          ));
+          if (timerManageOpen) {
+            {{ lg_climate_timer_manage_sticky_set_js('wheelHost', 'false') }}
+            wheelHost.__lgTimerManageOpenedAt = 0;
+            if (wheelHost.__lgTimerManageArmTimer) {
+              try { clearTimeout(wheelHost.__lgTimerManageArmTimer); } catch (e) {}
+              wheelHost.__lgTimerManageArmTimer = 0;
+            }
+            {{ lg_climate_temp_focus_set_js('false') }}
+            {{ lg_climate_blur_kick_js() }}
+            return;
+          }
+          /* DEFAULT_ON: room tap-off (ADR 0016 / 0035 SHUTDOWN_LOAD).
+             IDLE_OFF: corner Power is inert (Hub owns turn_on). */
           const ids = variables.ha_entity_ids;
+          const primaryId = (Array.isArray(ids) && ids[0]) || '';
+          const climateState = (primaryId && states[primaryId]) ? states[primaryId].state : '';
+          if (!climateState || climateState === 'off') return;
           if (Array.isArray(ids) && ids.length) {
+            let removeScriptId = (variables && variables.remove_script_id) || '';
+            if (!removeScriptId && wheelHost) {
+              const cfg = wheelHost._config || wheelHost.config || {};
+              const vars = cfg.variables || {};
+              removeScriptId = vars.remove_script_id || '';
+            }
+            const timerActive = !!(wheelHost && wheelHost.classList.contains('lg-wheel-timer-active'));
+            if (removeScriptId && timerActive) {
+              try {
+                hass.callService('script', 'turn_on', { entity_id: removeScriptId });
+              } catch (e) {}
+            }
+            if (wheelHost) {
+              {{ lg_climate_timer_sticky_clear_js('wheelHost') }}
+              wheelHost.classList.remove(
+                'lg-timer-manage-open', 'lg-timer-manage-arming',
+                'lg-timer-radial-open', 'lg-timer-radial-arming',
+                'lg-wheel-timer-active'
+              );
+              {{ lg_climate_power_load_sticky_set_js('wheelHost', "'shutdown'", "'active_on'") }}
+            }
             try { hass.callService('climate', 'turn_off', { entity_id: ids }); } catch (e) {}
           }
         ]]]
     hold_action:
       action: none
     extra_styles: |
+      [[[
+        this.classList.add('lg-room-off-host');
+        const composedParent = (el) => {
+          if (!el) return null;
+          if (el.parentElement) return el.parentElement;
+          const rn = el.getRootNode && el.getRootNode();
+          return (rn && rn.host) || null;
+        };
+        const deepFind = (root, cls, depth) => {
+          if (!root || depth > 12) return null;
+          if (root.querySelector) {
+            const hit = root.querySelector('.' + cls);
+            if (hit) return hit;
+          }
+          const kids = root.querySelectorAll ? root.querySelectorAll('*') : [];
+          for (const el of kids) {
+            if (el.shadowRoot) {
+              const found = deepFind(el.shadowRoot, cls, depth + 1);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        let roomHost = null;
+        let scope = composedParent(this);
+        for (let i = 0; i < 24 && scope; i++) {
+          if (scope.classList && scope.classList.contains('lg-climate-room-host')) {
+            roomHost = scope;
+            break;
+          }
+          scope = composedParent(scope);
+        }
+        const wheelHost = roomHost
+          ? (deepFind(roomHost.shadowRoot, 'lg-wheel-host', 0)
+            || (roomHost.shadowRoot && roomHost.shadowRoot.querySelector('.lg-wheel-host')))
+          : null;
+        const ids = variables.ha_entity_ids;
+        const primaryId = (Array.isArray(ids) && ids[0]) || '';
+        const climateState = (primaryId && states[primaryId]) ? states[primaryId].state : '';
+        window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
+        const powerRec = (primaryId && window.__lgKlimatPowerLoadByEntity[primaryId]) || null;
+        const powerLoad = !!(wheelHost && (
+          wheelHost.classList.contains('lg-power-load')
+          || (wheelHost.getAttribute && wheelHost.getAttribute('data-lg-power-load'))
+          || (powerRec && powerRec.phase)
+        ));
+        const focusOpen = !!(this.classList.contains('lg-temp-focus')
+          || this.classList.contains('lg-timer-surface-open'));
+        const idleOff = climateState === 'off' && !powerLoad && !focusOpen;
+        const unavail = climateState === 'unavailable' || climateState === 'unknown';
+        const lockChrome = powerLoad || unavail || idleOff;
+        return `
       {{ lg_climate_room_off_layout_extra_styles() }}
+      #card {
+        opacity: ${lockChrome ? 'var(--lg_opacity_climate_node_disabled)' : '1'};
+        filter: ${lockChrome ? 'var(--lg_filter_climate_node_disabled)' : 'none'};
+        pointer-events: ${(powerLoad || unavail || (idleOff && !focusOpen)) ? 'none' : 'auto'} !important;
+        transition: var(--lg_transition_climate_node_state);
+      }
+        `;
+      ]]]
     custom_fields:
+      corner_glyph: |
+        [[[
+          return `<ha-icon class="lg-room-off-glyph lg-room-off-glyph--power" icon="mdi:power"></ha-icon><ha-icon class="lg-room-off-glyph lg-room-off-glyph--close" icon="mdi:close"></ha-icon>`;
+        ]]]
       liquid_clip: >
         {{ lg_liquid_clip_shell_html() }}
-
-  # --- Laundry (ADR 0026) — rework glass UI (spec laundry_glass_rework_ui) ---

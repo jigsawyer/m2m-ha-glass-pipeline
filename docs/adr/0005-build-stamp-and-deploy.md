@@ -1,3 +1,7 @@
+Title: Deterministic Build, Build Stamp, and Single Deploy Path
+Date: Unknown
+Status: Accepted
+
 # 0005. Deterministic Build, Build Stamp, and Single Deploy Path
 
 ## Context

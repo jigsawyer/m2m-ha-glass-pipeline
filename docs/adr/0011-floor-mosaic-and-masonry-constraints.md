@@ -1,3 +1,7 @@
+Title: Floor Mosaic Composition and layout-card Constraints
+Date: Unknown
+Status: Accepted
+
 # 0011. Floor Mosaic Composition and layout-card Constraints
 
 ## Context

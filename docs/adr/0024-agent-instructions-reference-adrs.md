@@ -1,3 +1,7 @@
+Title: Agent Instructions Are Thin; Constraints Live in `docs/adr/`
+Date: Unknown
+Status: Accepted
+
 # 0024. Agent Instructions Are Thin; Constraints Live in `docs/adr/`
 
 ## Context

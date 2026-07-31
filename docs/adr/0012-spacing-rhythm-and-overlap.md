@@ -1,3 +1,7 @@
+Title: Spacing Rhythm, Caps, and No Overlap
+Date: Unknown
+Status: Accepted
+
 # 0012. Spacing Rhythm, Caps, and No Overlap
 
 ## Context

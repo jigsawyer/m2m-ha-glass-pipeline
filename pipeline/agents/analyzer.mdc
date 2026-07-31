@@ -61,6 +61,7 @@ Keep identifiers, menu paths, HA/UI labels, token names, and file paths in origi
 | Dual arc dials as Klimat SoT; fixed-12 sparse wheel; non-HA mode values; non-annular tiles | 0019 |
 | Bottom-anchored popup; dark chrome panel; `performance_mode: performance`; `floor_container`/masonry nested in a popup | 0020 |
 | Horizontal gradient timer bars; Bubble/native/`slider-button-card` as timer picker SoT; on-drag timer commit; hiding wheel timer while armed | 0021, 0025 |
+| Klimat power ON/OFF without INIT_LOAD/SHUTDOWN_LOAD hard loader; optimistic ACTIVE chrome before HA confirm on power; interrupting load; rotate/expand load animations; «Немає зв'язку» as Klimat offline SoT | 0035 |
 
 ## 5. Constraint Flags
 

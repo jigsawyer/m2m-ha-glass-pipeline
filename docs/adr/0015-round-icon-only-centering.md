@@ -1,3 +1,7 @@
+Title: Round Icon-Only Buttons — Icon Centered H+V (GLOBAL)
+Date: Unknown
+Status: Accepted
+
 # 0015. Round Icon-Only Buttons — Icon Centered H+V (GLOBAL)
 
 ## Context

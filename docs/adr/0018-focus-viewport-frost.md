@@ -1,3 +1,7 @@
+Title: Focus Viewport Frost — Global Recipe
+Date: Unknown
+Status: Accepted
+
 # 0018. Focus Viewport Frost — Global Recipe
 
 ## Context
