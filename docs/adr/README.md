@@ -53,4 +53,5 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0041](0041-agentic-fallback-orchestrator.md) | Agentic Fallback Orchestrator on PR E2E Failure | 2026-07-31 | Superseded by ADR-0042 |
 | [0042](0042-agentic-inline-json-repair-loop.md) | Agentic Inline JSON Repair Loop on PR E2E Failure | 2026-07-31 | Superseded by ADR-0043 |
 | [0043](0043-agentic-fallback-orchestration.md) | Agentic Fallback Orchestration in CI/CD | 2026-07-31 | Accepted |
-| [0044](0044-klimat-state-polish.md) | Klimat State Polish — Ambient Conic Timer + Optimistic Entity FSM | 2026-07-31 | Accepted |
+| [0044](0044-klimat-state-polish.md) | Klimat State Polish — Ambient Conic Timer + Optimistic Entity FSM | 2026-07-31 | Accepted (§1 picker/leading-edge amended by ADR-0045) |
+| [0045](0045-klimat-conic-chrome-correction.md) | Klimat Conic Chrome Correction — 12 o'clock Origin, Mode Hue, Picker Mechanism Frozen | 2026-08-01 | Accepted |

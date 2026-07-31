@@ -114,14 +114,23 @@
             g.appendChild(line);
           }
         };
-        const applyLeadingEdge = (host, t) => {
+        const applyCursor = (host, t) => {
           try {
             const root = host && host.shadowRoot;
-            const edge = root && root.querySelector('#timer_ring .lg-timer-conic-edge');
-            if (!edge) return;
+            const cur = root && root.querySelector('#timer_ring .lg-timer-cursor');
+            if (!cur) return;
+            const geo = readTickGeo(host);
             const tt = Math.max(0, Math.min(1, Number(t) || 0));
-            edge.style.setProperty('--lg_timer_edge_deg', `${tt * 360}deg`);
-            edge.style.opacity = tt > 0.001 ? '1' : '0';
+            const theta = tt * Math.PI * 2;
+            const cos = Math.cos(theta);
+            const sin = Math.sin(theta);
+            const rOut = geo.outerR + 0.35;
+            const rIn = geo.outerR - geo.cursorLen;
+            cur.setAttribute('x1', String(r4(CX + rIn * sin)));
+            cur.setAttribute('y1', String(r4(CY - rIn * cos)));
+            cur.setAttribute('x2', String(r4(CX + rOut * sin)));
+            cur.setAttribute('y2', String(r4(CY - rOut * cos)));
+            cur.setAttribute('stroke-width', String(geo.cursorThick));
           } catch (e) {}
         };
         const applyTickProgress = (host, t) => {
@@ -130,17 +139,19 @@
             const g = root && root.querySelector('#timer_ring .lg-timer-ticks');
             if (!g) return;
             ensureTicks(g, host);
-            /* ADR 0044 — static tick track only; progress = Ambient Conic. */
             const geo = readTickGeo(host);
+            const frac = Math.max(0, Math.min(1, Number(t) || 0)) * TICK_N;
             const lines = g.querySelectorAll('.lg-timer-tick');
             for (let i = 0; i < lines.length; i += 1) {
-              lines[i].style.opacity = String(geo.opInactive);
+              let op = geo.opInactive;
+              if ((i + 1) <= frac) op = geo.opActive;
+              else if (i < frac) {
+                const u = frac - i;
+                op = geo.opInactive + (geo.opActive - geo.opInactive) * u;
+              }
+              lines[i].style.opacity = String(op);
             }
-            const tt = Math.max(0, Math.min(1, Number(t) || 0));
-            host.style.setProperty('--lg_timer_t', String(tt));
-            const fill = root.querySelector('#timer_ring .lg-timer-conic-fill');
-            if (fill) fill.style.setProperty('--lg_timer_t', String(tt));
-            applyLeadingEdge(host, tt);
+            applyCursor(host, t);
           } catch (e) {}
         };
         const seedFromVars = () => {
@@ -215,8 +226,8 @@
               }
             } catch (e) {}
             if (fromDrag && prevMins !== null && mins !== prevMins) {
-              const step = card.__lgTimerStepMin || stepMin || 15;
-              const crossed = Math.floor(prevMins / step) !== Math.floor(mins / step);
+              const stepNow = card.__lgTimerStepMin || stepMin;
+              const crossed = Math.floor(prevMins / stepNow) !== Math.floor(mins / stepNow);
               if (crossed && typeof navigator !== 'undefined' && navigator.vibrate) {
                 try { navigator.vibrate(8); } catch (e) {}
               }
@@ -343,60 +354,15 @@
         stroke: var(--lg_color_climate_timer_tick);
         stroke-linecap: round;
         fill: none;
+        transition: var(--lg_transition_climate_timer_tick);
         pointer-events: none !important;
-      }
-      #timer_ring .lg-timer-conic-fill {
-        position: absolute !important;
-        inset: 0 !important;
-        border-radius: 50% !important;
-        pointer-events: none !important;
-        z-index: 1 !important;
-        background: conic-gradient(
-          from -90deg,
-          var(--lg_color_climate_timer_conic_fill) 0 calc(var(--lg_timer_t, 0) * 360deg),
-          transparent calc(var(--lg_timer_t, 0) * 360deg) 360deg
-        );
-        -webkit-mask-image: radial-gradient(
-          farthest-side,
-          transparent calc(100% - var(--lg_size_climate_timer_conic_ring_pct)),
-          #000 calc(100% - var(--lg_size_climate_timer_conic_ring_pct) + 0.5%),
-          #000 100%
-        );
-        mask-image: radial-gradient(
-          farthest-side,
-          transparent calc(100% - var(--lg_size_climate_timer_conic_ring_pct)),
-          #000 calc(100% - var(--lg_size_climate_timer_conic_ring_pct) + 0.5%),
-          #000 100%
-        );
-        filter: drop-shadow(0 0 0.35rem var(--lg_color_climate_timer_conic_glow));
-        transition: var(--lg_transition_climate_timer_state_morph);
-      }
-      #timer_ring .lg-timer-conic-edge {
-        position: absolute !important;
-        left: 50% !important;
-        top: 50% !important;
-        width: var(--lg_size_climate_timer_leading_edge) !important;
-        height: var(--lg_size_climate_timer_leading_edge) !important;
-        margin: 0 !important;
-        border-radius: 50% !important;
-        pointer-events: none !important;
-        z-index: 2 !important;
-        background: var(--lg_color_climate_timer_conic_fill);
-        box-shadow: 0 0 var(--lg_blur_climate_timer_leading_edge) var(--lg_color_climate_timer_conic_glow);
-        filter: blur(calc(var(--lg_blur_climate_timer_leading_edge) * 0.35));
-        transform: rotate(calc(var(--lg_timer_edge_deg, 0deg) - 90deg))
-          translateY(calc(-1 * (50% - var(--lg_size_climate_timer_conic_ring_pct) * 0.35)))
-          translate(-50%, -50%);
-        transform-origin: center center;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-      }
-      #timer_ring .lg-timer-radial__svg {
-        position: relative !important;
-        z-index: 3 !important;
       }
       #timer_ring .lg-timer-cursor {
-        display: none !important;
+        stroke: var(--lg_color_climate_timer_cursor);
+        stroke-linecap: round;
+        fill: none;
+        pointer-events: none !important;
+        filter: drop-shadow(0 0 0.15rem rgba(255, 72, 58, 0.45));
       }
       #timer_confirm {
         grid-area: 1 / 1 !important;
@@ -430,11 +396,10 @@
       ]]]
     custom_fields:
       timer_ring: >
-        <div class="lg-timer-conic-fill" aria-hidden="true"></div>
-        <div class="lg-timer-conic-edge" aria-hidden="true"></div>
         <svg class="lg-timer-radial__svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           <circle class="lg-timer-radial__hit" cx="50" cy="50" r="41" pathLength="100"></circle>
           <g class="lg-timer-ticks"></g>
+          <line class="lg-timer-cursor" x1="50" y1="35.5" x2="50" y2="41.35"></line>
         </svg>
       knob: ""
       timer_confirm:

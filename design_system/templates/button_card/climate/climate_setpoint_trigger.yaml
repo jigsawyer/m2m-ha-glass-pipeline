@@ -386,8 +386,19 @@
       .lg-setpoint-stack--optimistic-on {
         animation: lg_power_wait_pulse var(--lg_duration_climate_power_wait_pulse) ease-in-out infinite;
       }
-      .lg-setpoint-stack--optimistic-on .lg-setpoint-stack__target {
+      /* Optimistic target prints inline text, so the ::after var readout that
+         the ring drag owns must stay out of this path (no inline var writes). */
+      .lg-setpoint-stack__target--opt {
+        font-size: var(--lg_font_climate_setpoint_target_size) !important;
         opacity: var(--lg_opacity_climate_power_optimistic_target);
+      }
+      .lg-setpoint-stack__target--opt::after {
+        content: none !important;
+      }
+      @media (max-width: 48rem) {
+        .lg-setpoint-stack__target--opt {
+          font-size: var(--lg_font_climate_setpoint_target_size_phone) !important;
+        }
       }
       .lg-setpoint-stack--optimistic-off {
         filter: saturate(0.35);
@@ -592,8 +603,7 @@
             return `<div class="lg-setpoint-stack lg-setpoint-stack--wait"><div class="lg-setpoint-stack__toast">Зв'язок з Home Assistant втрачено. Перепідключення...</div></div>`;
           }
           if (__lgOptimisticOn) {
-            try { this.style.setProperty('--lg_climate_mid_target', `'${targetLabel}'`); } catch (e) {}
-            return `<div class="lg-setpoint-stack lg-setpoint-stack--optimistic-on"><div class="lg-setpoint-stack__target"></div><div class="lg-setpoint-stack__mode">${modeLabels.cool || 'Холод'}</div></div>`;
+            return `<div class="lg-setpoint-stack lg-setpoint-stack--optimistic-on"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__target lg-setpoint-stack__target--opt">${targetLabel}</div></div>`;
           }
           if (__lgOptimisticOff) {
             return `<div class="lg-setpoint-stack lg-setpoint-stack--idle lg-setpoint-stack--optimistic-off"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__mode">${modeLabels.off}</div></div>`;

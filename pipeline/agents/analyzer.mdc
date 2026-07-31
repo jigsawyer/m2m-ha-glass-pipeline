@@ -63,6 +63,7 @@ Keep identifiers, menu paths, HA/UI labels, token names, and file paths in origi
 | Horizontal gradient timer bars; Bubble/native/`slider-button-card` as timer picker SoT; on-drag timer commit; hiding wheel timer while armed | 0021, 0025 |
 | Klimat power ON/OFF without entity-scoped Optimistic_On/Off + 5s rollback (ADR 0044); rotate/expand load animations; «Немає зв'язку» as Klimat offline SoT; tick-opacity-only or continuous-fuse timer progress when Ambient Conic Track is SoT | 0044 |
 | Reintroducing INIT_LOAD/SHUTDOWN_LOAD hard loader or banning optimistic power chrome as Klimat SoT without a new ADR (yields to 0044 for state-polish intents) | 0035→0044 |
+| `conic-gradient(from -90deg …)` or any non-12-o'clock progress origin; conic/leading-edge inside the timer duration picker (ticks + red cursor are frozen); satellite leading-edge dot; timer chrome rendered while the climate entity is off; optimistic power pulse ring; full-alpha (non mode-derived) progress hue | 0045 |
 
 ## 5. Constraint Flags
 

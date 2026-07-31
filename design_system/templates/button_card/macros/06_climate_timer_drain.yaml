@@ -80,15 +80,12 @@
             const tt = Math.max(0, Math.min(1, Number(t) || 0));
             host.style.setProperty('--lg_timer_drain_t', String(tt));
             const fill = root.querySelector('#timer_drain .lg-timer-conic-fill');
-            const edge = root.querySelector('#timer_drain .lg-timer-conic-edge');
             if (fill) fill.style.setProperty('--lg_timer_drain_t', String(tt));
-            if (edge) {
-              edge.style.setProperty('--lg_timer_edge_deg', `${tt * 360}deg`);
-              edge.style.opacity = tt > 0.001 ? '1' : '0';
-            }
-            /* Threshold_Warning: remaining < 10% or < 5 minutes. */
-            const remSec = (host.__lgTimerDrainDurSec || 0) * tt;
-            const warn = tt > 0 && (tt < 0.1 || remSec < 300);
+            /* Threshold_Warning needs a known span; armed clock timers report
+               none, so warn only when the duration is actually measurable. */
+            const durSec = Number(host.__lgTimerDrainDurSec) || 0;
+            const remSec = durSec * tt;
+            const warn = tt > 0 && durSec > 0 && (tt < 0.1 || remSec < 300);
             host.classList.toggle('lg-timer-threshold-warn', !!warn);
             if (tt <= 0.001 && host.__lgTimerDrainWasPositive) {
               host.classList.add('lg-timer-completion');
@@ -172,9 +169,27 @@
             }
           }, 50);
         };
+        /* Mode-driven progress hue (cool / heat), muted to the glass palette. */
+        const __lgDrainMode = String((entity && entity.state) || 'off');
+        const __lgDrainPowered = __lgDrainMode !== 'off'
+          && __lgDrainMode !== 'unavailable'
+          && __lgDrainMode !== 'unknown';
+        this.style.setProperty('--lg_color_climate_timer_conic_active',
+          __lgDrainMode === 'heat'
+            ? 'var(--lg_color_climate_timer_conic_fill_heat)'
+            : 'var(--lg_color_climate_timer_conic_fill_cool)');
+        this.style.setProperty('--lg_color_climate_timer_conic_active_glow',
+          __lgDrainMode === 'heat'
+            ? 'var(--lg_color_climate_timer_conic_glow_heat)'
+            : 'var(--lg_color_climate_timer_conic_glow_cool)');
+        /* An armed/running timer must not paint chrome over an OFF widget. */
         const __lgDrainShow = !!(!(__lgWantManage || __lgWantRadial)
           && (running || armed)
+          && __lgDrainPowered
           && !(this.classList.contains('lg-wheel-temp-open') || this.classList.contains('lg-wheel-temp-arming')));
+        if (!__lgDrainPowered) {
+          this.classList.remove('lg-timer-threshold-warn', 'lg-timer-completion');
+        }
         __lgSyncDrain(this, __lgDrainT, __lgDrainShow);
         if (this.__lgTimerDrainTick) {
           clearInterval(this.__lgTimerDrainTick);
@@ -194,6 +209,8 @@
               || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-manage') === '1')
               || __lgDrainHost.classList.contains('lg-timer-radial-open')
               || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-radial') === '1')
+              || __lgDrainHost.classList.contains('lg-power-idle-off')
+              || __lgDrainHost.classList.contains('lg-power-unavailable')
               || __lgDrainHost.classList.contains('lg-wheel-temp-open')
               || __lgDrainHost.classList.contains('lg-wheel-temp-arming'));
             __lgSyncDrain(__lgDrainHost, t, !hide);
@@ -213,6 +230,8 @@
               || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-manage') === '1')
               || __lgDrainHost.classList.contains('lg-timer-radial-open')
               || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-radial') === '1')
+              || __lgDrainHost.classList.contains('lg-power-idle-off')
+              || __lgDrainHost.classList.contains('lg-power-unavailable')
               || __lgDrainHost.classList.contains('lg-wheel-temp-open')
               || __lgDrainHost.classList.contains('lg-wheel-temp-arming'));
             __lgSyncDrain(__lgDrainHost, t, !hide);
