@@ -14,9 +14,14 @@ import pytest
 # Lovelace yaml dashboard id from pipeline/tests/e2e/conftest.py bootstrap.
 DASHBOARD_PATH = "/dashboard-glass"
 
-# Console noise that is common on a fresh HA sandbox and is not a YAML failure.
-_CONSOLE_NOISE = re.compile(
-    r"(favicon\.ico|Failed to load resource|net::ERR_|WebSocket connection)",
+# Frontend noise that is common on a fresh HA sandbox and is not a YAML failure.
+# Includes Chromium Popover API races in HA tooltips/menus (showPopover on a node
+# already torn down during auth redirect / Lovelace remount) — not our cards.
+_FRONTEND_NOISE = re.compile(
+    r"("
+    r"favicon\.ico|Failed to load resource|net::ERR_|WebSocket connection|"
+    r"showPopover|disconnected popover"
+    r")",
     re.IGNORECASE,
 )
 
@@ -46,13 +51,16 @@ def test_dashboard_integrity(page, ha_base_url: str) -> None:
     severe_js_errors: list[str] = []
 
     def _on_page_error(error) -> None:
-        severe_js_errors.append(f"pageerror: {error}")
+        text = str(error)
+        if _FRONTEND_NOISE.search(text):
+            return
+        severe_js_errors.append(f"pageerror: {text}")
 
     def _on_console(msg) -> None:
         if msg.type != "error":
             return
         text = msg.text
-        if _CONSOLE_NOISE.search(text):
+        if _FRONTEND_NOISE.search(text):
             return
         severe_js_errors.append(f"console.error: {text}")
 
