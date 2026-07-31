@@ -20,6 +20,9 @@ _CONSOLE_NOISE = re.compile(
     re.IGNORECASE,
 )
 
+# Custom element that always mounts once HA frontend has an authenticated session.
+_LOVELACE_SHELL = "home-assistant"
+
 
 @pytest.fixture(scope="session")
 def browser_context_args(browser_context_args):
@@ -52,9 +55,29 @@ def test_dashboard_integrity(page, ha_base_url: str) -> None:
     target = f"{ha_base_url.rstrip('/')}{DASHBOARD_PATH}"
     page.goto(target, wait_until="domcontentloaded", timeout=120_000)
 
-    # Wait for the custom Lovelace shell to mount before inspecting cards.
+    # trusted_networks + allow_bypass_login should redirect off /auth/* once the
+    # seeded owner exists. Fail fast with a clear signal if auth is broken.
+    try:
+        page.wait_for_function(
+            "() => !window.location.pathname.startsWith('/auth/')",
+            timeout=60_000,
+        )
+    except Exception as exc:
+        raise AssertionError(
+            "Home Assistant stayed on the auth flow — trusted_networks bypass "
+            "did not complete. Ensure conftest seeds .storage/auth with exactly "
+            f"one owner user. Final URL: {page.url}"
+        ) from exc
+
+    # Wait for the authenticated HA shell before inspecting Lovelace cards.
     page.wait_for_selector(
-        "home-assistant, hui-root, hui-view, ha-panel-lovelace",
+        _LOVELACE_SHELL,
+        timeout=120_000,
+        state="attached",
+    )
+    # Optional Lovelace panels may mount slightly later than <home-assistant>.
+    page.wait_for_selector(
+        "hui-root, hui-view, ha-panel-lovelace",
         timeout=120_000,
         state="attached",
     )

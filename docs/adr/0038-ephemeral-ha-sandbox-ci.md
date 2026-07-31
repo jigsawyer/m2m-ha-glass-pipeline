@@ -31,7 +31,9 @@ No deployment steps in this workflow. Handoff remains Git-only.
 
 - PRs and `main` pushes fail closed on Lovelace parse/render failures.
 - Staging gains ephemeral sandbox bootstrap files (`configuration.yaml`,
-  `.storage/onboarding`) during e2e; they are not deploy artifacts.
+  `.storage/onboarding`, `.storage/auth` with exactly one owner so
+  `trusted_networks` + `allow_bypass_login` can skip `/auth/authorize`) during
+  e2e; they are not deploy artifacts.
 - CI runners require Docker (testcontainers) and Chromium (Playwright).
 - Official `testcontainers` has no `homeassistant` extra; the requirement line
   `testcontainers[homeassistant]` installs base testcontainers and we use
