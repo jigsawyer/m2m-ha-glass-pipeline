@@ -1,6 +1,6 @@
 Title: Klimat Power Load FSM — Dual-Surface Main Power + Hard Loader
 Date: Unknown
-Status: Accepted
+Status: Superseded by ADR-0044
 
 # 0035. Klimat Power Load FSM — Dual-Surface Main Power + Hard Loader
 

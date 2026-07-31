@@ -41,11 +41,11 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0029](0029-klimat-hub-fsm.md) | Klimat Central Hub FSM — Power, Cancel, Container Frost, 270° Arc | Unknown | Accepted |
 | [0030](0030-klimat-temp-frost-free-morph.md) | Klimat TEMP — Frost-Free In-Place Morph (Local Container) | Unknown | Accepted |
 | [0031](0031-shadow-layer-morph-hit-shield.md) | Animatable Layer Exit in Shadow DOM — Opacity Morph + Hit Shield | Unknown | Accepted |
-| [0032](0032-klimat-ac-timer-inplace-fsm.md) | Klimat AC Widget — In-Place Timer FSM (Frost-Free) | Unknown | Accepted |
+| [0032](0032-klimat-ac-timer-inplace-fsm.md) | Klimat AC Widget — In-Place Timer FSM (Frost-Free) | Unknown | Accepted (D1 quantization Superseded by ADR-0044) |
 | [0033](0033-klimat-timer-fsm-sticky-sot.md) | Klimat Timer FSM — Clarification Gloss + Single Sticky SoT | Unknown | Accepted |
 | [0034](0034-premium-hvac-spatial-depth.md) | Premium HVAC Radial — Spatial Depth & Material Lighting | Unknown | Accepted |
-| [0035](0035-klimat-power-load-fsm.md) | Klimat Power Load FSM — Dual-Surface Main Power + Hard Loader | Unknown | Accepted |
-| [0036](0036-klimat-tick-radial-polish.md) | Klimat Timer / Temp — Tick Radial Polish | Unknown | Accepted |
+| [0035](0035-klimat-power-load-fsm.md) | Klimat Power Load FSM — Dual-Surface Main Power + Hard Loader | Unknown | Superseded by ADR-0044 |
+| [0036](0036-klimat-tick-radial-polish.md) | Klimat Timer / Temp — Tick Radial Polish | Unknown | Superseded by ADR-0044 |
 | [0037](0037-gitops-and-agent-isolation.md) | Enterprise GitOps, CI/CD Pipeline, and Agent Isolation | 2026-07-31 | Accepted |
 | [0038](0038-ephemeral-ha-sandbox-ci.md) | Ephemeral Home Assistant Sandbox CI Gate | 2026-07-31 | Accepted |
 | [0039](0039-sandbox-primary-stack-resources.md) | Ephemeral Sandbox Must Vendor Primary-Stack Lovelace Resources | 2026-07-31 | Accepted |
@@ -53,3 +53,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0041](0041-agentic-fallback-orchestrator.md) | Agentic Fallback Orchestrator on PR E2E Failure | 2026-07-31 | Superseded by ADR-0042 |
 | [0042](0042-agentic-inline-json-repair-loop.md) | Agentic Inline JSON Repair Loop on PR E2E Failure | 2026-07-31 | Superseded by ADR-0043 |
 | [0043](0043-agentic-fallback-orchestration.md) | Agentic Fallback Orchestration in CI/CD | 2026-07-31 | Accepted |
+| [0044](0044-klimat-state-polish.md) | Klimat State Polish — Ambient Conic Timer + Optimistic Entity FSM | 2026-07-31 | Accepted |
