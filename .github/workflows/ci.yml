@@ -32,3 +32,12 @@ jobs:
 
       - name: Run Tests
         run: pytest pipeline/tests/e2e/ --browser chromium
+
+  deploy:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Edge deployment
+        run: curl -X POST ${{ secrets.DEPLOY_WEBHOOK_URL }}

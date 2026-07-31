@@ -49,3 +49,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0037](0037-gitops-and-agent-isolation.md) | Enterprise GitOps, CI/CD Pipeline, and Agent Isolation | 2026-07-31 | Accepted |
 | [0038](0038-ephemeral-ha-sandbox-ci.md) | Ephemeral Home Assistant Sandbox CI Gate | 2026-07-31 | Accepted |
 | [0039](0039-sandbox-primary-stack-resources.md) | Ephemeral Sandbox Must Vendor Primary-Stack Lovelace Resources | 2026-07-31 | Accepted |
+| [0040](0040-ci-deploy-webhook-handoff.md) | CI Deploy Job — Secure Webhook Handoff After E2E | 2026-07-31 | Accepted |
