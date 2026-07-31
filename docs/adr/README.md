@@ -50,4 +50,5 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0038](0038-ephemeral-ha-sandbox-ci.md) | Ephemeral Home Assistant Sandbox CI Gate | 2026-07-31 | Accepted |
 | [0039](0039-sandbox-primary-stack-resources.md) | Ephemeral Sandbox Must Vendor Primary-Stack Lovelace Resources | 2026-07-31 | Accepted |
 | [0040](0040-ci-deploy-webhook-handoff.md) | CI Deploy Job — Secure Webhook Handoff After E2E | 2026-07-31 | Accepted |
-| [0041](0041-agentic-fallback-orchestrator.md) | Agentic Fallback Orchestrator on PR E2E Failure | 2026-07-31 | Accepted |
+| [0041](0041-agentic-fallback-orchestrator.md) | Agentic Fallback Orchestrator on PR E2E Failure | 2026-07-31 | Superseded by ADR-0042 |
+| [0042](0042-agentic-inline-json-repair-loop.md) | Agentic Inline JSON Repair Loop on PR E2E Failure | 2026-07-31 | Accepted |

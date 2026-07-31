@@ -1,6 +1,6 @@
 Title: Agentic Fallback Orchestrator on PR E2E Failure
 Date: 2026-07-31
-Status: Accepted
+Status: Superseded by ADR-0042
 
 # 0041. Agentic Fallback Orchestrator on PR E2E Failure
 
