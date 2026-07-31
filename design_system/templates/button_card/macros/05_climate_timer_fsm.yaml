@@ -214,14 +214,19 @@
         display: block !important;
         opacity: 1 !important;
       }
+      /* Submenus and temp drag own the outer band: cut, never fade (ADR 0046). */
       :host(.lg-timer-radial-open) #timer_drain,
       :host([data-lg-timer-radial="1"]) #timer_drain,
       :host(.lg-timer-manage-open) #timer_drain,
       :host([data-lg-timer-manage="1"]) #timer_drain,
+      :host(.lg-wheel-layer-mode) #timer_drain,
+      :host(.lg-wheel-layer-fan) #timer_drain,
       :host(.lg-wheel-temp-open) #timer_drain,
       :host(.lg-wheel-temp-arming) #timer_drain {
         display: none !important;
         opacity: 0 !important;
+        transition: none !important;
+        animation: none !important;
       }
       #timer_drain .lg-timer-conic-host {
         position: relative !important;
@@ -236,31 +241,28 @@
         z-index: 1 !important;
         background: conic-gradient(
           from 0deg,
-          var(--lg_color_climate_timer_conic_active, var(--lg_color_climate_timer_conic_fill_cool)) 0 calc(var(--lg_timer_drain_t, 0) * 360deg),
+          var(--lg_color_climate_timer_conic_active, var(--lg_color_climate_timer_conic_fill_neutral)) 0 calc(var(--lg_timer_drain_t, 0) * 360deg),
           transparent calc(var(--lg_timer_drain_t, 0) * 360deg) 360deg
         );
         -webkit-mask-image: radial-gradient(
           farthest-side,
-          transparent calc(100% - var(--lg_size_climate_timer_conic_ring_pct)),
-          #000 calc(100% - var(--lg_size_climate_timer_conic_ring_pct) + 0.5%),
-          #000 100%
+          transparent var(--lg_timer_conic_inner_pct, 94%),
+          #000 calc(var(--lg_timer_conic_inner_pct, 94%) + 0.35%),
+          #000 var(--lg_timer_conic_outer_pct, 100%),
+          transparent calc(var(--lg_timer_conic_outer_pct, 100%) + 0.35%)
         );
         mask-image: radial-gradient(
           farthest-side,
-          transparent calc(100% - var(--lg_size_climate_timer_conic_ring_pct)),
-          #000 calc(100% - var(--lg_size_climate_timer_conic_ring_pct) + 0.5%),
-          #000 100%
+          transparent var(--lg_timer_conic_inner_pct, 94%),
+          #000 calc(var(--lg_timer_conic_inner_pct, 94%) + 0.35%),
+          #000 var(--lg_timer_conic_outer_pct, 100%),
+          transparent calc(var(--lg_timer_conic_outer_pct, 100%) + 0.35%)
         );
-        filter: drop-shadow(0 0 0.3rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_cool)));
+        filter: drop-shadow(0 0 0.2rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_neutral)));
         transition: var(--lg_transition_climate_timer_state_morph);
       }
+      /* Threshold_Warning breathes; the hue stays mode-owned (ADR 0046). */
       :host(.lg-timer-threshold-warn) #timer_drain .lg-timer-conic-fill {
-        background: conic-gradient(
-          from 0deg,
-          var(--lg_color_climate_timer_conic_fill_warn) 0 calc(var(--lg_timer_drain_t, 0) * 360deg),
-          transparent calc(var(--lg_timer_drain_t, 0) * 360deg) 360deg
-        );
-        filter: drop-shadow(0 0 0.3rem var(--lg_color_climate_timer_conic_glow_warn));
         animation: lg_timer_conic_breath var(--lg_duration_climate_timer_threshold_breath) ease-in-out infinite;
       }
       @keyframes lg_timer_conic_breath {
@@ -268,7 +270,7 @@
         50% { opacity: 1; }
       }
       :host(.lg-timer-completion) #timer_drain .lg-timer-conic-fill {
-        filter: brightness(1.6) drop-shadow(0 0 0.5rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_cool)));
+        filter: brightness(1.6) drop-shadow(0 0 0.35rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_neutral)));
         animation: lg_timer_completion_flash var(--lg_duration_climate_timer_completion_flash) ease-out,
           lg_timer_completion_fade var(--lg_duration_climate_timer_completion_fade) ease-in 0.2s forwards;
       }
