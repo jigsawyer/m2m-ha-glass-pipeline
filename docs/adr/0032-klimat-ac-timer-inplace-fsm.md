@@ -1,6 +1,6 @@
 Title: Klimat AC Widget — In-Place Timer FSM (Frost-Free)
 Date: Unknown
-Status: Accepted
+Status: Accepted (D1 quantization Superseded by ADR-0044)
 
 # 0032. Klimat AC Widget — In-Place Timer FSM (Frost-Free)
 

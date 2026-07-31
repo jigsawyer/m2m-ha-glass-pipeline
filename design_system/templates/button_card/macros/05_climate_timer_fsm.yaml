@@ -188,8 +188,7 @@
            keep base 3D rim here only (no saturate/brightness fill wash). */
         filter: none;
       }
-      /* ADR 0036 — TIMER_ACTIVE outer drain = 60-tick clock-face (no continuous fuse).
-         Tick outer R set in JS; gap to segment outer matches lg_size_climate_wheel_seg_gap. */
+      /* ADR 0044 — TIMER_ACTIVE outer drain = Ambient Conic + static ticks. */
       #timer_drain {
         position: absolute !important;
         left: 50% !important;
@@ -223,7 +222,87 @@
         display: none !important;
         opacity: 0 !important;
       }
+      #timer_drain .lg-timer-conic-host {
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      #timer_drain .lg-timer-conic-fill {
+        position: absolute !important;
+        inset: 0 !important;
+        border-radius: 50% !important;
+        pointer-events: none !important;
+        z-index: 1 !important;
+        background: conic-gradient(
+          from -90deg,
+          var(--lg_color_climate_timer_conic_fill) 0 calc(var(--lg_timer_drain_t, 0) * 360deg),
+          transparent calc(var(--lg_timer_drain_t, 0) * 360deg) 360deg
+        );
+        -webkit-mask-image: radial-gradient(
+          farthest-side,
+          transparent calc(100% - var(--lg_size_climate_timer_conic_ring_pct)),
+          #000 calc(100% - var(--lg_size_climate_timer_conic_ring_pct) + 0.5%),
+          #000 100%
+        );
+        mask-image: radial-gradient(
+          farthest-side,
+          transparent calc(100% - var(--lg_size_climate_timer_conic_ring_pct)),
+          #000 calc(100% - var(--lg_size_climate_timer_conic_ring_pct) + 0.5%),
+          #000 100%
+        );
+        filter: drop-shadow(0 0 0.35rem var(--lg_color_climate_timer_conic_glow));
+        transition: var(--lg_transition_climate_timer_state_morph);
+      }
+      :host(.lg-timer-threshold-warn) #timer_drain .lg-timer-conic-fill {
+        background: conic-gradient(
+          from -90deg,
+          var(--lg_color_climate_timer_conic_fill_warn) 0 calc(var(--lg_timer_drain_t, 0) * 360deg),
+          transparent calc(var(--lg_timer_drain_t, 0) * 360deg) 360deg
+        );
+        filter: drop-shadow(0 0 0.4rem var(--lg_color_climate_timer_conic_glow_warn));
+      }
+      #timer_drain .lg-timer-conic-edge {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        width: var(--lg_size_climate_timer_leading_edge) !important;
+        height: var(--lg_size_climate_timer_leading_edge) !important;
+        border-radius: 50% !important;
+        pointer-events: none !important;
+        z-index: 2 !important;
+        background: var(--lg_color_climate_timer_conic_fill);
+        box-shadow: 0 0 var(--lg_blur_climate_timer_leading_edge) var(--lg_color_climate_timer_conic_glow);
+        filter: blur(calc(var(--lg_blur_climate_timer_leading_edge) * 0.35));
+        transform: rotate(calc(var(--lg_timer_edge_deg, 0deg) - 90deg))
+          translateY(calc(-1 * (50% - var(--lg_size_climate_timer_conic_ring_pct) * 0.35)))
+          translate(-50%, -50%);
+        transform-origin: center center;
+        opacity: 0;
+      }
+      :host(.lg-timer-threshold-warn) #timer_drain .lg-timer-conic-edge {
+        background: var(--lg_color_climate_timer_conic_fill_warn);
+        box-shadow: 0 0 var(--lg_blur_climate_timer_leading_edge) var(--lg_color_climate_timer_conic_glow_warn);
+        animation: lg_timer_edge_breath var(--lg_duration_climate_timer_threshold_breath) ease-in-out infinite;
+      }
+      @keyframes lg_timer_edge_breath {
+        0%, 100% { opacity: 0.55; }
+        50% { opacity: 1; }
+      }
+      :host(.lg-timer-completion) #timer_drain .lg-timer-conic-fill {
+        filter: brightness(2) drop-shadow(0 0 0.6rem var(--lg_color_climate_timer_conic_glow));
+        animation: lg_timer_completion_flash var(--lg_duration_climate_timer_completion_flash) ease-out,
+          lg_timer_completion_fade var(--lg_duration_climate_timer_completion_fade) ease-in 0.2s forwards;
+      }
+      @keyframes lg_timer_completion_flash {
+        from { filter: brightness(1); }
+        to { filter: brightness(2); }
+      }
+      @keyframes lg_timer_completion_fade {
+        to { opacity: 0; }
+      }
       #timer_drain svg {
+        position: relative !important;
+        z-index: 3 !important;
         width: 100% !important;
         height: 100% !important;
         display: block !important;
@@ -234,7 +313,6 @@
         stroke: var(--lg_color_climate_timer_tick);
         stroke-linecap: round;
         fill: none;
-        transition: var(--lg_transition_climate_timer_tick);
         filter: none;
       }
       #timer_drain .lg-timer-drain__spark {

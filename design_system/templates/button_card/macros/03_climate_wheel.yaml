@@ -461,13 +461,19 @@
         -webkit-clip-path: polygon(${__lgClipPts}) !important;
         /* Idle/Active glow: release curve as default; :active swaps to press-down. */
         transition: var(--lg_transition_climate_node_state), var(--lg_transition_climate_node_press_release);
-        filter: ${__lgNodeDisabled || (__lgPeripheralDisabled && !__lgPowerLoad)
-          ? 'var(--lg_filter_climate_node_disabled)'
-          : 'var(--lg_filter_climate_wheel_seg_idle_lift)'};
-        opacity: ${__lgNodeDisabled || (__lgPeripheralDisabled && !__lgPowerLoad)
-          ? 'var(--lg_opacity_climate_node_disabled)'
-          : '1'};
-        ${__lgPowerLoad && __lgSegVisible ? `animation: lg_power_skel_pass var(--lg_duration_climate_power_skel) ease-in-out infinite; animation-delay: calc(${__lgSegIdx} * var(--lg_delay_climate_power_skel_step));` : 'animation: none;'}
+        filter: ${(__lgPowerLoad && !(__lgPowerRec && (__lgPowerRec.phase === 'optimistic_off' || __lgPowerRec.phase === 'shutdown')))
+          ? 'var(--lg_filter_climate_wheel_seg_idle_lift)'
+          : (__lgNodeDisabled || (__lgPeripheralDisabled && !__lgPowerLoad)
+            ? 'var(--lg_filter_climate_node_disabled)'
+            : 'var(--lg_filter_climate_wheel_seg_idle_lift)')};
+        opacity: ${(__lgPowerLoad && (__lgPowerRec && (__lgPowerRec.phase === 'optimistic_off' || __lgPowerRec.phase === 'shutdown')))
+          ? 'var(--lg_opacity_climate_power_optimistic_off_seg)'
+          : (__lgNodeDisabled || (__lgPeripheralDisabled && !__lgPowerLoad)
+            ? 'var(--lg_opacity_climate_node_disabled)'
+            : '1')};
+        ${(__lgPowerLoad && __lgSegVisible && (__lgPowerRec && (__lgPowerRec.phase === 'optimistic_on' || __lgPowerRec.phase === 'init')))
+          ? `animation: lg_power_skel_pass var(--lg_duration_climate_power_skel) ease-in-out infinite; animation-delay: calc(${__lgSegIdx} * var(--lg_delay_climate_power_skel_step));`
+          : 'animation: none;'}
       }
       @keyframes lg_power_skel_pass {
         0%, 100% { opacity: var(--lg_opacity_climate_power_skel_dim); }

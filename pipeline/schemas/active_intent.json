@@ -1,16 +1,35 @@
 {
-  "target_dashboard": "svitlo",
-  "intent_class": "STYLISTIC",
-  "target_agent": "@stylist",
-  "source_spec": "specs/global-climate-polish.md",
-  "summary": "Equal-gap timer drain vs room pad; outer contour drop-shadow on active wheel segments; hub sphere highlight only on hub press (not ring drag).",
+  "target_dashboard": "klimat",
+  "intent_class": "EXTRACTIVE",
+  "target_agent": "@extractor",
+  "source_spec": "specs/state-polish.md",
+  "payload": {
+    "action_summary": "Klimat state polish: Ambient Conic timer track + leading edge; timer FSM visual states Threshold_Warning/Completion; 15-min snap; entity-scoped optimistic power with 5s rollback; tnum countdown; haptics; degraded offline mask",
+    "requested_entities": [
+      "climate_timer_radial_panel",
+      "climate_timer_drain",
+      "climate_power_fsm",
+      "climate_setpoint_trigger",
+      "climate_room_off_button",
+      "climate_global_wheel"
+    ],
+    "preserve_behavior": [
+      "sticky TIMER_CONFIG/TIMER_MANAGE window maps (ADR 0033)",
+      "deferred timer commit — no on-drag HA write",
+      "frost-free Cancel morph Power↔X",
+      "TIMER_MANAGE Edit/Stop/Pause annular sectors",
+      "dual-surface Main Power Hub ON / Corner OFF hit targets",
+      "segment __lgSegPending optimistic retained for non-power segments",
+      "mutex .lg-timer-radial-open ⟂ .lg-wheel-temp-open"
+    ]
+  },
   "flags": {
     "allow_template_layout_edit": true,
     "allow_climate_timer_radial_control": true,
-    "allow_climate_ring_control_deferred_commit": true
+    "tokens_and_button_card_templates_only": false
   },
   "constraints": {
-    "adr": ["0006", "0007", "0019", "0031", "0036"],
-    "deploy": ["build_engine.py", "publish_edge.sh"]
+    "adr": ["0006", "0007", "0014", "0025", "0032", "0033", "0037", "0040", "0044"],
+    "deploy": ["build_engine.py", "git_push_ci_webhook"]
   }
 }

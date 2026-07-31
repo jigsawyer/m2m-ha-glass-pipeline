@@ -1,6 +1,6 @@
 Title: Klimat Timer / Temp — Tick Radial Polish
 Date: Unknown
-Status: Accepted
+Status: Superseded by ADR-0044
 
 # 0036. Klimat Timer / Temp — Tick Radial Polish
 

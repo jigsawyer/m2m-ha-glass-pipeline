@@ -58,7 +58,7 @@
               && modeNow === 'off' && id) {
             const wheelHost = wheelHostEarly || findWheelHost(this);
             if (wheelHost) {
-              {{ lg_climate_power_load_sticky_set_js('wheelHost', "'init'", "'idle_off'") }}
+              {{ lg_climate_power_load_sticky_set_js('wheelHost', "'optimistic_on'", "'idle_off'") }}
             }
             try { hass.callService('climate', 'turn_on', { entity_id: id }); } catch (e) {}
             return;
@@ -382,7 +382,16 @@
         gap: 0.15em;
         padding: var(--lg_space_climate_power_wait_pad);
         box-sizing: border-box;
+      }
+      .lg-setpoint-stack--optimistic-on {
         animation: lg_power_wait_pulse var(--lg_duration_climate_power_wait_pulse) ease-in-out infinite;
+      }
+      .lg-setpoint-stack--optimistic-on .lg-setpoint-stack__target {
+        opacity: var(--lg_opacity_climate_power_optimistic_target);
+      }
+      .lg-setpoint-stack--optimistic-off {
+        filter: saturate(0.35);
+        opacity: 0.85;
       }
       .lg-setpoint-stack__wait {
         color: var(--lg_color_text);
@@ -393,12 +402,22 @@
         overflow-wrap: anywhere;
         max-width: 100%;
       }
+      .lg-setpoint-stack__toast {
+        color: var(--lg_color_text);
+        font-size: var(--lg_font_climate_power_wait_size);
+        font-weight: var(--lg_font_label_weight);
+        line-height: 1.3;
+        opacity: 0.92;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
       @keyframes lg_power_wait_pulse {
         0%, 100% { opacity: var(--lg_opacity_climate_power_wait_hi); }
         50% { opacity: var(--lg_opacity_climate_power_wait_lo); }
       }
       @media (max-width: 48rem) {
-        .lg-setpoint-stack__wait {
+        .lg-setpoint-stack__wait,
+        .lg-setpoint-stack__toast {
           font-size: var(--lg_font_climate_power_wait_size_phone);
         }
       }
@@ -439,6 +458,20 @@
         font-family: var(--lg_font_label_family);
         font-size: var(--lg_font_climate_timer_off_at_size);
         font-weight: var(--lg_font_body_weight, 400);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+      }
+      .lg-setpoint-stack__countdown {
+        display: block;
+        color: ${color} !important;
+        opacity: 0.78;
+        font-family: var(--lg_font_label_family);
+        font-size: var(--lg_font_climate_timer_off_at_size);
+        font-weight: var(--lg_font_body_weight, 400);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+        letter-spacing: 0.04em;
         white-space: nowrap;
       }
       .lg-setpoint-stack__timer-icon {
@@ -544,13 +577,26 @@
           const __lgEid = String((entity && entity.entity_id) || '');
           window.__lgKlimatPowerLoadByEntity = window.__lgKlimatPowerLoadByEntity || {};
           const __lgPowerRec = (__lgEid && window.__lgKlimatPowerLoadByEntity[__lgEid]) || null;
-          const __lgPowerLoad = !!(__lgWheel && (
+          const __lgPowerPhaseRaw = (__lgPowerRec && __lgPowerRec.phase)
+            || (__lgWheel && __lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-power-load'))
+            || '';
+          const __lgOptimisticOn = __lgPowerPhaseRaw === 'optimistic_on' || __lgPowerPhaseRaw === 'init'
+            || !!(__lgWheel && __lgWheel.classList.contains('lg-power-optimistic--on'));
+          const __lgOptimisticOff = __lgPowerPhaseRaw === 'optimistic_off' || __lgPowerPhaseRaw === 'shutdown'
+            || !!(__lgWheel && __lgWheel.classList.contains('lg-power-optimistic--off'));
+          const __lgPowerLoad = !!(__lgOptimisticOn || __lgOptimisticOff || (__lgWheel && (
             __lgWheel.classList.contains('lg-power-load')
-            || (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-power-load'))
-            || (__lgPowerRec && (__lgPowerRec.phase === 'init' || __lgPowerRec.phase === 'shutdown'))
-          ));
-          if (__lgPowerLoad) {
-            return `<div class="lg-setpoint-stack lg-setpoint-stack--wait"><div class="lg-setpoint-stack__wait">Будь ласка,</div><div class="lg-setpoint-stack__wait">зачекайте</div></div>`;
+            || __lgWheel.classList.contains('lg-power-optimistic')
+          )));
+          if (__lgWheel && __lgWheel.classList.contains('lg-power-degraded')) {
+            return `<div class="lg-setpoint-stack lg-setpoint-stack--wait"><div class="lg-setpoint-stack__toast">Зв'язок з Home Assistant втрачено. Перепідключення...</div></div>`;
+          }
+          if (__lgOptimisticOn) {
+            try { this.style.setProperty('--lg_climate_mid_target', `'${targetLabel}'`); } catch (e) {}
+            return `<div class="lg-setpoint-stack lg-setpoint-stack--optimistic-on"><div class="lg-setpoint-stack__target"></div><div class="lg-setpoint-stack__mode">${modeLabels.cool || 'Холод'}</div></div>`;
+          }
+          if (__lgOptimisticOff) {
+            return `<div class="lg-setpoint-stack lg-setpoint-stack--idle lg-setpoint-stack--optimistic-off"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__mode">${modeLabels.off}</div></div>`;
           }
           /* ADR 0035 IDLE_OFF: ambient + Вимк only (hide target). */
           if (mode === 'off') {
@@ -585,21 +631,39 @@
             const running = tEnt && (tEnt.state === 'active' || tEnt.state === 'paused');
             const armed = !running && armedId && states[armedId] && states[armedId].state === 'on';
             let __lgOffLabel = '';
+            let __lgCountdown = '';
+            const __lgFmtHms = (sec) => {
+              const s = Math.max(0, Math.floor(sec));
+              const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+              const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+              const ss = String(s % 60).padStart(2, '0');
+              return `${hh}:${mm}:${ss}`;
+            };
             if (running) {
               if (tEnt.state === 'active' && tEnt.attributes && tEnt.attributes.finishes_at) {
                 __lgOffLabel = __lgFmtOffAt(tEnt.attributes.finishes_at);
+                const ms = new Date(tEnt.attributes.finishes_at).getTime() - Date.now();
+                if (Number.isFinite(ms)) __lgCountdown = __lgFmtHms(ms / 1000);
               } else if (tEnt.state === 'paused') {
                 const rem = __lgParseDur(tEnt.attributes && tEnt.attributes.remaining);
-                if (rem > 0) __lgOffLabel = __lgFmtOffAt(Date.now() + rem * 1000);
+                if (rem > 0) {
+                  __lgOffLabel = __lgFmtOffAt(Date.now() + rem * 1000);
+                  __lgCountdown = __lgFmtHms(rem);
+                }
               }
             } else if (armed && clockId && states[clockId] && states[clockId].state) {
               const parts = String(states[clockId].state).split(':');
               const hh = String(parseInt(parts[0], 10) || 0).padStart(2, '0');
               const mm = String(parseInt(parts[1], 10) || 0).padStart(2, '0');
               __lgOffLabel = `Вимкнеться о ${hh}:${mm}`;
+              const now = new Date();
+              const target = new Date(now);
+              target.setHours(parseInt(hh, 10) || 0, parseInt(mm, 10) || 0, 0, 0);
+              if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+              __lgCountdown = __lgFmtHms((target.getTime() - now.getTime()) / 1000);
             }
-            if (__lgOffLabel) {
-              __lgTimerLine = `<div class="lg-setpoint-stack__timer"><ha-icon class="lg-setpoint-stack__timer-icon" icon="mdi:clock-outline"></ha-icon><span>${__lgOffLabel}</span></div>`;
+            if (__lgCountdown || __lgOffLabel) {
+              __lgTimerLine = `${__lgCountdown ? `<div class="lg-setpoint-stack__countdown">${__lgCountdown}</div>` : ''}${__lgOffLabel ? `<div class="lg-setpoint-stack__timer"><ha-icon class="lg-setpoint-stack__timer-icon" icon="mdi:clock-outline"></ha-icon><span>${__lgOffLabel}</span></div>` : ''}`;
             }
           }
           return `<div class="lg-setpoint-stack"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__target">${targetLabel}</div><div class="lg-setpoint-stack__mode">${modeLabel}</div>${__lgTimerLine}</div>`;
