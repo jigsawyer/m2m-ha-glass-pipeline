@@ -14,11 +14,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v7
@@ -37,14 +36,18 @@ jobs:
         run: python pipeline/scripts/build_engine.py
 
       - name: Run Tests
-        run: pytest pipeline/tests/e2e/ --browser chromium > test_failures.log 2>&1
+        run: |
+          pytest pipeline/tests/e2e/ 2>&1 | tee test_failures.log
+          exit ${PIPESTATUS[0]}
 
       - name: Agentic Fallback (Auto-Repair)
         if: failure() && github.event_name == 'pull_request'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python pipeline/scripts/agentic_repair.py test_failures.log
+        run: |
+          pip install anthropic
+          python pipeline/scripts/agentic_repair.py test_failures.log
 
       - name: Upload failure logs
         if: failure()

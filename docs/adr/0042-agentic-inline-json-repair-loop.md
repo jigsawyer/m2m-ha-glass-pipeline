@@ -1,6 +1,6 @@
 Title: Agentic Inline JSON Repair Loop on PR E2E Failure
 Date: 2026-07-31
-Status: Accepted
+Status: Superseded by ADR-0043
 
 # 0042. Agentic Inline JSON Repair Loop on PR E2E Failure
 

@@ -275,7 +275,7 @@ def apply_patches(patches: list[dict[str, str]]) -> list[Path]:
 def git_commit_and_push() -> None:
     run_git(["config", "user.name", BOT_AUTHOR])
     run_git(["config", "user.email", BOT_EMAIL])
-    run_git(["add", "."])
+    run_git(["add", "-u"])
 
     status = run_git(["status", "--porcelain"])
     if not status.stdout.strip():
