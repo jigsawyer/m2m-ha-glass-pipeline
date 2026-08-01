@@ -1,6 +1,6 @@
 Title: Agent Instructions Are Thin; Constraints Live in `docs/adr/`
 Date: Unknown
-Status: Accepted
+Status: Accepted (instruction surface relocated by ADR-0047; thin-instruction principle unchanged)
 
 # 0024. Agent Instructions Are Thin; Constraints Live in `docs/adr/`
 

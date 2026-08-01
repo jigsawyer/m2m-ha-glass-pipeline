@@ -1,0 +1,40 @@
+Title: CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E
+Date: 2026-08-02
+Status: Accepted
+
+# 0048. CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E
+
+## Context
+
+ADR-0040 handed Edge publish to a webhook (`DEPLOY_WEBHOOK_URL`). The production
+HAOS host is reachable only through a Cloudflare Tunnel: direct SSH by IP is
+impossible, the SSH daemon listens on a custom port, and login uses a non-root
+user. CI must therefore terminate SSH through `cloudflared` (`ProxyCommand`) and
+publish generated artifacts with rsync, without restoring agent-local deploy
+powers (ADR-0037).
+
+## Decision
+
+`.github/workflows/ci.yml` `deploy` job:
+
+1. `needs: build-and-test` — runs only after E2E validation succeeds.
+2. `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` — main
+   push only (PRs validate; they do not publish).
+3. Rebuilds staging via `python pipeline/scripts/build_engine.py`.
+4. Installs `cloudflared` on the Ubuntu runner and configures SSH host
+   `haos-target` with `ProxyCommand cloudflared access ssh --hostname %h`.
+5. Authenticates exclusively via repository secrets: `HAOS_SSH_KEY`,
+   `HAOS_HOST`, `HAOS_USER`, `HAOS_PORT` (key file mode `600`).
+6. Publishes with fail-fast `rsync -avz --delete -e ssh build/staging/ haos-target:/config/`.
+7. Reloads Edge with `ssh haos-target 'ha core restart'`.
+
+Agents still must not run `publish_edge.sh`, ad-hoc SSH writes, or local edge
+copies. Git + CI remain the sole deploy path. ADR-0040 webhook handoff is
+superseded by this decision.
+
+## Consequences
+
+- Broken Lovelace never reaches Edge: deploy stays strictly downstream of E2E.
+- Required secrets: `HAOS_SSH_KEY`, `HAOS_HOST`, `HAOS_USER`, `HAOS_PORT`.
+- `DEPLOY_WEBHOOK_URL` is no longer the production publish mechanism.
+- PRs validate only; production publish is main-branch exclusive.

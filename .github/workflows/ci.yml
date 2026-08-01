@@ -59,9 +59,70 @@ jobs:
 
   deploy:
     needs: build-and-test
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger Edge deployment
-        run: curl -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          pip install -r pipeline/scripts/requirements.txt
+
+      - name: Generate Artifacts
+        run: |
+          set -euo pipefail
+          python pipeline/scripts/build_engine.py
+
+      - name: Install cloudflared
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -o /tmp/cloudflared \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x /tmp/cloudflared
+          sudo mv /tmp/cloudflared /usr/local/bin/cloudflared
+          cloudflared --version
+
+      - name: Configure SSH context
+        env:
+          HAOS_SSH_KEY: ${{ secrets.HAOS_SSH_KEY }}
+          HAOS_HOST: ${{ secrets.HAOS_HOST }}
+          HAOS_USER: ${{ secrets.HAOS_USER }}
+          HAOS_PORT: ${{ secrets.HAOS_PORT }}
+        run: |
+          set -euo pipefail
+          : "${HAOS_SSH_KEY:?HAOS_SSH_KEY secret is required}"
+          : "${HAOS_HOST:?HAOS_HOST secret is required}"
+          : "${HAOS_USER:?HAOS_USER secret is required}"
+          : "${HAOS_PORT:?HAOS_PORT secret is required}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$HAOS_SSH_KEY" > ~/.ssh/haos_key
+          chmod 600 ~/.ssh/haos_key
+          cat > ~/.ssh/config <<EOF
+          Host haos-target
+            HostName ${HAOS_HOST}
+            User ${HAOS_USER}
+            Port ${HAOS_PORT}
+            IdentityFile ~/.ssh/haos_key
+            StrictHostKeyChecking no
+            ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Rsync deploy to Edge
+        run: |
+          set -euo pipefail
+          rsync -avz --delete -e ssh build/staging/ haos-target:/config/
+
+      - name: Reload Core configuration
+        run: |
+          set -euo pipefail
+          ssh haos-target 'ha core restart'

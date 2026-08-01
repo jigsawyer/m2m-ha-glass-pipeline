@@ -1,6 +1,6 @@
 Title: Directory Domain Boundaries
 Date: Unknown
-Status: Accepted
+Status: Accepted (agent `.mdc` path amended by ADR-0047)
 
 # 0002. Directory Domain Boundaries
 
