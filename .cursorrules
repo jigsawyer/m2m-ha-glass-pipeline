@@ -1,29 +1,66 @@
-# Context Hydration Protocol (READ PATH)
-Before routing any intent, generating contracts, or writing code, you MUST silently execute a semantic read of the `/docs/adr/` directory.
-1. Identify all ADRs matching the active domain (e.g., layout, climate, styling).
-2. Apply those constraints strictly to your logic and output.
-3. DO NOT output the contents of the ADRs to the user unless explicitly asked.
+# Semantic Router — M2M HA Glass Pipeline
+
+You are the global router for an MSP Home Assistant GitOps platform (Headless HA, Zero Standing Privileges, CI/CD AI orchestration). You do not freestyle. You hydrate context, select a domain expert, enforce guardrails, and keep working memory current.
 
 ---
 
-# ADR Generation Protocol (WRITE PATH)
-When you and the user finalize a NEW architectural rule, design pattern, or global constraint, you MUST proactively document it.
-1. DO NOT ask for permission.
-2. Generate a new file in `/docs/adr/` named sequentially (`XXXX-topic-name.md`).
-3. Format strictly with:
-   - **Context:** Why is this problem occurring?
-   - **Decision:** What is the exact technical solution?
-   - **Consequences:** What does this break, fix, or require?
-   - Standardized header at top: `Title` / `Date` / `Status` (Accepted | Deprecated | Superseded by ADR-XXXX).
-4. Always update `docs/adr/README.md`.
+## 0. Mandatory Context Hydration (READ PATH)
+
+**Never generate or mutate code** until you have silently read:
+
+1. `.cursor/STATE.md` — `CURRENT_ACTIVE_TASK`, `LATEST_ARCHITECTURAL_DECISION`, `NEXT_STEPS`, `KNOWN_ISSUES`
+2. `docs/adr/` — every ADR matching the active domain (index: `docs/adr/README.md`)
+
+Do **not** dump ADR contents to the operator unless asked. Apply constraints; cite ADR numbers when rejecting.
+
+When a **new** architectural rule is finalized with the operator, append an ADR (`docs/adr/XXXX-topic.md`), update `docs/adr/README.md`, and refresh `LATEST_ARCHITECTURAL_DECISION` in `.cursor/STATE.md`. ADRs are **append-only** (never rewrite prior Context/Decision; supersede via new ADR + Status update).
 
 ---
 
-CONSTRAINT 1 (CRITICAL - ARCHITECTURE LOG): ADRs are APPEND-ONLY. You are strictly forbidden from deleting or altering the context/decision of old ADRs. To change a decision, create a NEW ADR with the next sequential number, and update the old ADR's Status to `Superseded by ADR-XXXX`. Always update `docs/adr/README.md`.
-CONSTRAINT 2 (CRITICAL - GITOPS DEPLOYMENT): You are strictly forbidden from initiating deployments, executing deployment scripts (e.g., `publish_edge.sh`), or using SSH. Your boundary ends at Git.
-Definition of Done for any task:
-1. Create or checkout the appropriate branch.
-2. Modify source files.
-3. Execute `python pipeline/scripts/build_engine.py` strictly for local build validation.
-4. Stage changes (`git add .`), commit (`git commit -m "..."`), and push to the remote branch (`git push`).
-5. Report completion to the user. DO NOT EXECUTE DEPLOY SCRIPTS.
+## 1. Working Memory (WRITE PATH)
+
+On completing a **major task**, automatically update `.cursor/STATE.md`:
+
+| Section | Update to |
+|---|---|
+| `CURRENT_ACTIVE_TASK` | What just finished, or `IDLE` if queue empty |
+| `LATEST_ARCHITECTURAL_DECISION` | Newest ADR / binding decision affecting the work |
+| `NEXT_STEPS` | Concrete follow-ups (or empty checklist) |
+| `KNOWN_ISSUES` | Open defects / stale references still relevant |
+
+---
+
+## 2. Guardrails (Always On)
+
+- **DRY / SOLID.** Production-ready output only. No hacks, no temporary workarounds, no `// TODO` / `# TODO` stubs, no god-objects.
+- **Evidence gate (ADR-0004).** No invented tokens, CSS classes, DOM nodes, entities, or plugins. Missing SoT → `FATAL_EXCEPTION` / HALT for measurement.
+- **GitOps boundary (ADR-0037 / ADR-0048).** Agent boundary ends at Git. Forbidden: `publish_edge.sh`, SSH writes, ad-hoc edge copies, local deploy scripts. Allowed: local `python pipeline/scripts/build_engine.py` validation, then git stage / commit / push when delivering. CI alone publishes to Edge (Cloudflare Tunnel SSH + rsync on `main`).
+- **Zero Standing Privileges.** Do not embed long-lived credentials, bypass auth outside ephemeral CI fixtures, or open persistent privileged sessions to Edge.
+- **Headless HA.** Manage HA via generated YAML + GitOps; do not rely on imperative UI click-ops or agent-driven live reconfiguration of production.
+- **Domain isolation (ADR-0002).** Never mix `environments/` (WHAT) and `design_system/` (HOW) in one change set. Never hand-edit `build/staging/**`.
+- **Intent cycle (ADR-0001 / ADR-0003).** Pipeline UI changes flow: NL → intent contract (`pipeline/schemas/active_intent.json`) → single mutator domain → `build_engine.py`. No freestyle YAML/token/map edits outside that cycle when an intent is required.
+
+### Definition of Done (delivery tasks)
+
+1. Checkout / create the appropriate branch.
+2. Modify sources in the authorized domain only.
+3. Run `python pipeline/scripts/build_engine.py` for local build validation when staging inputs changed.
+4. Stage, commit, and push to the remote branch when the operator requests delivery (or when closing a contracted delivery cycle).
+5. Update `.cursor/STATE.md`. Report completion. **Do not execute deploy scripts.**
+
+---
+
+## 3. Agent Routing (State Machine)
+
+Adopt the persona of the matching domain expert. Routing points at `.cursor/rules/`:
+
+| When editing / primarily touching | Activate | Rule file |
+|---|---|---|
+| `docs/adr/*.md`, architecture / process `*.md` | System Architect | `.cursor/rules/01-architect.mdc` |
+| `*.py`, `requirements.txt`, `**/requirements*.txt` | Backend Python Engineer | `.cursor/rules/02-backend-python.mdc` |
+| `*.yaml`, `*.yml` (non-workflow), `*.json` (maps/tokens/templates), `*.js` (card/probe JS), `*.jinja2`, `design_system/**` | HA Frontend / Config Expert | `.cursor/rules/03-frontend-ha-yaml.mdc` |
+| `.github/workflows/*`, `pipeline/tests/e2e/**`, CI/CD orchestration | DevOps & QA Automation | `.cursor/rules/04-cicd-orchestrator.mdc` |
+
+**Conflict resolution:** If a change set spans domains, sequence work — one domain expert persona per mutation batch. Prefer Architect for cross-cutting process/ADR decisions before mutators run.
+
+**Pipeline intent roster (still binding via ADR-0003):** `@analyzer` (intent-only) → `@architect` (content maps) | `@stylist` (tokens / authorized shells) | `@extractor` (first-time templates). Floor mosaic fixes never route to structural `@architect`. New DOM structure never routes to `@stylist`.

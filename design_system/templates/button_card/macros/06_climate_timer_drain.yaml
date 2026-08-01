@@ -127,8 +127,15 @@
               outerPx = midPx + useLen / 2;
               innerPx = midPx - useLen / 2;
             }
+            /* ADR 0046 — progress ring rides past the tick tips, centred in the
+               clearance to the room edge, so segment animations never touch it. */
+            const clearPx = Math.max(0, roomHalfPx - outerPx);
+            const ringThickPx = Math.max(1.5, Math.min(clearPx * 0.34, 4));
+            const ringMidPx = outerPx + clearPx / 2;
+            const ringOuterPx = ringMidPx + ringThickPx / 2;
+            const ringInnerPx = ringMidPx - ringThickPx / 2;
             /* Size drain box so outer tip fits (equal-gap may exceed host). */
-            const needHalf = Math.max(hostW / 2, outerPx * 1.02);
+            const needHalf = Math.max(hostW / 2, outerPx * 1.02, ringOuterPx * 1.02);
             const needBox = needHalf * 2;
             if (needBox > hostW + 0.5) {
               try {
@@ -137,6 +144,11 @@
               } catch (e) {}
             }
             const viewHalf = Math.max(el.clientWidth || drainW, needBox) / 2;
+            if (viewHalf > 0) {
+              const pct = (px) => __lgR4(Math.max(0, Math.min(100, (px / viewHalf) * 100)));
+              el.style.setProperty('--lg_timer_conic_inner_pct', `${pct(ringInnerPx)}%`);
+              el.style.setProperty('--lg_timer_conic_outer_pct', `${pct(ringOuterPx)}%`);
+            }
             const r = viewHalf > 0 ? (outerPx / viewHalf) * 50 : 46;
             return Math.min(49, Math.round(r * 1000) / 1000);
           } catch (e) { return 0; }
@@ -169,23 +181,23 @@
             }
           }, 50);
         };
-        /* Mode-driven progress hue (cool / heat), muted to the glass palette. */
+        /* Mode hue rule (ADR 0046): cool → cyan, heat → orange, rest → white. */
         const __lgDrainMode = String((entity && entity.state) || 'off');
         const __lgDrainPowered = __lgDrainMode !== 'off'
           && __lgDrainMode !== 'unavailable'
           && __lgDrainMode !== 'unknown';
+        const __lgDrainHue = __lgDrainMode === 'cool' ? 'cool'
+          : (__lgDrainMode === 'heat' ? 'heat' : 'neutral');
         this.style.setProperty('--lg_color_climate_timer_conic_active',
-          __lgDrainMode === 'heat'
-            ? 'var(--lg_color_climate_timer_conic_fill_heat)'
-            : 'var(--lg_color_climate_timer_conic_fill_cool)');
+          `var(--lg_color_climate_timer_conic_fill_${__lgDrainHue})`);
         this.style.setProperty('--lg_color_climate_timer_conic_active_glow',
-          __lgDrainMode === 'heat'
-            ? 'var(--lg_color_climate_timer_conic_glow_heat)'
-            : 'var(--lg_color_climate_timer_conic_glow_cool)');
-        /* An armed/running timer must not paint chrome over an OFF widget. */
+          `var(--lg_color_climate_timer_conic_glow_${__lgDrainHue})`);
+        /* An armed/running timer must not paint chrome over an OFF widget, and
+           any submenu layer owns the outer band while it is open. */
         const __lgDrainShow = !!(!(__lgWantManage || __lgWantRadial)
           && (running || armed)
           && __lgDrainPowered
+          && this.classList.contains('lg-wheel-layer-main')
           && !(this.classList.contains('lg-wheel-temp-open') || this.classList.contains('lg-wheel-temp-arming')));
         if (!__lgDrainPowered) {
           this.classList.remove('lg-timer-threshold-warn', 'lg-timer-completion');
@@ -211,6 +223,7 @@
               || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-radial') === '1')
               || __lgDrainHost.classList.contains('lg-power-idle-off')
               || __lgDrainHost.classList.contains('lg-power-unavailable')
+              || !__lgDrainHost.classList.contains('lg-wheel-layer-main')
               || __lgDrainHost.classList.contains('lg-wheel-temp-open')
               || __lgDrainHost.classList.contains('lg-wheel-temp-arming'));
             __lgSyncDrain(__lgDrainHost, t, !hide);
@@ -232,6 +245,7 @@
               || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-radial') === '1')
               || __lgDrainHost.classList.contains('lg-power-idle-off')
               || __lgDrainHost.classList.contains('lg-power-unavailable')
+              || !__lgDrainHost.classList.contains('lg-wheel-layer-main')
               || __lgDrainHost.classList.contains('lg-wheel-temp-open')
               || __lgDrainHost.classList.contains('lg-wheel-temp-arming'));
             __lgSyncDrain(__lgDrainHost, t, !hide);

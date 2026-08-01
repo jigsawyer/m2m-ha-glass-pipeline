@@ -1,6 +1,6 @@
 Title: CI Deploy Job — Secure Webhook Handoff After E2E
 Date: 2026-07-31
-Status: Accepted
+Status: Superseded by ADR-0048
 
 # 0040. CI Deploy Job — Secure Webhook Handoff After E2E
 
