@@ -1,4 +1,4 @@
-{# ADR 0044 — TIMER_ACTIVE drain = Ambient Conic Track + static tick track.
+{# ADR 0055 — Watch Bezel drain: equidistant geometry + Ambient Conic Track.
    Call from climate_global_wheel extra_styles AFTER __lgDrainT / running / armed /
    tEnt / __lgWantManage / __lgWantRadial / __lgClockRemSec are in scope. #}
 {% macro lg_climate_timer_drain_sync_js() -%}
@@ -17,26 +17,39 @@
         };
         const __lgTickN = 60;
         const __lgR4 = (n) => Math.round(n * 10000) / 10000;
-        const __lgReadDrainTickGeo = (host) => {
+        const __lgReadDrainTickGeo = (host, drainW) => {
           const cs = getComputedStyle(host);
           const num = (prop, fb) => {
             const v = parseFloat(cs.getPropertyValue(prop));
             return Number.isFinite(v) && v > 0 ? v : fb;
           };
           const phone = window.matchMedia && window.matchMedia('(max-width: 48rem)').matches;
+          const remToVb = (prop, fbRem) => {
+            const px = __lgParseCssLen(cs.getPropertyValue(prop) || fbRem, host.clientWidth || 0);
+            if (!(drainW > 0) || !(px > 0)) return 0;
+            return (px / drainW) * 100;
+          };
           return {
             len: num(phone ? '--lg_size_climate_timer_tick_len_phone' : '--lg_size_climate_timer_tick_len', phone ? 2.25 : 2.0),
+            lenM: remToVb(
+              phone ? '--lg_size_climate_timer_tick_len_medium_phone' : '--lg_size_climate_timer_tick_len_medium',
+              phone ? '0.32rem' : '0.28rem'
+            ) || (phone ? 2.5 : 2.25),
             lenQ: num(phone ? '--lg_size_climate_timer_tick_len_quarter_phone' : '--lg_size_climate_timer_tick_len_quarter', phone ? 2.85 : 2.55),
             thick: num(phone ? '--lg_size_climate_timer_tick_thick_phone' : '--lg_size_climate_timer_tick_thick', phone ? 0.95 : 0.85),
+            thickM: remToVb(
+              phone ? '--lg_size_climate_timer_tick_thick_medium_phone' : '--lg_size_climate_timer_tick_thick_medium',
+              phone ? '0.085rem' : '0.075rem'
+            ) || (phone ? 1.05 : 1.0),
             thickQ: num(phone ? '--lg_size_climate_timer_tick_thick_quarter_phone' : '--lg_size_climate_timer_tick_thick_quarter', phone ? 1.35 : 1.2),
-            opActive: num('--lg_opacity_climate_timer_tick_active', 0.87),
+            opDormant: num('--lg_opacity_climate_timer_tick_dormant', 0.2),
             opInactive: num('--lg_opacity_climate_timer_tick_inactive', 0.18),
           };
         };
-        const __lgEnsureDrainTicks = (g, host, outerR) => {
+        const __lgEnsureDrainTicks = (g, host, outerR, drainW) => {
           if (!g) return;
-          const geo = __lgReadDrainTickGeo(host);
-          const geoKey = `${outerR}|${geo.len}|${geo.thick}|${geo.lenQ}|${geo.thickQ}`;
+          const geo = __lgReadDrainTickGeo(host, drainW);
+          const geoKey = `${outerR}|${geo.len}|${geo.lenM}|${geo.thick}|${geo.thickM}|${geo.lenQ}|${geo.thickQ}`;
           const needRebuild = g.childElementCount !== __lgTickN
             || g.getAttribute('data-geo') !== geoKey;
           if (!needRebuild) return;
@@ -47,35 +60,39 @@
           const CX = 50, CY = 50;
           for (let i = 0; i < __lgTickN; i += 1) {
             const quarter = (i % 15) === 0;
-            const len = quarter ? geo.lenQ : geo.len;
-            const thick = quarter ? geo.thickQ : geo.thick;
+            const medium = !quarter && (i % 5) === 0;
+            const len = quarter ? geo.lenQ : (medium ? geo.lenM : geo.len);
+            const thick = quarter ? geo.thickQ : (medium ? geo.thickM : geo.thick);
             const theta = (i / __lgTickN) * Math.PI * 2;
             const cos = Math.cos(theta);
             const sin = Math.sin(theta);
             const rOut = outerR;
             const rIn = Math.max(0, outerR - len);
             const line = document.createElementNS(ns, 'line');
-            line.setAttribute('class', quarter ? 'lg-timer-drain-tick lg-timer-drain-tick--quarter' : 'lg-timer-drain-tick');
+            let cls = 'lg-timer-drain-tick';
+            if (quarter) cls += ' lg-timer-drain-tick--quarter';
+            else if (medium) cls += ' lg-timer-drain-tick--medium';
+            line.setAttribute('class', cls);
             line.setAttribute('data-i', String(i));
             line.setAttribute('x1', String(__lgR4(CX + rIn * sin)));
             line.setAttribute('y1', String(__lgR4(CY - rIn * cos)));
             line.setAttribute('x2', String(__lgR4(CX + rOut * sin)));
             line.setAttribute('y2', String(__lgR4(CY - rOut * cos)));
             line.setAttribute('stroke-width', String(thick));
-            line.style.opacity = String(geo.opInactive);
+            line.style.opacity = String(geo.opDormant);
             g.appendChild(line);
           }
         };
-        const __lgApplyDrainTicks = (host, t, outerR) => {
+        const __lgApplyDrainTicks = (host, t, outerR, drainW) => {
           try {
             const root = host.shadowRoot;
             const g = root && root.querySelector('#timer_drain .lg-timer-drain-ticks');
             if (!g) return false;
-            __lgEnsureDrainTicks(g, host, outerR);
-            const geo = __lgReadDrainTickGeo(host);
+            __lgEnsureDrainTicks(g, host, outerR, drainW);
+            const geo = __lgReadDrainTickGeo(host, drainW);
             const lines = g.querySelectorAll('.lg-timer-drain-tick');
             for (let i = 0; i < lines.length; i += 1) {
-              lines[i].style.opacity = String(geo.opInactive);
+              lines[i].style.opacity = String(geo.opDormant);
             }
             const tt = Math.max(0, Math.min(1, Number(t) || 0));
             host.style.setProperty('--lg_timer_drain_t', String(tt));
@@ -97,45 +114,41 @@
             return true;
           } catch (e) { return false; }
         };
+        /* ADR 0055 — Watch Bezel: D_bezel_gap = G_radial; W_bezel = k * W_radial_button. */
         const __lgLayoutDrain = (host) => {
           try {
             const root = host.shadowRoot;
             const el = root && root.querySelector('#timer_drain');
-            if (!el) return 0;
+            if (!el) return { r: 0, drainW: 0 };
             const hostW = host.clientWidth || 0;
-            if (!(hostW > 0)) return 0;
+            if (!(hostW > 0)) return { r: 0, drainW: 0 };
             const cs = getComputedStyle(host);
-            const outerPct = parseFloat(cs.getPropertyValue('--lg_size_climate_wheel_outer_pct')) || 96;
+            const phone = window.matchMedia && window.matchMedia('(max-width: 48rem)').matches;
+            const outerPct = parseFloat(cs.getPropertyValue(
+              phone ? '--lg_size_climate_wheel_outer_pct_phone' : '--lg_size_climate_wheel_outer_pct'
+            )) || 96;
+            const innerPct = parseFloat(cs.getPropertyValue(
+              phone ? '--lg_size_climate_wheel_inner_pct_phone' : '--lg_size_climate_wheel_inner_pct'
+            )) || 54;
             const padPx = __lgParseCssLen(cs.getPropertyValue('--lg_space_climate_pad'), hostW);
             const strokeGlassPx = __lgParseCssLen(cs.getPropertyValue('--lg_stroke_glass'), hostW);
-            const geo = __lgReadDrainTickGeo(host);
-            const drainW = el.clientWidth || hostW;
-            const drainHalf = drainW / 2;
-            const segOuterPx = (outerPct / 100) * (hostW / 2);
-            /* Equal-split gutter: menu→ticks == ticks→room edge (ADR polish gap). */
-            const roomHalfPx = hostW / 2 + padPx + strokeGlassPx;
-            const gutterPx = Math.max(0, roomHalfPx - segOuterPx);
-            const tickLenPx = (geo.len * drainW) / 100;
-            let midPx = segOuterPx + gutterPx / 2;
-            let outerPx = midPx + tickLenPx / 2;
-            let innerPx = midPx - tickLenPx / 2;
-            if (innerPx <= segOuterPx && tickLenPx > 0) {
-              /* Prefer equal-gap; if tick too long for gutter, shrink effective length. */
-              const maxLen = Math.max(0, gutterPx * 0.9);
-              const useLen = Math.min(tickLenPx, maxLen);
-              midPx = segOuterPx + gutterPx / 2;
-              outerPx = midPx + useLen / 2;
-              innerPx = midPx - useLen / 2;
+            const gRadialPx = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_wheel_seg_gap'), hostW);
+            const kWeight = (() => {
+              const v = parseFloat(cs.getPropertyValue('--lg_ratio_climate_timer_bezel_weight'));
+              return Number.isFinite(v) && v > 0 ? v : 0.1;
+            })();
+            const hostHalf = hostW / 2;
+            const rRadialOuter = (outerPct / 100) * hostHalf;
+            const wRadialButton = Math.max(0, ((outerPct - innerPct) / 100) * hostHalf);
+            let wBezel = kWeight * wRadialButton;
+            const rBezelInner = rRadialOuter + gRadialPx;
+            const roomHalfPx = hostHalf + padPx + strokeGlassPx;
+            let rBezelOuter = rBezelInner + wBezel;
+            if (rBezelOuter > roomHalfPx) {
+              wBezel = Math.max(0, roomHalfPx - rBezelInner);
+              rBezelOuter = rBezelInner + wBezel;
             }
-            /* ADR 0046 — progress ring rides past the tick tips, centred in the
-               clearance to the room edge, so segment animations never touch it. */
-            const clearPx = Math.max(0, roomHalfPx - outerPx);
-            const ringThickPx = Math.max(1.5, Math.min(clearPx * 0.34, 4));
-            const ringMidPx = outerPx + clearPx / 2;
-            const ringOuterPx = ringMidPx + ringThickPx / 2;
-            const ringInnerPx = ringMidPx - ringThickPx / 2;
-            /* Size drain box so outer tip fits (equal-gap may exceed host). */
-            const needHalf = Math.max(hostW / 2, outerPx * 1.02, ringOuterPx * 1.02);
+            const needHalf = Math.max(hostW / 2, rBezelOuter * 1.02);
             const needBox = needHalf * 2;
             if (needBox > hostW + 0.5) {
               try {
@@ -143,15 +156,21 @@
                 el.style.setProperty('height', `${needBox}px`, 'important');
               } catch (e) {}
             }
-            const viewHalf = Math.max(el.clientWidth || drainW, needBox) / 2;
+            const drainW = Math.max(el.clientWidth || hostW, needBox);
+            const viewHalf = drainW / 2;
             if (viewHalf > 0) {
               const pct = (px) => __lgR4(Math.max(0, Math.min(100, (px / viewHalf) * 100)));
-              el.style.setProperty('--lg_timer_conic_inner_pct', `${pct(ringInnerPx)}%`);
-              el.style.setProperty('--lg_timer_conic_outer_pct', `${pct(ringOuterPx)}%`);
+              el.style.setProperty('--lg_timer_conic_inner_pct', `${pct(rBezelInner)}%`);
+              el.style.setProperty('--lg_timer_conic_outer_pct', `${pct(rBezelOuter)}%`);
+              el.style.setProperty('--lg_timer_bezel_gap_px', String(__lgR4(gRadialPx)));
+              el.style.setProperty('--lg_timer_bezel_weight_px', String(__lgR4(wBezel)));
             }
-            const r = viewHalf > 0 ? (outerPx / viewHalf) * 50 : 46;
-            return Math.min(49, Math.round(r * 1000) / 1000);
-          } catch (e) { return 0; }
+            const r = viewHalf > 0 ? (rBezelOuter / viewHalf) * 50 : 46;
+            return {
+              r: Math.min(49, Math.round(r * 1000) / 1000),
+              drainW,
+            };
+          } catch (e) { return { r: 0, drainW: 0 }; }
         };
         const __lgSyncDrain = (host, t, show) => {
           const once = () => {
@@ -162,9 +181,10 @@
               el.style.setProperty('opacity', show ? '1' : '0', 'important');
             } catch (e) {}
             if (show) {
-              const r = __lgLayoutDrain(host) || 48.5;
+              const layout = __lgLayoutDrain(host);
+              const r = layout.r || 48.5;
               host.__lgTimerDrainR = r;
-              __lgApplyDrainTicks(host, t, r);
+              __lgApplyDrainTicks(host, t, r, layout.drainW || el.clientWidth || host.clientWidth || 0);
             }
             return true;
           };
@@ -181,23 +201,34 @@
             }
           }, 50);
         };
-        /* Mode hue rule (ADR 0046): cool → cyan, heat → orange, rest → white. */
-        const __lgDrainMode = String((entity && entity.state) || 'off');
+        /* ADR 0055 — hue from hvac_action, fallback entity.state (cool/heat/neutral). */
+        const __lgDrainAttrs = (entity && entity.attributes) || {};
+        const __lgDrainAction = String(__lgDrainAttrs.hvac_action || '').toLowerCase();
+        const __lgDrainMode = String((entity && entity.state) || 'off').toLowerCase();
         const __lgDrainPowered = __lgDrainMode !== 'off'
           && __lgDrainMode !== 'unavailable'
           && __lgDrainMode !== 'unknown';
-        const __lgDrainHue = __lgDrainMode === 'cool' ? 'cool'
-          : (__lgDrainMode === 'heat' ? 'heat' : 'neutral');
+        const __lgHueFromAction = (() => {
+          if (__lgDrainAction === 'cooling') return 'cool';
+          if (__lgDrainAction === 'heating') return 'heat';
+          if (__lgDrainAction === 'fan' || __lgDrainAction === 'fan_only'
+            || __lgDrainAction === 'dry' || __lgDrainAction === 'idle') {
+            return 'neutral';
+          }
+          return '';
+        })();
+        const __lgDrainHue = __lgHueFromAction
+          || (__lgDrainMode === 'cool' ? 'cool'
+            : (__lgDrainMode === 'heat' ? 'heat' : 'neutral'));
         this.style.setProperty('--lg_color_climate_timer_conic_active',
           `var(--lg_color_climate_timer_conic_fill_${__lgDrainHue})`);
         this.style.setProperty('--lg_color_climate_timer_conic_active_glow',
           `var(--lg_color_climate_timer_conic_glow_${__lgDrainHue})`);
-        /* An armed/running timer must not paint chrome over an OFF widget, and
-           any submenu layer owns the outer band while it is open. */
-        const __lgDrainShow = !!(!(__lgWantManage || __lgWantRadial)
-          && (running || armed)
-          && __lgDrainPowered
+        /* Dormant Watch Bezel ticks always on powered main layer (ADR 0055 IDLE).
+           Progress arc stays opacity 0 until armed/running (t > 0). */
+        const __lgDrainShow = !!(__lgDrainPowered
           && this.classList.contains('lg-wheel-layer-main')
+          && !(__lgWantManage || __lgWantRadial)
           && !(this.classList.contains('lg-wheel-temp-open') || this.classList.contains('lg-wheel-temp-arming')));
         if (!__lgDrainPowered) {
           this.classList.remove('lg-timer-threshold-warn', 'lg-timer-completion');
@@ -207,6 +238,15 @@
           clearInterval(this.__lgTimerDrainTick);
           this.__lgTimerDrainTick = null;
         }
+        const __lgDrainHideCheck = (h) => !!(h.classList.contains('lg-timer-manage-open')
+          || (h.getAttribute && h.getAttribute('data-lg-timer-manage') === '1')
+          || h.classList.contains('lg-timer-radial-open')
+          || (h.getAttribute && h.getAttribute('data-lg-timer-radial') === '1')
+          || h.classList.contains('lg-power-idle-off')
+          || h.classList.contains('lg-power-unavailable')
+          || !h.classList.contains('lg-wheel-layer-main')
+          || h.classList.contains('lg-wheel-temp-open')
+          || h.classList.contains('lg-wheel-temp-arming'));
         if (running && tEnt && tEnt.state === 'active') {
           const __lgDrainHost = this;
           this.__lgTimerDrainTick = setInterval(() => {
@@ -217,16 +257,7 @@
             const rem = Number.isFinite(ms) ? Math.max(0, Math.floor(ms / 1000)) : 0;
             const t = Math.max(0, Math.min(1, rem / dur));
             __lgDrainHost.style.setProperty('--lg_timer_drain_t', String(t));
-            const hide = !!(__lgDrainHost.classList.contains('lg-timer-manage-open')
-              || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-manage') === '1')
-              || __lgDrainHost.classList.contains('lg-timer-radial-open')
-              || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-radial') === '1')
-              || __lgDrainHost.classList.contains('lg-power-idle-off')
-              || __lgDrainHost.classList.contains('lg-power-unavailable')
-              || !__lgDrainHost.classList.contains('lg-wheel-layer-main')
-              || __lgDrainHost.classList.contains('lg-wheel-temp-open')
-              || __lgDrainHost.classList.contains('lg-wheel-temp-arming'));
-            __lgSyncDrain(__lgDrainHost, t, !hide);
+            __lgSyncDrain(__lgDrainHost, t, !__lgDrainHideCheck(__lgDrainHost));
           }, 1000);
         } else if (armed) {
           const __lgDrainHost = this;
@@ -239,16 +270,7 @@
             }
             const t = Math.max(0, Math.min(1, rem / initial));
             __lgDrainHost.style.setProperty('--lg_timer_drain_t', String(t));
-            const hide = !!(__lgDrainHost.classList.contains('lg-timer-manage-open')
-              || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-manage') === '1')
-              || __lgDrainHost.classList.contains('lg-timer-radial-open')
-              || (__lgDrainHost.getAttribute && __lgDrainHost.getAttribute('data-lg-timer-radial') === '1')
-              || __lgDrainHost.classList.contains('lg-power-idle-off')
-              || __lgDrainHost.classList.contains('lg-power-unavailable')
-              || !__lgDrainHost.classList.contains('lg-wheel-layer-main')
-              || __lgDrainHost.classList.contains('lg-wheel-temp-open')
-              || __lgDrainHost.classList.contains('lg-wheel-temp-arming'));
-            __lgSyncDrain(__lgDrainHost, t, !hide);
+            __lgSyncDrain(__lgDrainHost, t, !__lgDrainHideCheck(__lgDrainHost));
           }, 1000);
         }
 {%- endmacro %}
