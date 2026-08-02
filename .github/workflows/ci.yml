@@ -65,6 +65,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # ADR-0054: classify Change Set from git source paths (not build/staging).
+      - name: Detect Change Set
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            backend:
+              - 'environments/**/ha_operator/**'
+            frontend:
+              - 'design_system/**'
+              - 'environments/**/dashboards/**'
+              - 'environments/**/global_hardware_map.json'
+              - 'environments/**/global_spatial_topology.json'
+              - 'environments/**/config.json'
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v7
@@ -146,7 +163,21 @@ jobs:
             rsync -avz -e ssh "${root_yamls[@]}" haos-target:/config/
           fi
 
+      # ADR-0054: packages (backend) require HAOS core restart; frontend-only skips.
       - name: Reload Core configuration
+        if: steps.filter.outputs.backend == 'true'
         run: |
           set -euo pipefail
+          echo "Backend Change Set detected — executing ha core restart."
           ssh haos-target 'ha core restart'
+
+      - name: Skip Core restart (non-backend Change Set)
+        if: steps.filter.outputs.backend != 'true'
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.filter.outputs.frontend }}" = "true" ]; then
+            echo "Frontend-only Change Set (www/themes/dashboards) — skipping ha core restart (ADR-0054)."
+          else
+            echo "No backend Change Set — skipping ha core restart (ADR-0054)."
+          fi
+          exit 0
