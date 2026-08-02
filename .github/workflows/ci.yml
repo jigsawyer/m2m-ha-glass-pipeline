@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      PYTHONPATH: .
 
     steps:
       - name: Checkout repository
@@ -31,6 +33,23 @@ jobs:
 
       - name: Install Playwright browsers
         run: playwright install --with-deps chromium
+
+      - name: ADR Policy Gate
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags origin "${{ github.base_ref }}"
+            python -m pipeline.harness policy-gate --base "origin/${{ github.base_ref }}"
+          else
+            BEFORE="${{ github.event.before }}"
+            if [ -n "${BEFORE}" ] && [ "${BEFORE}" != "0000000000000000000000000000000000000000" ]; then
+              python -m pipeline.harness policy-gate --base "${BEFORE}"
+            else
+              python -m pipeline.harness policy-gate --base HEAD~1
+            fi
+          fi
+
+      - name: Harness unit tests
+        run: pytest pipeline/tests/unit/ -q
 
       - name: Generate Artifacts
         run: python pipeline/scripts/build_engine.py

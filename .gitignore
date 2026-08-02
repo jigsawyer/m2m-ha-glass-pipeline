@@ -1,5 +1,9 @@
 build/*
 logs/*
 .cursor/*
+!.cursor/mcp.json
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/STATE.md
 .env/*
 .venv/*

@@ -1,6 +1,6 @@
 Title: Agent Roster, Intent Classification, and Contract Schema
 Date: Unknown
-Status: Accepted
+Status: Accepted (JSON mutation contract amended by ADR-0059)
 
 # 0003. Agent Roster, Intent Classification, and Contract Schema
 
@@ -19,7 +19,7 @@ Routing must be deterministic: a natural-language request maps to exactly one ag
 | **@stylist** | Hot | Intent (`STYLISTIC`) | `design_system/tokens/*.json`, `dashboards/{target}/config.json`; layout + `button_card_templates` only under `constraints.allow_template_layout_edit: true` | `global_*.json`, `local_content_map.json` |
 | **@extractor** | Ingest | Intent (`EXTRACTIVE`), design refs in payload | `design_system/tokens/*.json`, `design_system/templates/**`, shared macros | `environments/`, pipeline scripts |
 
-`@architect` validates every requested entity against the hardware map; a missing entity → `FATAL_EXCEPTION`. Mutators overwrite their target file completely with valid formatted content and emit no conversational text.
+`@architect` validates every requested entity against the hardware map; a missing entity → `FATAL_EXCEPTION`. Mutators emit no conversational text. For JSON registries they MAY apply RFC 6902 patches via `pipeline/harness` (ADR-0059); for YAML templates and other non-JSON sources they overwrite the target file completely with valid formatted content.
 
 ### Classification
 

@@ -1,6 +1,6 @@
 Title: Agentic Fallback Orchestration in CI/CD
 Date: 2026-07-31
-Status: Accepted
+Status: Accepted (patch envelope amended by ADR-0059)
 
 # 0043. Agentic Fallback Orchestration in CI/CD
 
