@@ -120,7 +120,7 @@
             return true;
           } catch (e) { return false; }
         };
-        /* ADR 0055 — Watch Bezel: D_bezel_gap = G_radial; W_bezel = k * W_radial_button. */
+        /* ADR 0055 — Watch Bezel: D_bezel_gap from bezel_gap token; W_bezel = k * W_radial_button. */
         const __lgLayoutDrain = (host) => {
           try {
             const root = host.shadowRoot;
@@ -139,15 +139,19 @@
             const padPx = __lgParseCssLen(cs.getPropertyValue('--lg_space_climate_pad'), hostW);
             const strokeGlassPx = __lgParseCssLen(cs.getPropertyValue('--lg_stroke_glass'), hostW);
             const gRadialPx = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_wheel_seg_gap'), hostW);
+            const bezelGapPx = (() => {
+              const dedicated = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_timer_bezel_gap'), hostW);
+              return dedicated > 0 ? dedicated : (gRadialPx * 2.5);
+            })();
             const kWeight = (() => {
               const v = parseFloat(cs.getPropertyValue('--lg_ratio_climate_timer_bezel_weight'));
-              return Number.isFinite(v) && v > 0 ? v : 0.24;
+              return Number.isFinite(v) && v > 0 ? v : 0.36;
             })();
             const hostHalf = hostW / 2;
             const rRadialOuter = (outerPct / 100) * hostHalf;
             const wRadialButton = Math.max(0, ((outerPct - innerPct) / 100) * hostHalf);
             let wBezel = kWeight * wRadialButton;
-            const rBezelInner = rRadialOuter + gRadialPx;
+            const rBezelInner = rRadialOuter + bezelGapPx;
             const roomHalfPx = hostHalf + padPx + strokeGlassPx;
             let rBezelOuter = rBezelInner + wBezel;
             if (rBezelOuter > roomHalfPx) {
@@ -168,7 +172,7 @@
               const pct = (px) => __lgR4(Math.max(0, Math.min(100, (px / viewHalf) * 100)));
               el.style.setProperty('--lg_timer_conic_inner_pct', `${pct(rBezelInner)}%`);
               el.style.setProperty('--lg_timer_conic_outer_pct', `${pct(rBezelOuter)}%`);
-              el.style.setProperty('--lg_timer_bezel_gap_px', String(__lgR4(gRadialPx)));
+              el.style.setProperty('--lg_timer_bezel_gap_px', String(__lgR4(bezelGapPx)));
               el.style.setProperty('--lg_timer_bezel_weight_px', String(__lgR4(wBezel)));
             }
             const r = viewHalf > 0 ? (rBezelOuter / viewHalf) * 50 : 46;
@@ -238,6 +242,8 @@
            Progress arc stays opacity 0 until armed/running (t > 0). */
         const __lgDrainShow = !!(__lgDrainPowered
           && this.classList.contains('lg-wheel-layer-main')
+          && !this.classList.contains('lg-wheel-layer-mode')
+          && !this.classList.contains('lg-wheel-layer-fan')
           && !(__lgWantManage || __lgWantRadial)
           && !(this.classList.contains('lg-wheel-temp-open') || this.classList.contains('lg-wheel-temp-arming')));
         if (!__lgDrainPowered) {
@@ -255,6 +261,8 @@
           || h.classList.contains('lg-power-idle-off')
           || h.classList.contains('lg-power-unavailable')
           || !h.classList.contains('lg-wheel-layer-main')
+          || h.classList.contains('lg-wheel-layer-mode')
+          || h.classList.contains('lg-wheel-layer-fan')
           || h.classList.contains('lg-wheel-temp-open')
           || h.classList.contains('lg-wheel-temp-arming'));
         if (running && tEnt && tEnt.state === 'active') {

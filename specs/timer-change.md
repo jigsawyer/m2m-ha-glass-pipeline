@@ -39,11 +39,12 @@ Let:
 
 Equidistant Clearance Contract:
 
-D_bezel_gap = G_radial
+D_bezel_gap = Token.Bezel_Clearance (`lg_size_climate_timer_bezel_gap`,
+derived as a multiple of Token.Radial_Gap / `lg_size_climate_wheel_seg_gap`)
 
 Therefore:
 
-R_bezel_inner = R_radial_outer + G_radial
+R_bezel_inner = R_radial_outer + D_bezel_gap
 
 R_bezel_outer = R_bezel_inner + W_bezel
 

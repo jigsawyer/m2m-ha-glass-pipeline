@@ -189,7 +189,8 @@
         filter: none;
       }
       /* ADR 0055 — Watch Bezel: Ambient Conic + Major/Medium/Minor ticks.
-         conic-gradient 0deg already points at 12 o'clock; no -90deg offset. */
+         conic-gradient 0deg already points at 12 o'clock; no -90deg offset.
+         Visibility cuts must be instant — never morph opacity (ADR 0046). */
       #timer_drain {
         position: absolute !important;
         left: 50% !important;
@@ -201,8 +202,10 @@
         pointer-events: none !important;
         display: none !important;
         opacity: 0 !important;
+        visibility: hidden !important;
         overflow: visible !important;
-        transition: var(--lg_transition_climate_radial_morph);
+        transition: none !important;
+        animation: none !important;
       }
       @media (max-width: 48rem) {
         #timer_drain {
@@ -212,13 +215,15 @@
       }
       /* IDLE dormant tick ring on powered main layer (progress fill opacity 0).
          Explicit :not(submenu) so cut rules are not lost to specificity. */
-      :host(.lg-wheel-layer-main):not(.lg-power-idle-off):not(.lg-power-unavailable):not(.lg-timer-radial-open):not([data-lg-timer-radial="1"]):not(.lg-timer-manage-open):not([data-lg-timer-manage="1"]):not(.lg-wheel-temp-open):not(.lg-wheel-temp-arming) #timer_drain {
+      :host(.lg-wheel-layer-main):not(.lg-power-idle-off):not(.lg-power-unavailable):not(.lg-timer-radial-open):not([data-lg-timer-radial="1"]):not(.lg-timer-manage-open):not([data-lg-timer-manage="1"]):not(.lg-wheel-layer-mode):not(.lg-wheel-layer-fan):not(.lg-wheel-temp-open):not(.lg-wheel-temp-arming) #timer_drain {
         display: block !important;
         opacity: 1 !important;
+        visibility: visible !important;
       }
       :host(.lg-wheel-timer-active):not(.lg-timer-radial-open):not([data-lg-timer-radial="1"]):not(.lg-timer-manage-open):not([data-lg-timer-manage="1"]):not(.lg-wheel-layer-mode):not(.lg-wheel-layer-fan):not(.lg-wheel-temp-open):not(.lg-wheel-temp-arming) #timer_drain {
         display: block !important;
         opacity: 1 !important;
+        visibility: visible !important;
       }
       /* Submenus and temp drag own the outer band: cut, never fade (ADR 0046). */
       :host(.lg-timer-radial-open) #timer_drain,
@@ -231,6 +236,18 @@
       :host(.lg-wheel-temp-arming) #timer_drain {
         display: none !important;
         opacity: 0 !important;
+        visibility: hidden !important;
+        transition: none !important;
+        animation: none !important;
+      }
+      :host(.lg-timer-radial-open) #timer_drain *,
+      :host([data-lg-timer-radial="1"]) #timer_drain *,
+      :host(.lg-timer-manage-open) #timer_drain *,
+      :host([data-lg-timer-manage="1"]) #timer_drain *,
+      :host(.lg-wheel-layer-mode) #timer_drain *,
+      :host(.lg-wheel-layer-fan) #timer_drain *,
+      :host(.lg-wheel-temp-open) #timer_drain *,
+      :host(.lg-wheel-temp-arming) #timer_drain * {
         transition: none !important;
         animation: none !important;
       }
