@@ -265,7 +265,7 @@
           #000 var(--lg_timer_conic_outer_pct, 100%),
           transparent calc(var(--lg_timer_conic_outer_pct, 100%) + 0.35%)
         );
-        filter: drop-shadow(0 0 0.2rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_neutral)));
+        filter: drop-shadow(0 0 0.35rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_neutral)));
         transition: var(--lg_transition_climate_timer_state_morph);
       }
       :host(.lg-wheel-timer-active) #timer_drain .lg-timer-conic-fill {
@@ -280,7 +280,7 @@
         50% { opacity: 1; }
       }
       :host(.lg-timer-completion) #timer_drain .lg-timer-conic-fill {
-        filter: brightness(1.6) drop-shadow(0 0 0.35rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_neutral)));
+        filter: brightness(1.6) drop-shadow(0 0 0.5rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_neutral)));
         animation: lg_timer_completion_flash var(--lg_duration_climate_timer_completion_flash) ease-out,
           lg_timer_completion_fade var(--lg_duration_climate_timer_completion_fade) ease-in 0.2s forwards;
       }
