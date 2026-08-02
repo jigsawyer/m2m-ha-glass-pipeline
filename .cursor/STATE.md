@@ -4,10 +4,8 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`fix/timer-bezel-progress-collapse` — Watch Bezel progress bar collapsed to ~0 after
-`lg_size_climate_timer_bezel_gap = 2.5×G_radial` (eb90049). Fix applied locally:
-gap restored to `G_radial` (ADR-0055), drain layout defends track by clamping gap
-toward `G_radial` before shrinking `W_bezel`. Awaiting operator commit / push / CI.
+`fix/timer-bezel-progress-collapse` pushed (`a15790c`). Commit done; host has no
+`gh` CLI — PR must be opened via GitHub UI compare link.
 
 ## LATEST_ARCHITECTURAL_DECISION
 
@@ -17,7 +15,7 @@ clearance band and container-preservation zeros `W_bezel` (invisible Ambient Con
 
 ## NEXT_STEPS
 
-1. Operator: commit + push `fix/timer-bezel-progress-collapse` and open PR → `main`.
+1. Open PR: https://github.com/jigsawyer/m2m-ha-glass-pipeline/compare/main...fix/timer-bezel-progress-collapse?expand=1
 2. Confirm CI edge-state publish + Lovelace reload (ADR-0057 / ADR-0058).
 3. Visual verify on Кабінет: active timer shows Watch Bezel progress arc + ticks.
 
