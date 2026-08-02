@@ -4,9 +4,8 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`feat/adr-0064-enterprise-observability` — Phase 4 (evals, tracing, risk,
-Edge canary, lessons lifecycle) implemented locally; awaiting operator commit /
-push / PR.
+`feat/adr-0064-enterprise-observability` — ADR-0064 committed and pushed;
+operator opens PR via compare URL.
 
 ## LATEST_ARCHITECTURAL_DECISION
 
@@ -16,7 +15,7 @@ MCP action tracing + truncation, risk-classified tools, Edge REST canary with
 
 ## NEXT_STEPS
 
-1. Operator: review Change Set; authorize local commit + push/PR when ready.
+1. Operator opens PR from compare URL for `feat/adr-0064-enterprise-observability`.
 2. After merge to `main`: confirm CI runs Golden Intent evals and post-deploy
    Edge canary (rollback path only on health failure).
 3. Scheduled review: `python -m pipeline.harness lessons-status` → promote
