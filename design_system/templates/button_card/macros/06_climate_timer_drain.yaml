@@ -143,9 +143,8 @@
             return true;
           } catch (e) { return false; }
         };
-        /* ADR 0055 — Watch Bezel: D_bezel_gap = G_radial; W_bezel = k * W_radial_button.
-           Oversized gap tokens must not collapse the progress track to 0 width:
-           clamp gap down toward G_radial first, then shrink W_bezel to fit room. */
+        /* ADR 0063 — Watch Bezel: thin track centered in clearance band between
+           R_radial_outer and roomHalf (symmetric G_radial air vs menu + edge). */
         const __lgLayoutDrain = (host) => {
           try {
             const root = host.shadowRoot;
@@ -163,19 +162,13 @@
             )) || 54;
             const padPx = __lgParseCssLen(cs.getPropertyValue('--lg_space_climate_pad'), hostW, cs);
             const strokeGlassPx = __lgParseCssLen(cs.getPropertyValue('--lg_stroke_glass'), hostW, cs);
-            const gRadialPx = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_wheel_seg_gap'), hostW, cs);
-            let bezelGapPx = (() => {
-              const dedicated = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_timer_bezel_gap'), hostW, cs);
-              return dedicated > 0 ? dedicated : gRadialPx;
-            })();
             const kWeight = (() => {
               const v = parseFloat(cs.getPropertyValue('--lg_ratio_climate_timer_bezel_weight'));
-              return Number.isFinite(v) && v > 0 ? v : 0.36;
+              return Number.isFinite(v) && v > 0 ? v : 0.16;
             })();
             const hostHalf = hostW / 2;
             const rRadialOuter = (outerPct / 100) * hostHalf;
             const wRadialButton = Math.max(0, ((outerPct - innerPct) / 100) * hostHalf);
-            let wBezel = kWeight * wRadialButton;
             /* Prefer measured CSS drain_box (host+2pad+2stroke) over parsed pad —
                getPropertyValue often leaves var()/clamp() unresolved → padPx=0. */
             void el.offsetWidth;
@@ -184,18 +177,23 @@
             const roomHalfPx = (measuredHalf > hostHalf + 0.5)
               ? measuredHalf
               : Math.max(parsedRoomHalf, hostHalf + (__lgParseCssLen('0.5rem', hostW) || 8) + strokeGlassPx);
-            let rBezelInner = rRadialOuter + bezelGapPx;
+            /* Center thin track in Band_total with equal air to menu + card edge.
+               Do not reserve G_radial on both sides — that starves the band. */
+            const bandTotal = Math.max(0, roomHalfPx - rRadialOuter);
+            let wBezel = kWeight * wRadialButton;
+            /* ≤~1/3 of band ≈ ≥2× thinner than prior pad-edge fill. */
+            if (bandTotal > 0) wBezel = Math.min(wBezel, bandTotal * 0.32);
+            else wBezel = 0;
+            const airTotal = Math.max(0, bandTotal - wBezel);
+            const clearEach = airTotal / 2;
+            let rBezelInner = rRadialOuter + clearEach;
             let rBezelOuter = rBezelInner + wBezel;
             if (rBezelOuter > roomHalfPx) {
-              const overflow = rBezelOuter - roomHalfPx;
-              const gapFloor = Math.max(0, gRadialPx);
-              const gapSlack = Math.max(0, bezelGapPx - gapFloor);
-              const gapCut = Math.min(overflow, gapSlack);
-              bezelGapPx -= gapCut;
-              rBezelInner = rRadialOuter + bezelGapPx;
-              wBezel = Math.max(0, roomHalfPx - rBezelInner);
-              rBezelOuter = rBezelInner + wBezel;
+              rBezelOuter = roomHalfPx;
+              rBezelInner = Math.max(rRadialOuter, rBezelOuter - wBezel);
+              wBezel = Math.max(0, rBezelOuter - rBezelInner);
             }
+            const bezelGapPx = Math.max(0, rBezelInner - rRadialOuter);
             const needHalf = Math.max(hostW / 2, rBezelOuter * 1.02);
             const needBox = needHalf * 2;
             if (needBox > hostW + 0.5) {

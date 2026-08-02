@@ -1,6 +1,6 @@
 Title: Klimat Watch Bezel Timer — Equidistant Geometry, Tick Hierarchy, hvac_action Hue
 Date: 2026-08-02
-Status: Accepted
+Status: Accepted (placement superseded by ADR-0063 thin centered clearance-band; hue/ticks/FSM remain)
 
 # 0055. Klimat Watch Bezel Timer — Equidistant Geometry, Tick Hierarchy, hvac_action Hue
 

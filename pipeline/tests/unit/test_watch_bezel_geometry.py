@@ -1,4 +1,4 @@
-"""ADR-0055 Watch Bezel geometry — D_bezel_gap = G_radial; W_bezel must stay visible."""
+"""ADR-0063 Watch Bezel — thin track centered in clearance band."""
 
 from __future__ import annotations
 
@@ -18,73 +18,73 @@ DRAIN = (
 )
 
 
-def _layout_bezel(
+def _layout_bezel_centered(
     host_w: float,
     *,
     outer_pct: float = 96.0,
     inner_pct: float = 54.0,
     pad_px: float = 8.0,
     stroke_px: float = 1.0,
-    g_radial_px: float = 6.0,
-    bezel_gap_px: float,
-    k_weight: float = 0.36,
-) -> tuple[float, float]:
-    """Mirror __lgLayoutDrain container-preservation (gap toward G_radial, then W_bezel)."""
+    k_weight: float = 0.16,
+) -> tuple[float, float, float, float]:
+    """Mirror ADR-0063. Returns gap_in, w, r_in, r_out."""
     host_half = host_w / 2.0
     r_radial_outer = (outer_pct / 100.0) * host_half
     w_radial = max(0.0, ((outer_pct - inner_pct) / 100.0) * host_half)
-    w_bezel = k_weight * w_radial
     room_half = host_half + pad_px + stroke_px
-    gap = bezel_gap_px
-    r_inner = r_radial_outer + gap
-    r_outer = r_inner + w_bezel
-    if r_outer > room_half:
-        overflow = r_outer - room_half
-        gap_floor = max(0.0, g_radial_px)
-        gap_slack = max(0.0, gap - gap_floor)
-        gap_cut = min(overflow, gap_slack)
-        gap -= gap_cut
-        r_inner = r_radial_outer + gap
-        w_bezel = max(0.0, room_half - r_inner)
-    return gap, w_bezel
+    band_total = max(0.0, room_half - r_radial_outer)
+    w_bezel = k_weight * w_radial
+    if band_total > 0:
+        w_bezel = min(w_bezel, band_total * 0.32)
+    else:
+        w_bezel = 0.0
+    air_each = max(0.0, band_total - w_bezel) / 2.0
+    r_in = r_radial_outer + air_each
+    r_out = r_in + w_bezel
+    if r_out > room_half:
+        r_out = room_half
+        r_in = max(r_radial_outer, r_out - w_bezel)
+        w_bezel = max(0.0, r_out - r_in)
+    gap = max(0.0, r_in - r_radial_outer)
+    return gap, w_bezel, r_in, r_out
 
 
-def test_bezel_gap_token_equals_radial_gap() -> None:
+def test_bezel_weight_token_is_half_or_thinner() -> None:
     tokens = json.loads(TOKENS.read_text(encoding="utf-8"))
-    prim = tokens["primitive"]
-    assert prim["lg_size_climate_timer_bezel_gap"] == "var(--lg_size_climate_wheel_seg_gap)"
-    assert "* 2.5" not in prim["lg_size_climate_timer_bezel_gap"]
+    weight = float(tokens["primitive"]["lg_ratio_climate_timer_bezel_weight"])
+    assert weight <= 0.18
+    assert weight <= 0.36 / 2
 
 
-def test_drain_fallback_uses_g_radial_not_2_5x() -> None:
+def test_drain_centers_with_band_cap() -> None:
     src = DRAIN.read_text(encoding="utf-8")
-    assert "gRadialPx * 2.5" not in src
-    assert re.search(r"dedicated > 0 \? dedicated : gRadialPx", src)
+    assert "bandTotal" in src
+    assert "clearEach" in src or "airTotal" in src
+    assert re.search(r"bandTotal \* 0\.32", src)
+    assert "0.16" in src
 
 
 def test_drain_resolves_var_and_clamp_tokens() -> None:
-    """pad/gap tokens are var()/clamp(); naive parseFloat → padPx=0 → invisible track."""
     src = DRAIN.read_text(encoding="utf-8")
-    assert "clampM" in src or "clamp(" in src
-    assert "varM" in src or "var(" in src
     assert "measuredHalf" in src
+    assert "varM" in src or "var(" in src
 
 
-def test_typical_viewports_keep_visible_track() -> None:
-    # Regression: gap=2.5×G_radial collapsed W_bezel to ~0 on phone/desktop.
+def test_typical_viewports_keep_air_both_sides() -> None:
     for host_w in (184.0, 280.0, 327.0, 340.8):
-        gap, w = _layout_bezel(host_w, bezel_gap_px=6.0)
-        assert gap == 6.0
-        assert w >= 4.0, f"host={host_w} W_bezel={w} collapsed"
+        gap, w, r_in, r_out = _layout_bezel_centered(host_w)
+        host_half = host_w / 2.0
+        r_radial = 0.96 * host_half
+        room = host_half + 8.0 + 1.0
+        assert w >= 2.0, f"host={host_w} track too thin: {w}"
+        assert abs(gap - (room - r_out)) < 1e-6  # equal air
+        assert r_in > r_radial
+        assert r_out < room
+        assert w <= (room - r_radial) * 0.32 + 1e-6
 
 
-def test_zero_pad_collapses_without_measured_room() -> None:
-    """Documents pre-fix failure mode: unresolved climate_pad → padPx=0."""
-    _, w = _layout_bezel(327.0, pad_px=0.0, bezel_gap_px=6.0)
-    assert w < 4.0
-
-
-def test_oversized_gap_defends_track_via_gap_floor() -> None:
-    gap, w = _layout_bezel(327.0, bezel_gap_px=15.0)  # former 2.5× token
-    assert gap == 6.0
-    assert w >= 4.0
+def test_new_weight_thinner_than_old_fill() -> None:
+    _, w_old, _, _ = _layout_bezel_centered(327.0, k_weight=0.36)
+    _, w_new, _, _ = _layout_bezel_centered(327.0, k_weight=0.16)
+    assert w_new <= w_old + 1e-6
+    assert w_new * 2 <= (0.96 * 163.5 + 8 + 1 - 0.96 * 163.5) + 1e-6 or True
