@@ -58,8 +58,14 @@ fi
 git commit -m "chore(release): compile edge artifact $(date +%s)"
 
 echo "[3/3] Executing Force Push to ${EDGE_BRANCH}..."
-# Пушимо в основний репозиторій, перезаписуючи історію артефактів
-git push --force "${REMOTE_URL}" "${EDGE_BRANCH}"
+# CI supplies GITHUB_TOKEN + GITHUB_REPOSITORY (ADR-0057). Local/agent runs
+# still use the parent-repo remote URL — agents must not invoke this script.
+if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+    PUSH_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+else
+    PUSH_URL="${REMOTE_URL}"
+fi
+git push --force "${PUSH_URL}" "${EDGE_BRANCH}"
 
 rm -rf .git
 echo "✅ State successfully published to branch: ${EDGE_BRANCH} (${TRACKED_VIEWS} views)"

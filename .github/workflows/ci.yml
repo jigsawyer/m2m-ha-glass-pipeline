@@ -61,6 +61,8 @@ jobs:
     needs: build-and-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -97,6 +99,17 @@ jobs:
         run: |
           set -euo pipefail
           python pipeline/scripts/build_engine.py
+
+      - name: Publish edge-state artifact branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          # ADR-0057: Lovelace SoT is origin/edge-state → /config/edge-state.
+          bash pipeline/scripts/publish_edge.sh
 
       - name: Install cloudflared
         run: |
@@ -177,6 +190,38 @@ jobs:
             rsync -avz -e ssh "${root_yamls[@]}" haos-target:/config/
           fi
 
+      - name: Sync /config/edge-state from origin
+        run: |
+          set -euo pipefail
+          # ADR-0057: HA Lovelace reads /config/edge-state (pull_state consumer).
+          ssh haos-target 'bash -s' <<'EOS'
+          set -euo pipefail
+          STATE_DIR="/config/edge-state"
+          if [ ! -d "${STATE_DIR}/.git" ]; then
+            echo "FATAL: ${STATE_DIR} is not a git checkout — cannot reset to origin/edge-state."
+            exit 1
+          fi
+          export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -i /config/.ssh/id_ed25519 -o StrictHostKeyChecking=no}"
+          cd "${STATE_DIR}"
+          git fetch origin edge-state
+          git reset --hard origin/edge-state
+          git clean -fd
+          mkdir -p /config/www/liquid_glass
+          if [ -d "${STATE_DIR}/www/liquid_glass" ]; then
+            # Replace wallpaper tree only — never touch www/community (ADR-0056).
+            find /config/www/liquid_glass -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            cp -a "${STATE_DIR}/www/liquid_glass/." /config/www/liquid_glass/
+          fi
+          echo "edge-state HEAD=$(git rev-parse --short HEAD)"
+          if [ -x /config/deploy/pull_state.sh ] && [ -n "${HA_TOKEN:-}" ]; then
+            echo "Invoking pull_state.sh for theme/lovelace reload."
+            /config/deploy/pull_state.sh || true
+          else
+            echo "pull_state/HA_TOKEN unavailable — relying on file mtime + optional ha reload."
+            ha core reload 2>/dev/null || true
+          fi
+          EOS
+
       # ADR-0054: packages (backend) require HAOS core restart; frontend-only skips.
       - name: Reload Core configuration
         if: steps.filter.outputs.backend == 'true'
@@ -190,7 +235,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ steps.filter.outputs.frontend }}" = "true" ]; then
-            echo "Frontend-only Change Set (www/themes/dashboards) — skipping ha core restart (ADR-0054)."
+            echo "Frontend-only Change Set — edge-state synced; skipping ha core restart (ADR-0054/0057)."
           else
             echo "No backend Change Set — skipping ha core restart (ADR-0054)."
           fi

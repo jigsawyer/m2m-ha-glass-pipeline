@@ -2,9 +2,9 @@
   "target_dashboard": "klimat",
   "intent_class": "EXTRACTIVE",
   "target_agent": "@extractor",
-  "source_spec": "specs/state-polish.md",
+  "source_spec": "specs/timer-change.md",
   "payload": {
-    "action_summary": "Klimat state polish: Ambient Conic timer track + leading edge; timer FSM visual states Threshold_Warning/Completion; 15-min snap; entity-scoped optimistic power with 5s rollback; tnum countdown; haptics; degraded offline mask",
+    "action_summary": "Klimat Watch Bezel timer: equidistant D_bezel_gap=G_radial geometry, Major/Medium/Minor ticks, dormant IDLE ring, hvac_action hue with entity.state fallback, WARNING=mode hue+breath only (ADR-0055)",
     "requested_entities": [
       "climate_timer_radial_panel",
       "climate_timer_drain",
@@ -20,7 +20,9 @@
       "TIMER_MANAGE Edit/Stop/Pause annular sectors",
       "dual-surface Main Power Hub ON / Corner OFF hit targets",
       "segment __lgSegPending optimistic retained for non-power segments",
-      "mutex .lg-timer-radial-open ⟂ .lg-wheel-temp-open"
+      "mutex .lg-timer-radial-open ⟂ .lg-wheel-temp-open",
+      "picker mechanism frozen (ADR 0045)",
+      "no leading-edge satellite; no warn-hue override (ADR 0046/0055)"
     ]
   },
   "flags": {
@@ -29,7 +31,7 @@
     "tokens_and_button_card_templates_only": false
   },
   "constraints": {
-    "adr": ["0006", "0007", "0014", "0025", "0032", "0033", "0037", "0040", "0044"],
-    "deploy": ["build_engine.py", "git_push_ci_webhook"]
+    "adr": ["0006", "0007", "0014", "0025", "0032", "0033", "0037", "0044", "0045", "0046", "0048", "0051", "0055", "0056", "0057"],
+    "deploy": ["build_engine.py", "git_push_ci_edge_state"]
   }
 }

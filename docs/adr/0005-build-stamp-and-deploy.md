@@ -1,6 +1,6 @@
 Title: Deterministic Build, Build Stamp, and Single Deploy Path
 Date: Unknown
-Status: Accepted
+Status: Accepted (publish executor amended by ADR-0048 / ADR-0057 — CI runs edge-state publish; agents must not)
 
 # 0005. Deterministic Build, Build Stamp, and Single Deploy Path
 
