@@ -1,6 +1,6 @@
 Title: CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E
 Date: 2026-08-02
-Status: Accepted
+Status: Accepted (root rsync publish model superseded by ADR-0051; Cloudflare Tunnel transport unchanged)
 
 # 0048. CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E
 
@@ -25,12 +25,15 @@ powers (ADR-0037).
    `haos-target` with `ProxyCommand cloudflared access ssh --hostname %h`.
 5. Authenticates exclusively via repository secrets: `HAOS_SSH_KEY`,
    `HAOS_HOST`, `HAOS_USER`, `HAOS_PORT` (key file mode `600`).
-6. Publishes with fail-fast `rsync -avz --delete -e ssh build/staging/ haos-target:/config/`.
+6. Publishes staging to Edge via rsync. **Historical:** root
+   `rsync -avz --delete … build/staging/ → /config/`. **Live SoT:** ADR-0051
+   Whitelist CD (scoped `--delete` only under allow-listed dirs; root YAML
+   additive; no root `--delete`).
 7. Reloads Edge with `ssh haos-target 'ha core restart'`.
 
 Agents still must not run `publish_edge.sh`, ad-hoc SSH writes, or local edge
 copies. Git + CI remain the sole deploy path. ADR-0040 webhook handoff is
-superseded by this decision.
+superseded by this decision. Root `--delete` publish is superseded by ADR-0051.
 
 ## Consequences
 

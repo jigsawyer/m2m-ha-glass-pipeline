@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -14,6 +15,7 @@ BUTTON_CARD_DIR = TEMPLATE_DIR / "button_card"
 LEGACY_BUTTON_CARD_MONOLITH = TEMPLATE_DIR / "button_card_templates.yaml"
 TOKENS_DIR = PROJECT_ROOT / "design_system" / "tokens"
 ASSETS_DIR = PROJECT_ROOT / "design_system" / "assets" / "liquid_glass"
+PACKAGES_SRC_DIR = ENV_DIR / "ha_operator"
 STAGING_DIR = PROJECT_ROOT / "build" / "staging"
 DEFAULT_BACKGROUND = "/local/liquid_glass/ipad_dark_mesh.jpg"
 # Soft limit for atomic design-system sources (ADR 0000 — no god objects).
@@ -691,8 +693,6 @@ def stage_www_assets():
     """
     Copy design_system/assets/liquid_glass/* into staging for /local/liquid_glass/.
     """
-    import shutil
-
     if not ASSETS_DIR.is_dir():
         print(f"FATAL_EXCEPTION: Missing wallpaper assets at {ASSETS_DIR}")
         exit(1)
@@ -709,6 +709,40 @@ def stage_www_assets():
     for src in assets:
         shutil.copy2(src, out_dir / src.name)
     print(f"  -> Staged www/liquid_glass/ ({len(assets)} files)")
+    return out_dir
+
+
+def stage_packages():
+    """
+    Copy Git-managed HA packages into staging/packages/ (ADR-0051).
+
+    Source of truth: environments/.../ha_operator/*.yaml → /config/packages/
+    on Edge via whitelist CD. Leaves default automations.yaml free for HAOS UI
+    edits (avoids State Collision with Git-owned advanced automations).
+    """
+    out_dir = STAGING_DIR / "packages"
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if not PACKAGES_SRC_DIR.is_dir():
+        print(
+            f"  -> No packages source at {PACKAGES_SRC_DIR.relative_to(PROJECT_ROOT)} "
+            "(packages/ staged empty)"
+        )
+        return out_dir
+
+    packages = sorted(
+        p
+        for p in PACKAGES_SRC_DIR.iterdir()
+        if p.is_file() and p.suffix in {".yaml", ".yml"} and not p.name.startswith(".")
+    )
+    for src in packages:
+        shutil.copy2(src, out_dir / src.name)
+    print(
+        f"  -> Staged packages/ ({len(packages)} files) from "
+        f"{PACKAGES_SRC_DIR.relative_to(PROJECT_ROOT)}"
+    )
     return out_dir
 
 
@@ -758,6 +792,8 @@ def build_dashboard(dashboard_id):
     stage_ha_theme(theme_reference)
     print("[1d/4] Staging www/liquid_glass wallpapers...")
     stage_www_assets()
+    print("[1e/4] Staging packages/ (Git-managed automations)...")
+    stage_packages()
 
     routing = content_map.get("routing", {})
     spa_mode = routing.get("mode") == "spa"
