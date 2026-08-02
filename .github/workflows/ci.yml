@@ -120,7 +120,18 @@ jobs:
       - name: Rsync deploy to Edge
         run: |
           set -euo pipefail
-          rsync -avz --delete -e ssh build/staging/ haos-target:/config/
+          rsync -avz --delete \
+            --exclude='.storage/' \
+            --exclude='.cloud/' \
+            --exclude='home-assistant_v2.db*' \
+            --exclude='home-assistant.log*' \
+            --exclude='custom_components/' \
+            --exclude='blueprints/' \
+            --exclude='tts/' \
+            --exclude='backups/' \
+            --exclude='secrets.yaml' \
+            --exclude='configuration.yaml' \
+            -e ssh build/staging/ haos-target:/config/
 
       - name: Reload Core configuration
         run: |
