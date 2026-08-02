@@ -2,13 +2,23 @@
 
 ## **Document Overview & Architecture Scope**
 
-This document defines the definitive production specification for the visual refinement, state management, and interaction design of the Smart Home Climate Control system interface. Operating within the Home Assistant ecosystem and tailored for high-density mobile displays (such as Super Retina XDR displays on modern devices), this system prioritizes extreme visual elegance, deterministic state management, sub-millisecond perceived latency, and complete resilience against race conditions or hardware asynchronous delays.
+This document defines the definitive production specification for the visual refinement, state management, and interaction design of the Smart Home Climate Control system interface. Operating within the Home Assistant ecosystem and tailored for high-density mobile displays (such as Super Retina XDR displays on modern devices), this system prioritizes extreme visual elegance, deterministic state management, sub-millisecond perceived latency, and complete resilience against race conditions or hardware asynchronous delays.l
+
+
+
+
+
+
+
+
 
 All visual styling specifications are expressed strictly through architectural design tokens, spatial constraints, and business logic abstractions rather than fixed platform-specific style declarations, enabling seamless implementation across native or web-based frontend renderers.
 
  
 
 ## **Section 1: Active Timer Architecture & Circular Geometry Preservation**
+
+
 
 ### **1.1 Problem Statement & Visual Domain Model**
 
@@ -21,6 +31,8 @@ The timer component consists of three synchronized visual sub-layers rendered wi
 - **Base Outer Ring (Static Tick Track):** A 360-degree radial ring composed of discrete tick marks set to low opacity (20% nominal opacity) establishing the static spatial boundary.
 - **Active Progress Track (Conic Gradient Ring):** A dynamic sweeping fill layer utilizing a conic gradient that expands or contracts clockwise around the perimeter. The layer resides beneath the top glass glassmorphic filter, creating an illusion of colored fluid encapsulated within translucent glass. It features an inner radial glow that accentuates depth.
 - **Leading Edge (Soft Gaussian Point):** A localized highlight positioned at the active terminus of the conic fill. It applies a soft Gaussian blur effect to simulate specular light refraction inside the glass shell, providing a precise yet subtle visual marker of current elapsed time.
+
+
 
 ### **1.3 Timer Finite State Machine (FSM) Matrix**
 
@@ -36,6 +48,8 @@ The active timer system operates under a multi-state machine defined below:
 | **Completion**        | Countdown reaches zero (Backend Event).                          | Flash luminance boost (+100% brightness spike for 200ms) followed by a exponential fade-out (500ms) to Idle state.            | Haptic feedback trigger; interface returns to standard climate monitoring view.                                                        |
 
 
+
+
 ### **1.4 Typography & Numeric Anti-Jitter Rules**
 
 To maintain visual stability in the central display area during active countdown tracking, numeric values MUST enforce tabular/monospaced digit alignment (Font Feature Settings: 'tnum'). Standard proportional font rendering causes layout jitter (horizontal shaking) as digits fluctuate in width (e.g., '1' vs '8'). The main temperature digits remain prominent ("21°"), while the timer countdown is rendered as an auxiliary monospaced sub-label ("01:45:00") directly below the primary status string ("Холод") with reduced visual weight.
@@ -43,6 +57,8 @@ To maintain visual stability in the central display area during active countdown
  
 
 ## **Section 2: Global State Management, Concurrency Control & Optimistic UI**
+
+
 
 ### **2.1 Architectural Paradigm: Single Source of Truth & Asynchronous Bus**
 
@@ -64,6 +80,8 @@ When an action is taken (e.g., toggling power or changing target temperature):
 - *Positive Acknowledgement (ACK Received):* When state update event is published from backend, the entity transitions smoothly from Optimistic state to Confirmed state. Component locks are released.
 - *Timeout / Failure (NACK or Timeout > 5000ms):* If no confirmation arrives within the defined window, the system initiates a **Graceful Rollback**. The local UI animates back to the verified backend state, accompanied by a subtle error notification feedback.
 
+
+
 ### **2.4 Complete Entity State Machine & Interaction Rules Matrix**
 
 
@@ -76,6 +94,8 @@ When an action is taken (e.g., toggling power or changing target temperature):
 | **Optimistic_Off**  | Backend Event State = Off  | **Confirmed_Off**  | Indeterminate pulse ceases. Radial buttons enter dormant glass state. Central display shows power off indicator.                                                                                  | Lock released on Power button only. Mode controls remain disabled in Off state. |
 
 
+
+
 ### **2.5 Throttling, Debouncing & Event Delegation Rules**
 
 To eliminate multi-click storms (where a user repeatedly taps a slow-responding interface), the frontend implements strict event delegation and command queuing rules:
@@ -86,6 +106,8 @@ To eliminate multi-click storms (where a user repeatedly taps a slow-responding 
  
 
 ## **Section 3: Micro-Interactions, Edge Cases & Haptic Protocol**
+
+
 
 ### **3.1 Tactile Feedback Mapping Protocol (Haptic Engine)**
 
@@ -100,6 +122,8 @@ Because glassmorphic interfaces lack physical tactile affordance, precise haptic
 | **Rollback / Network Error**                   | `Error_Notification_Pattern` | Double heavy burst pulse. Synchronized with visual red border flash and horizontal shake animation.                                   |
 
 
+
+
 ### **3.2 Fault Tolerance: Network Partitioning & Degraded State Rendering**
 
 Smart home mobile applications are inherently subject to intermittent connectivity loss (e.g., leaving Wi-Fi range or router restarts). The client maintains an active WebSocket Heartbeat Monitor `ping/pong` cycle every 3000ms).
@@ -108,6 +132,8 @@ Smart home mobile applications are inherently subject to intermittent connectivi
 - **Visual Masking:** The widget applies an elevated glass blur backdrop filter (increased blur radius) and a grayscale filter across all controls. Interactive elements transition to 20% opacity.
 - **Interaction Guard:** Tapping any button on a degraded widget suppresses optimistic mutation entirely. Instead, a contextual glass floating toast message appears: *"Connection to Home Assistant lost. Reconnecting..."*
 - **Auto Re-synchronization:** When WebSocket connection is re-established, the client triggers an explicit state pull payload `get_states`). The local UI synchronizes strictly to backend data before removing the degraded mask layer.
+
+
 
 ### **3.3 Motion Physics & Transition Curves Matrix**
 
@@ -121,4 +147,3 @@ Linear motion curves feel robotic and unnatural in high-end interfaces. All stat
 | **Error Shake & Rollback**            | `cubic-bezier(0.36, 0.07, 0.19, 0.97)`           | 400 ms                             | Rapid decaying displacement oscillation indicating rejection of user action.                       |
 
 
-  
