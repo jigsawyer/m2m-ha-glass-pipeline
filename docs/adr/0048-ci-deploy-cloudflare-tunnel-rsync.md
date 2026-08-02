@@ -1,6 +1,6 @@
 Title: CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E
 Date: 2026-08-02
-Status: Accepted (root rsync publish model superseded by ADR-0051; Cloudflare Tunnel transport unchanged)
+Status: Accepted (root rsync publish model superseded by ADR-0051; unconditional `ha core restart` amended by ADR-0054; Cloudflare Tunnel transport unchanged)
 
 # 0048. CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E
 
@@ -29,11 +29,15 @@ powers (ADR-0037).
    `rsync -avz --delete … build/staging/ → /config/`. **Live SoT:** ADR-0051
    Whitelist CD (scoped `--delete` only under allow-listed dirs; root YAML
    additive; no root `--delete`).
-7. Reloads Edge with `ssh haos-target 'ha core restart'`.
+7. Reloads Edge with `ssh haos-target 'ha core restart'` when the Change Set
+   includes backend (`packages`) sources. **Amended by ADR-0054:** frontend-only
+   Change Sets skip Core restart after Whitelist rsync.
 
 Agents still must not run `publish_edge.sh`, ad-hoc SSH writes, or local edge
 copies. Git + CI remain the sole deploy path. ADR-0040 webhook handoff is
 superseded by this decision. Root `--delete` publish is superseded by ADR-0051.
+Unconditional Core restart is superseded by ADR-0054 path-based conditional
+restarts.
 
 ## Consequences
 
