@@ -9,3 +9,5 @@ pipeline/logs/*
 !.cursor/STATE.md
 .env/*
 .venv/*
+__pycache__/
+*.py[cod]
