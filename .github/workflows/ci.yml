@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
@@ -51,7 +51,7 @@ jobs:
 
       - name: Upload failure logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-failure-log
           path: test_failures.log
@@ -64,7 +64,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v7
@@ -120,18 +120,31 @@ jobs:
       - name: Rsync deploy to Edge
         run: |
           set -euo pipefail
-          rsync -avz --delete \
-            --exclude='.storage/' \
-            --exclude='.cloud/' \
-            --exclude='home-assistant_v2.db*' \
-            --exclude='home-assistant.log*' \
-            --exclude='custom_components/' \
-            --exclude='blueprints/' \
-            --exclude='tts/' \
-            --exclude='backups/' \
-            --exclude='secrets.yaml' \
-            --exclude='configuration.yaml' \
-            -e ssh build/staging/ haos-target:/config/
+          STAGING_DIR="build/staging"
+          if [ ! -d "${STAGING_DIR}" ]; then
+            echo "FATAL: ${STAGING_DIR} missing — run build_engine before deploy."
+            exit 1
+          fi
+
+          # Whitelist Execution Boundary (ADR-0051): never rsync --delete at /config/.
+          # Scoped --delete only inside explicitly allowed artifact directories.
+          # `views` is required for Lovelace !include paths from root dashboard.yaml.
+          ALLOWED_DIRS=(www themes dashboards packages views)
+
+          for dir in "${ALLOWED_DIRS[@]}"; do
+            src="${STAGING_DIR}/${dir}"
+            if [ -d "${src}" ]; then
+              ssh haos-target "mkdir -p /config/${dir}"
+              rsync -avz --delete -e ssh "${src}/" "haos-target:/config/${dir}/"
+            fi
+          done
+
+          # Root YAML only — additive sync, never --delete (preserves HAOS core files).
+          shopt -s nullglob
+          root_yamls=("${STAGING_DIR}"/*.yaml)
+          if [ "${#root_yamls[@]}" -gt 0 ]; then
+            rsync -avz -e ssh "${root_yamls[@]}" haos-target:/config/
+          fi
 
       - name: Reload Core configuration
         run: |

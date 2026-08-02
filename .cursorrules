@@ -34,6 +34,7 @@ On completing a **major task**, automatically update `.cursor/STATE.md`:
 
 - **DRY / SOLID.** Production-ready output only. No hacks, no temporary workarounds, no `// TODO` / `# TODO` stubs, no god-objects.
 - **Evidence gate (ADR-0004).** No invented tokens, CSS classes, DOM nodes, entities, or plugins. Missing SoT → `FATAL_EXCEPTION` / HALT for measurement.
+- **Evergreen Dependency Model & Zero Warnings Policy (ADR-0053).** Agents MUST ALWAYS use the latest stable versions for all libraries, modules, and GitHub Actions. Never use deprecated packages. If a deprecation warning occurs in any runtime or build process, treat it as a compilation error and resolve it immediately. Prioritize native compatibility with current runtimes (e.g., Node 24+).
 - **GitOps boundary (ADR-0037 / ADR-0048).** Agent boundary ends at Git. Forbidden: `publish_edge.sh`, SSH writes, ad-hoc edge copies, local deploy scripts. Allowed: local `python pipeline/scripts/build_engine.py` validation, then git stage / commit / push when delivering. CI alone publishes to Edge (Cloudflare Tunnel SSH + rsync on `main`).
 - **Zero Standing Privileges.** Do not embed long-lived credentials, bypass auth outside ephemeral CI fixtures, or open persistent privileged sessions to Edge.
 - **Headless HA.** Manage HA via generated YAML + GitOps; do not rely on imperative UI click-ops or agent-driven live reconfiguration of production.
