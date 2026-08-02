@@ -56,7 +56,7 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0044](0044-klimat-state-polish.md) | Klimat State Polish — Ambient Conic Timer + Optimistic Entity FSM | 2026-07-31 | Accepted (§1 picker/leading-edge amended by ADR-0045) |
 | [0045](0045-klimat-conic-chrome-correction.md) | Klimat Conic Chrome Correction — 12 o'clock Origin, Mode Hue, Picker Mechanism Frozen | 2026-08-01 | Accepted (warn hue/ring mask amended by ADR-0046) |
 | [0046](0046-klimat-timer-ring-placement-and-hue.md) | Klimat Timer Ring — Outer Clearance Band, Mode Hue Rule, Instant Submenu Cut | 2026-08-01 | Accepted (placement superseded by ADR-0055; hue + submenu cut amended by ADR-0055) |
-| [0047](0047-cursor-multi-agent-routing-and-working-memory.md) | Cursor Multi-Agent Routing and Working Memory | 2026-08-02 | Accepted |
+| [0047](0047-cursor-multi-agent-routing-and-working-memory.md) | Cursor Multi-Agent Routing and Working Memory | 2026-08-02 | Accepted (hydration amended by ADR-0062) |
 | [0048](0048-ci-deploy-cloudflare-tunnel-rsync.md) | CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E | 2026-08-02 | Accepted (root rsync publish model superseded by ADR-0051; unconditional restart amended by ADR-0054) |
 | [0051](0051-package-driven-whitelist-cd.md) | Package-Driven Architecture and Whitelist CD Deployment | 2026-08-02 | Accepted (`www` scope amended by ADR-0056) |
 | [0053](0053-evergreen-dependency-model.md) | Evergreen Dependency Model & Zero Warnings Policy | 2026-08-02 | Accepted |
@@ -68,3 +68,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0059](0059-execution-harness-json-patch-mcp.md) | Execution Harness — RFC 6902 Deltas, ADR Policy Gate, MCP stdio | 2026-08-03 | Accepted |
 | [0060](0060-swarm-map-reduce-subagent.md) | Swarm & Map-Reduce Sub-Agent Architecture | 2026-08-03 | Accepted |
 | [0061](0061-vcs-execution-governance.md) | Version Control & Execution Governance for AI Agents | 2026-08-03 | Accepted |
+| [0062](0062-self-correction-experience-memory.md) | Self-Correction & Environment Experience Memory | 2026-08-03 | Accepted |

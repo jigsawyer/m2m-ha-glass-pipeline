@@ -4,23 +4,23 @@
 
 ## CURRENT_ACTIVE_TASK
 
-ADR-0061 accepted on `docs/adr-0061-vcs-execution-governance`. Local quality
-gate passed; awaiting remote delivery (host has no `gh` — PR via operator).
+ADR-0062 accepted on `docs/adr-0062-experience-memory-bank`. Experience Memory
+Bank at `.agent/lessons.md`; hydration + capture wired into `.cursorrules` and
+architect rules. Pushed; operator creates PR.
 
 ## LATEST_ARCHITECTURAL_DECISION
 
-ADR-0061 — Version Control & Execution Governance for AI Agents. Sync with
-`main` before new work; mutate only on task branches; local quality gates
-required; fail-fast on first environment restriction; agent scope ends at
-verified local commit; push/PR only via authenticated interface (amends
-ADR-0037 delivery boundary).
+ADR-0062 — Self-Correction & Environment Experience Memory. Canonical store
+`.agent/lessons.md` (Symptom / Operational Reality / Correct Action); mandatory
+pre-execution read; auto-capture after resolved environment failures (dedupe);
+promote validated lessons to ADRs/`.cursorrules` in review. Complements
+ADR-0047 working memory and ADR-0061 fail-fast.
 
 ## NEXT_STEPS
 
-1. Push branch `docs/adr-0061-vcs-execution-governance` if not already remote.
-2. Open PR via GitHub UI compare:
-   https://github.com/jigsawyer/m2m-ha-glass-pipeline/compare/main...docs/adr-0061-vcs-execution-governance?expand=1
-3. Confirm CI green on the docs PR.
+1. Open PR via compare:
+   https://github.com/jigsawyer/m2m-ha-glass-pipeline/compare/main...docs/adr-0062-experience-memory-bank?expand=1
+2. Confirm CI green on the docs PR.
 
 ## KNOWN_ISSUES
 
@@ -30,6 +30,6 @@ ADR-0037 delivery boundary).
 - Historical Edge package filename `klimat_ac_timers.yaml` may differ from repo source `climate_ac_sleep_timers.yaml`.
 - Stale cross-references to `pipeline/agents/*.mdc` remain in some older ADRs; `docs/adr/` is SoT.
 - ADR-0005 local `publish_edge.sh` executor is CI-only (ADR-0048 / ADR-0057); agents must not run it.
-- MCP stdio requires deps in `.venv` (`mcp`, `jsonpatch`) and `PYTHONPATH=.`.
+- MCP stdio requires deps in `.venv` (`mcp`, `jsonpatch`) and `PYTHONPATH=.` (also in `.agent/lessons.md`).
 - Do not reintroduce `lg_size_climate_timer_bezel_gap` multipliers > 1× without expanding outer clearance (`outer_pct` / pad) — else `W_bezel` collapses again.
-- Host may lack authenticated `gh` — remote PR creation then delegates to operator (ADR-0061).
+- Host may lack authenticated `gh` — remote PR creation then delegates to operator (ADR-0061; also in `.agent/lessons.md`).

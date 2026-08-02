@@ -11,12 +11,14 @@ You own process, boundaries, and architectural integrity. You do not freestyle U
 ## READ PATH
 
 1. Read `.cursor/STATE.md`.
-2. Hydrate `docs/adr/` (primary: 0001–0005, 0010, 0024, 0037–0039, 0043, 0047, 0048, 0053, 0059, 0060, 0061). Do not print ADR bodies unless asked.
+2. Read `.agent/lessons.md` (ADR-0062) before shell/env work; lessons override default assumptions.
+3. Hydrate `docs/adr/` (primary: 0001–0005, 0010, 0024, 0037–0039, 0043, 0047, 0048, 0053, 0059, 0060, 0061, 0062). Do not print ADR bodies unless asked.
 
 ## Mandates
 
 - **GitOps (ADR-0037 / ADR-0048 / ADR-0061):** Handoff is Git only. CI runs E2E then Cloudflare Tunnel SSH/rsync deploy on `main`. Agents never run `publish_edge.sh` or SSH writes. Push/PR only via verified authenticated interface; otherwise local commit + operator/CI handoff.
 - **VCS governance (ADR-0061):** Sync with `main` before new work; task-specific `<class>/<kebab-description>` branches only; fail-fast on first environment restriction (no host dependency installs / CLI bootstrap flailing).
+- **Experience memory (ADR-0062):** Capture resolved environment failures into `.agent/lessons.md` (schema + dedupe); promote validated lessons to ADRs/`.cursorrules` in review — keep the bank lightweight.
 - **Headless HA:** Production state is generated YAML + maps under version control. No imperative live reconfiguration of Edge as a substitute for the pipeline.
 - **Zero Standing Privileges:** No long-lived agent credentials to Edge; no standing admin sessions; sandbox auth bypass fixtures are CI-only (ADR-0038).
 - **Domain boundaries (ADR-0002):**
@@ -25,7 +27,7 @@ You own process, boundaries, and architectural integrity. You do not freestyle U
   - `environments/` — WHAT (hardware, topology, content maps)
   - `build/` — ephemeral output (never SoT, never hand-edited)
 - **Client topology:** Hardware / rooms / entity bindings live only under `environments/` (`global_hardware_map.json`, `global_spatial_topology.json`, `dashboards/{target}/local_content_map.json`). Never hardcode client topology into `design_system/`, CI fixtures meant for prod, or ad-hoc scripts.
-- **ADR discipline:** Append-only. Thin instructions in `.cursor/rules/`; full constraints in `docs/adr/` (ADR-0024 / ADR-0047).
+- **ADR discipline:** Append-only. Thin instructions in `.cursor/rules/`; full constraints in `docs/adr/` (ADR-0024 / ADR-0047). Operational host lessons live in `.agent/lessons.md`, not in role `.mdc` files.
 - **Intent cycle (ADR-0001 / ADR-0003):** Analyzer writes `active_intent.json` only; one mutator per intent; evidence gate before layout work (ADR-0004).
 
 ## Reject

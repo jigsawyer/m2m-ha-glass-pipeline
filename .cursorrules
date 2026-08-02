@@ -6,10 +6,11 @@ You are the global router for an MSP Home Assistant GitOps platform (Headless HA
 
 ## 0. Mandatory Context Hydration (READ PATH)
 
-**Never generate or mutate code** until you have silently read:
+**Never generate or mutate code**, and **never run shell / environment checks**, until you have silently read:
 
 1. `.cursor/STATE.md` — `CURRENT_ACTIVE_TASK`, `LATEST_ARCHITECTURAL_DECISION`, `NEXT_STEPS`, `KNOWN_ISSUES`
-2. `docs/adr/` — every ADR matching the active domain (index: `docs/adr/README.md`)
+2. `.agent/lessons.md` — Experience Memory Bank (ADR-0062). Operating constraints here take **strict precedence** over default assumptions and trial-and-error.
+3. `docs/adr/` — every ADR matching the active domain (index: `docs/adr/README.md`)
 
 When the Execution Harness MCP server (`m2m-ha-glass-harness`, ADR-0059 / ADR-0060) is
 available, prefer its precision tools (`get_working_memory`, `get_active_intent`,
@@ -34,6 +35,16 @@ On completing a **major task**, automatically update `.cursor/STATE.md`:
 | `NEXT_STEPS` | Concrete follow-ups (or empty checklist) |
 | `KNOWN_ISSUES` | Open defects / stale references still relevant |
 
+### Experience Memory (ADR-0062)
+
+When an unexpected **environment** failure is resolved (tool not found, version conflict, sandbox/auth limit):
+
+1. Self-Reflect — do not continue silently.
+2. Dedupe against `.agent/lessons.md`.
+3. Append a concise lesson using **Symptom / Failure Trigger**, **Operational Reality**, **Correct Action / Rule**.
+
+Architecture and design-system truths still graduate via ADRs, not lessons. Validated lessons may later promote into `.cursorrules` or ADRs and be removed/marked promoted.
+
 ---
 
 ## 2. Guardrails (Always On)
@@ -43,6 +54,7 @@ On completing a **major task**, automatically update `.cursor/STATE.md`:
 - **Evergreen Dependency Model & Zero Warnings Policy (ADR-0053).** Agents MUST ALWAYS use the latest stable versions for all libraries, modules, and GitHub Actions. Never use deprecated packages. If a deprecation warning occurs in any runtime or build process, treat it as a compilation error and resolve it immediately. Prioritize native compatibility with current runtimes (e.g., Node 24+).
 - **GitOps boundary (ADR-0037 / ADR-0048 / ADR-0061).** Agent boundary ends at Git. Forbidden: `publish_edge.sh`, SSH writes, ad-hoc edge copies, local deploy scripts. Allowed: local validation, then structured local commit. Push/PR only via a verified authenticated interface; otherwise halt and delegate remote delivery. CI alone publishes to Edge (Cloudflare Tunnel SSH + rsync on `main`).
 - **VCS & execution governance (ADR-0061).** Sync with `main` before new work; mutate only on `<class>/<kebab-description>` task branches; never develop on `main` or mix unrelated changes. Fail-fast on first environment restriction (stage → local commit → halt → status). No host dependency installs unless the task authorizes them.
+- **Experience memory (ADR-0062).** Read `.agent/lessons.md` before shell/env/code work; apply recorded Correct Actions over guesswork; capture new environment lessons after root-cause resolution (dedupe first).
 - **Zero Standing Privileges.** Do not embed long-lived credentials, bypass auth outside ephemeral CI fixtures, or open persistent privileged sessions to Edge.
 - **Headless HA.** Manage HA via generated YAML + GitOps; do not rely on imperative UI click-ops or agent-driven live reconfiguration of production.
 - **Domain isolation (ADR-0002).** Never mix `environments/` (WHAT) and `design_system/` (HOW) in one change set. Never hand-edit `build/staging/**`.
