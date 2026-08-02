@@ -51,3 +51,17 @@
   / unsandboxed permissions once. If it still fails, treat as an environment
   restriction: fail-fast per ADR-0061 — do not invent alternate remotes or
   credential hacks.
+
+---
+
+## Lesson: Apple Git rejects injected `--trailer` on commit
+
+- **Symptom / Failure Trigger:** `git commit` fails with
+  `error: unknown option \`trailer'\` (exit 129) even with a normal `-m` /
+  HEREDOC message.
+- **Operational Reality:** Host ships Apple Git 2.24.x, which lacks
+  `git commit --trailer`. Some agent/IDE commit wrappers inject `--trailer`,
+  which this binary rejects.
+- **Correct Action / Rule:** Commit with `/usr/bin/git commit -F <msgfile>` (no
+  `--trailer`). Do not upgrade/reinstall git unless the task authorizes host
+  dependency changes.
