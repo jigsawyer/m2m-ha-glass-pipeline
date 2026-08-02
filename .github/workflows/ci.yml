@@ -191,12 +191,15 @@ jobs:
           fi
 
       - name: Sync /config/edge-state from origin
+        env:
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
         run: |
           set -euo pipefail
-          # ADR-0057: HA Lovelace reads /config/edge-state (pull_state consumer).
-          ssh haos-target 'bash -s' <<'EOS'
+          # ADR-0057 / ADR-0058: reset Lovelace SoT, then fail-closed UI reload.
+          ssh haos-target "HA_TOKEN=$(printf '%q' "${HA_TOKEN:-}") bash -s" <<'EOS'
           set -euo pipefail
           STATE_DIR="/config/edge-state"
+          HA_URL="${HA_URL:-http://127.0.0.1:8123}"
           if [ ! -d "${STATE_DIR}/.git" ]; then
             echo "FATAL: ${STATE_DIR} is not a git checkout — cannot reset to origin/edge-state."
             exit 1
@@ -212,13 +215,35 @@ jobs:
             find /config/www/liquid_glass -mindepth 1 -maxdepth 1 -exec rm -rf {} +
             cp -a "${STATE_DIR}/www/liquid_glass/." /config/www/liquid_glass/
           fi
-          echo "edge-state HEAD=$(git rev-parse --short HEAD)"
-          if [ -x /config/deploy/pull_state.sh ] && [ -n "${HA_TOKEN:-}" ]; then
-            echo "Invoking pull_state.sh for theme/lovelace reload."
-            /config/deploy/pull_state.sh || true
-          else
-            echo "pull_state/HA_TOKEN unavailable — relying on file mtime + optional ha reload."
-            ha core reload 2>/dev/null || true
+          HEAD_SHORT="$(git rev-parse --short HEAD)"
+          echo "edge-state HEAD=${HEAD_SHORT}"
+          if ! grep -q 'rBezelInner' "${STATE_DIR}/button_card_templates.yaml"; then
+            echo "FATAL: edge-state button_card_templates.yaml missing Watch Bezel marker rBezelInner"
+            exit 1
+          fi
+
+          TOKEN="${HA_TOKEN:-}"
+          if [ -z "${TOKEN}" ] && [ -f /config/deploy/ha_token ]; then
+            TOKEN="$(tr -d '[:space:]' </config/deploy/ha_token)"
+          fi
+          if [ -z "${TOKEN}" ]; then
+            echo "FATAL: HA_TOKEN unavailable for Lovelace reload (set GitHub secret HA_TOKEN or Edge /config/deploy/ha_token). Soft-success is forbidden (ADR-0058)."
+            exit 1
+          fi
+
+          TH="$(curl -X POST -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${HA_URL}/api/services/frontend/reload_themes" || echo fail)"
+          LV="$(curl -X POST -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${HA_URL}/api/events/lovelace_updated" \
+            -d '{}' || echo fail)"
+          echo "reload_themes=${TH} lovelace_updated=${LV}"
+          if [ "${TH}" != "200" ] || [ "${LV}" != "200" ]; then
+            echo "FATAL: UI reload failed after edge-state sync (ADR-0058)."
+            exit 1
           fi
           EOS
 

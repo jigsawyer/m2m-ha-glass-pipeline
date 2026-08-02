@@ -1,6 +1,6 @@
 Title: CI Must Publish Lovelace SoT to edge-state
 Date: 2026-08-02
-Status: Accepted
+Status: Accepted (UI reload fail-closed by ADR-0058)
 
 # 0057. CI Must Publish Lovelace SoT to edge-state
 
