@@ -1,0 +1,19 @@
+{
+  "target_dashboard": "svitlo",
+  "intent_class": "STRUCTURAL",
+  "target_agent": "@architect",
+  "source_spec": "specs/orchestration-evolution.md",
+  "payload": {
+    "action_summary": "baseline structural flag state",
+    "requested_entities": [],
+    "preserve_behavior": []
+  },
+  "flags": {
+    "allow_template_layout_edit": false,
+    "tokens_and_button_card_templates_only": false
+  },
+  "constraints": {
+    "adr": ["0002", "0003", "0059", "0064"],
+    "deploy": ["build_engine.py", "git_push_ci_edge_state"]
+  }
+}

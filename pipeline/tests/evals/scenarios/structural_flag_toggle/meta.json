@@ -1,0 +1,8 @@
+{
+  "id": "structural_flag_toggle",
+  "description": "Golden: toggle allow_template_layout_edit for structural intent",
+  "expect": "pass",
+  "policy_paths": [
+    "environments/prd_main_house/dashboards/svitlo/local_content_map.json"
+  ]
+}

@@ -70,3 +70,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0061](0061-vcs-execution-governance.md) | Version Control & Execution Governance for AI Agents | 2026-08-03 | Accepted |
 | [0062](0062-self-correction-experience-memory.md) | Self-Correction & Environment Experience Memory | 2026-08-03 | Accepted |
 | [0063](0063-klimat-watch-bezel-thin-centered.md) | Klimat Watch Bezel — Thin Track Centered in Clearance Band | 2026-08-03 | Accepted |
+| [0064](0064-enterprise-observability-evals-resilience.md) | Enterprise Observability, Evals & Resilience | 2026-08-03 | Accepted |

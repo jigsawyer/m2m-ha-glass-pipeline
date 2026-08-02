@@ -1,0 +1,12 @@
+[
+  {
+    "op": "replace",
+    "path": "/flags/allow_template_layout_edit",
+    "value": true
+  },
+  {
+    "op": "replace",
+    "path": "/payload/action_summary",
+    "value": "enable template layout edit for structural Change Set"
+  }
+]

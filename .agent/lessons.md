@@ -10,7 +10,9 @@
 > - **Correct Action / Rule**
 >
 > After resolving a new unexpected environment failure: Self-Reflect → dedupe → append.
-> Promote validated lessons to `.cursorrules` / ADRs in review; mark or remove graduates.
+> Promote validated lessons to `.cursorrules` / ADRs in scheduled review (ADR-0064);
+> mark `- **Status:** Promoted → ADR-XXXX` / `Promoted → .cursorrules` or remove graduates.
+> Review hygiene: `python -m pipeline.harness lessons-status`.
 
 ---
 

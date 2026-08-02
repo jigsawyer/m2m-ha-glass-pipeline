@@ -1,5 +1,7 @@
 build/*
 logs/*
+pipeline/logs/*
+!pipeline/logs/.gitkeep
 .cursor/*
 !.cursor/mcp.json
 !.cursor/rules/

@@ -12,11 +12,13 @@ You are the global router for an MSP Home Assistant GitOps platform (Headless HA
 2. `.agent/lessons.md` — Experience Memory Bank (ADR-0062). Operating constraints here take **strict precedence** over default assumptions and trial-and-error.
 3. `docs/adr/` — every ADR matching the active domain (index: `docs/adr/README.md`)
 
-When the Execution Harness MCP server (`m2m-ha-glass-harness`, ADR-0059 / ADR-0060) is
-available, prefer its precision tools (`get_working_memory`, `get_active_intent`,
-`get_adr_index`, `validate_json_patch`, `check_adr_policy`, `apply_intent_json_patch`,
-`decompose_swarm_task`, `get_subtask_context`, `aggregate_swarm_deltas`)
-over slurping full registries or the entire ADR corpus into context.
+When the Execution Harness MCP server (`m2m-ha-glass-harness`, ADR-0059 / ADR-0060 /
+ADR-0064) is available, prefer its precision tools (`get_working_memory`,
+`get_active_intent`, `get_adr_index`, `validate_json_patch`, `check_adr_policy`,
+`apply_intent_json_patch`, `decompose_swarm_task`, `get_subtask_context`,
+`aggregate_swarm_deltas`, `get_tool_risk_registry`) over slurping full registries
+or the entire ADR corpus into context. Tool calls are traced to
+`pipeline/logs/traces.jsonl`; oversized returns are truncated with a `trace_ref`.
 
 Do **not** dump ADR contents to the operator unless asked. Apply constraints; cite ADR numbers when rejecting.
 
@@ -43,7 +45,11 @@ When an unexpected **environment** failure is resolved (tool not found, version 
 2. Dedupe against `.agent/lessons.md`.
 3. Append a concise lesson using **Symptom / Failure Trigger**, **Operational Reality**, **Correct Action / Rule**.
 
-Architecture and design-system truths still graduate via ADRs, not lessons. Validated lessons may later promote into `.cursorrules` or ADRs and be removed/marked promoted.
+Architecture and design-system truths still graduate via ADRs, not lessons.
+Validated lessons that hold across multiple cycles MUST be consolidated during
+scheduled reviews (ADR-0064): promote into `.cursorrules` or a formal ADR, then
+mark `- **Status:** Promoted → …` or remove the entry so the bank stays compact.
+Use `python -m pipeline.harness lessons-status` for review hygiene.
 
 ---
 
@@ -60,6 +66,7 @@ Architecture and design-system truths still graduate via ADRs, not lessons. Vali
 - **Domain isolation (ADR-0002).** Never mix `environments/` (WHAT) and `design_system/` (HOW) in one change set. Never hand-edit `build/staging/**`.
 - **Intent cycle (ADR-0001 / ADR-0003 / ADR-0059).** Pipeline UI changes flow: NL → intent contract (`pipeline/schemas/active_intent.json`) → single mutator domain → `build_engine.py`. JSON registries MAY mutate via RFC 6902 through `pipeline/harness`; YAML templates remain full-file overwrite. No freestyle YAML/token/map edits outside that cycle when an intent is required.
 - **ADR policy gate (ADR-0059).** Before staging a mixed Change Set, run `python -m pipeline.harness policy-gate`. Mixing `environments/` + `design_system/`, or editing `build/staging/**`, is a hard fail.
+- **Observability / evals / risk (ADR-0064).** Golden Intent suite under `pipeline/tests/evals/` gates harness regressions (`python -m pipeline.harness evals`). MCP tools are risk-classified (`READ_ONLY` / `LOCAL_MUTATION` / `CRITICAL_DEPLOY`); local mutations require `gates_passed=true` after unit tests + policy gate. Edge CD runs a 60s REST canary with auto-rollback to the last stable `edge-state`.
 
 ### Definition of Done (delivery tasks)
 

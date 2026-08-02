@@ -4,21 +4,23 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`fix/timer-bezel-thin-centered` — ADR-0063 thin centered Watch Bezel pushed;
-operator opens PR.
+`feat/adr-0064-enterprise-observability` — Phase 4 (evals, tracing, risk,
+Edge canary, lessons lifecycle) implemented locally; awaiting operator commit /
+push / PR.
 
 ## LATEST_ARCHITECTURAL_DECISION
 
-ADR-0063 — Thin Watch Bezel centered in clearance band (symmetric `G_radial`
-air vs menu + container). Supersedes ADR-0055 **placement** only; hue/ticks/FSM
-from ADR-0055 remain. Soft CD reload gap (ADR-0058 / YAML includes) still open.
+ADR-0064 — Enterprise Observability, Evals & Resilience (Golden Intent evals,
+MCP action tracing + truncation, risk-classified tools, Edge REST canary with
+60s auto-rollback, lessons promotion lifecycle). Amends ADR-0059 / 0062 / 0048.
 
 ## NEXT_STEPS
 
-1. Commit/push `fix/timer-bezel-thin-centered`; operator opens PR.
-2. After deploy: visual verify thinner cyan arc centered outside segments with
-   visible air to menu icons and card edges (core restart may still be needed).
-3. Later: harden CD template reload (touch dashboard.yaml / conditional restart).
+1. Operator: review Change Set; authorize local commit + push/PR when ready.
+2. After merge to `main`: confirm CI runs Golden Intent evals and post-deploy
+   Edge canary (rollback path only on health failure).
+3. Scheduled review: `python -m pipeline.harness lessons-status` → promote
+   multi-cycle lessons into `.cursorrules` / ADRs.
 
 ## KNOWN_ISSUES
 

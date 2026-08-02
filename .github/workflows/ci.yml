@@ -51,6 +51,10 @@ jobs:
       - name: Harness unit tests
         run: pytest pipeline/tests/unit/ -q
 
+      # ADR-0064: Golden Intent evals gate harness / rules regressions.
+      - name: Golden Intent evals
+        run: python -m pipeline.harness evals
+
       - name: Generate Artifacts
         run: python pipeline/scripts/build_engine.py
 
@@ -209,6 +213,15 @@ jobs:
             rsync -avz -e ssh "${root_yamls[@]}" haos-target:/config/
           fi
 
+      # ADR-0064: capture pre-deploy Edge edge-state HEAD as last known stable.
+      - name: Record stable Edge edge-state SHA
+        id: stable_edge
+        run: |
+          set -euo pipefail
+          STABLE_SHA="$(ssh haos-target 'cd /config/edge-state && git rev-parse HEAD')"
+          echo "sha=${STABLE_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Stable edge-state SHA=${STABLE_SHA}"
+
       - name: Sync /config/edge-state from origin
         env:
           HA_TOKEN: ${{ secrets.HA_TOKEN }}
@@ -284,3 +297,14 @@ jobs:
             echo "No backend Change Set — skipping ha core restart (ADR-0054)."
           fi
           exit 0
+
+      # ADR-0064: post-deploy REST canary; auto-rollback to stable SHA on failure.
+      - name: Edge canary health check
+        env:
+          HA_TOKEN: ${{ secrets.HA_TOKEN }}
+          HA_URL: http://127.0.0.1:8123
+          M2M_CANARY_TIMEOUT_SEC: "60"
+        run: |
+          set -euo pipefail
+          chmod +x pipeline/scripts/edge_canary.sh
+          bash pipeline/scripts/edge_canary.sh "${{ steps.stable_edge.outputs.sha }}"

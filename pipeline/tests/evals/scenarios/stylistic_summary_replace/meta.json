@@ -1,0 +1,8 @@
+{
+  "id": "stylistic_summary_replace",
+  "description": "Golden: replace action_summary via RFC 6902 without domain policy violation",
+  "expect": "pass",
+  "policy_paths": [
+    "design_system/tokens/liquid_glass_v1.0.json"
+  ]
+}

@@ -1,0 +1,7 @@
+[
+  {
+    "op": "replace",
+    "path": "/payload/action_summary",
+    "value": "still a valid patch body; policy_paths are the gate"
+  }
+]

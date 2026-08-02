@@ -1,0 +1,19 @@
+{
+  "target_dashboard": "klimat",
+  "intent_class": "STYLISTIC",
+  "target_agent": "@stylist",
+  "source_spec": "specs/orchestration-evolution.md",
+  "payload": {
+    "action_summary": "golden stylistic summary update",
+    "requested_entities": ["climate_global_wheel"],
+    "preserve_behavior": ["sticky TIMER_CONFIG/TIMER_MANAGE window maps (ADR 0033)"]
+  },
+  "flags": {
+    "allow_template_layout_edit": false,
+    "tokens_and_button_card_templates_only": true
+  },
+  "constraints": {
+    "adr": ["0006", "0007", "0059", "0064"],
+    "deploy": ["build_engine.py", "git_push_ci_edge_state"]
+  }
+}

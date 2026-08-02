@@ -1,0 +1,10 @@
+{
+  "id": "policy_mixed_domains_rejected",
+  "description": "Negative: mixed environments + design_system paths must fail ADR-0002 policy",
+  "expect": "fail",
+  "fail_on": "policy",
+  "policy_paths": [
+    "environments/prd_main_house/global_hardware_map.json",
+    "design_system/tokens/liquid_glass_v1.0.json"
+  ]
+}
