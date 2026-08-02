@@ -62,12 +62,26 @@ def test_drain_fallback_uses_g_radial_not_2_5x() -> None:
     assert re.search(r"dedicated > 0 \? dedicated : gRadialPx", src)
 
 
+def test_drain_resolves_var_and_clamp_tokens() -> None:
+    """pad/gap tokens are var()/clamp(); naive parseFloat → padPx=0 → invisible track."""
+    src = DRAIN.read_text(encoding="utf-8")
+    assert "clampM" in src or "clamp(" in src
+    assert "varM" in src or "var(" in src
+    assert "measuredHalf" in src
+
+
 def test_typical_viewports_keep_visible_track() -> None:
     # Regression: gap=2.5×G_radial collapsed W_bezel to ~0 on phone/desktop.
     for host_w in (184.0, 280.0, 327.0, 340.8):
         gap, w = _layout_bezel(host_w, bezel_gap_px=6.0)
         assert gap == 6.0
         assert w >= 4.0, f"host={host_w} W_bezel={w} collapsed"
+
+
+def test_zero_pad_collapses_without_measured_room() -> None:
+    """Documents pre-fix failure mode: unresolved climate_pad → padPx=0."""
+    _, w = _layout_bezel(327.0, pad_px=0.0, bezel_gap_px=6.0)
+    assert w < 4.0
 
 
 def test_oversized_gap_defends_track_via_gap_floor() -> None:

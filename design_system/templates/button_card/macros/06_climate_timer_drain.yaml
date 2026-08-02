@@ -3,12 +3,35 @@
    tEnt / __lgWantManage / __lgWantRadial / __lgClockRemSec are in scope. #}
 {% macro lg_climate_timer_drain_sync_js() -%}
         this.style.setProperty('--lg_timer_drain_t', String(__lgDrainT));
-        const __lgParseCssLen = (raw, hostPx) => {
+        /* Resolve token strings from getPropertyValue (often still var()/clamp(),
+           not px). Unresolved pad → roomHalf too small → W_bezel collapses to 0. */
+        const __lgParseCssLen = (raw, hostPx, cs) => {
           const s = String(raw || '').trim();
           if (!s) return 0;
+          const styles = cs || getComputedStyle(document.documentElement);
+          const varM = s.match(/^var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\s*\)$/i);
+          if (varM) {
+            const inner = String(styles.getPropertyValue(varM[1]) || '').trim();
+            if (inner) return __lgParseCssLen(inner, hostPx, styles);
+            if (varM[2]) return __lgParseCssLen(varM[2].trim(), hostPx, styles);
+            return 0;
+          }
+          const clampM = s.match(/^clamp\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)$/i);
+          if (clampM) {
+            const a = __lgParseCssLen(clampM[1], hostPx, styles);
+            const b = __lgParseCssLen(clampM[2], hostPx, styles);
+            const c = __lgParseCssLen(clampM[3], hostPx, styles);
+            return Math.min(c, Math.max(a, b));
+          }
           if (s.endsWith('rem')) {
             const fs = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
             return (parseFloat(s) || 0) * fs;
+          }
+          if (s.endsWith('vw')) {
+            return ((parseFloat(s) || 0) / 100) * (window.innerWidth || hostPx || 0);
+          }
+          if (s.endsWith('vh')) {
+            return ((parseFloat(s) || 0) / 100) * (window.innerHeight || 0);
           }
           if (s.endsWith('px')) return parseFloat(s) || 0;
           if (s.endsWith('%') && hostPx) return (parseFloat(s) / 100) * hostPx;
@@ -138,11 +161,11 @@
             const innerPct = parseFloat(cs.getPropertyValue(
               phone ? '--lg_size_climate_wheel_inner_pct_phone' : '--lg_size_climate_wheel_inner_pct'
             )) || 54;
-            const padPx = __lgParseCssLen(cs.getPropertyValue('--lg_space_climate_pad'), hostW);
-            const strokeGlassPx = __lgParseCssLen(cs.getPropertyValue('--lg_stroke_glass'), hostW);
-            const gRadialPx = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_wheel_seg_gap'), hostW);
+            const padPx = __lgParseCssLen(cs.getPropertyValue('--lg_space_climate_pad'), hostW, cs);
+            const strokeGlassPx = __lgParseCssLen(cs.getPropertyValue('--lg_stroke_glass'), hostW, cs);
+            const gRadialPx = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_wheel_seg_gap'), hostW, cs);
             let bezelGapPx = (() => {
-              const dedicated = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_timer_bezel_gap'), hostW);
+              const dedicated = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_timer_bezel_gap'), hostW, cs);
               return dedicated > 0 ? dedicated : gRadialPx;
             })();
             const kWeight = (() => {
@@ -153,7 +176,14 @@
             const rRadialOuter = (outerPct / 100) * hostHalf;
             const wRadialButton = Math.max(0, ((outerPct - innerPct) / 100) * hostHalf);
             let wBezel = kWeight * wRadialButton;
-            const roomHalfPx = hostHalf + padPx + strokeGlassPx;
+            /* Prefer measured CSS drain_box (host+2pad+2stroke) over parsed pad —
+               getPropertyValue often leaves var()/clamp() unresolved → padPx=0. */
+            void el.offsetWidth;
+            const measuredHalf = (el.clientWidth || 0) / 2;
+            const parsedRoomHalf = hostHalf + padPx + strokeGlassPx;
+            const roomHalfPx = (measuredHalf > hostHalf + 0.5)
+              ? measuredHalf
+              : Math.max(parsedRoomHalf, hostHalf + (__lgParseCssLen('0.5rem', hostW) || 8) + strokeGlassPx);
             let rBezelInner = rRadialOuter + bezelGapPx;
             let rBezelOuter = rBezelInner + wBezel;
             if (rBezelOuter > roomHalfPx) {
@@ -199,8 +229,10 @@
             try {
               el.style.setProperty('display', show ? 'block' : 'none', 'important');
               el.style.setProperty('opacity', show ? '1' : '0', 'important');
+              el.style.setProperty('visibility', show ? 'visible' : 'hidden', 'important');
             } catch (e) {}
             if (show) {
+              void el.offsetWidth;
               const layout = __lgLayoutDrain(host);
               const r = layout.r || 48.5;
               const ri = layout.ri || Math.max(0, r - 2);
