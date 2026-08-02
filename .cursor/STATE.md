@@ -4,27 +4,21 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`fix/timer-bezel-pad-resolve` — After HA core restart + hard refresh, Watch Bezel
-still missing. Root cause: `__lgParseCssLen` did not resolve `var()`/`clamp()` for
-`--lg_space_climate_pad` → `padPx=0` → `roomHalf` too small → `W_bezel≈0`.
-Fix implemented locally (resolve var/clamp/vw + measured drain_box half).
-Awaiting operator commit / push. CD soft-reload refactor still open separately.
+`fix/timer-bezel-thin-centered` — ADR-0063 thin centered Watch Bezel pushed;
+operator opens PR.
 
 ## LATEST_ARCHITECTURAL_DECISION
 
-ADR-0055 geometry remains SoT. Soft UI reload (`reload_themes` + `lovelace_updated`)
-is insufficient to prove template pickup for YAML `!include` (operator restart
-experiment); separately, layout math must resolve Design System token strings
-(`var`/`clamp`) or measure `#timer_drain` CSS box — never assume getPropertyValue
-returns px.
+ADR-0063 — Thin Watch Bezel centered in clearance band (symmetric `G_radial`
+air vs menu + container). Supersedes ADR-0055 **placement** only; hue/ticks/FSM
+from ADR-0055 remain. Soft CD reload gap (ADR-0058 / YAML includes) still open.
 
 ## NEXT_STEPS
 
-1. Commit/push `fix/timer-bezel-pad-resolve` → merge → deploy (expect core restart
-   or hardened reload until CD refactor lands).
-2. Visual verify Кабінет: cyan Ambient Conic outside radial segments.
-3. Refactor CD: touch `dashboard.yaml` and/or conditional `ha core restart` for
-   `button_card_templates` changes; restore reliable webhook/`pull_state` path.
+1. Commit/push `fix/timer-bezel-thin-centered`; operator opens PR.
+2. After deploy: visual verify thinner cyan arc centered outside segments with
+   visible air to menu icons and card edges (core restart may still be needed).
+3. Later: harden CD template reload (touch dashboard.yaml / conditional restart).
 
 ## KNOWN_ISSUES
 
@@ -37,4 +31,3 @@ returns px.
 - Stale cross-references to `pipeline/agents/*.mdc` remain in some older ADRs; `docs/adr/` is SoT.
 - ADR-0005 local `publish_edge.sh` executor is CI-only (ADR-0048 / ADR-0057); agents must not run it.
 - MCP stdio requires deps in `.venv` (`mcp`, `jsonpatch`) and `PYTHONPATH=.`.
-- Do not reintroduce `lg_size_climate_timer_bezel_gap` multipliers > 1× without expanding outer clearance.

@@ -61,7 +61,7 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0051](0051-package-driven-whitelist-cd.md) | Package-Driven Architecture and Whitelist CD Deployment | 2026-08-02 | Accepted (`www` scope amended by ADR-0056) |
 | [0053](0053-evergreen-dependency-model.md) | Evergreen Dependency Model & Zero Warnings Policy | 2026-08-02 | Accepted |
 | [0054](0054-path-based-conditional-restarts.md) | Path-Based Conditional Restarts | 2026-08-02 | Accepted |
-| [0055](0055-klimat-watch-bezel-timer-geometry.md) | Klimat Watch Bezel Timer — Equidistant Geometry, Tick Hierarchy, hvac_action Hue | 2026-08-02 | Accepted |
+| [0055](0055-klimat-watch-bezel-timer-geometry.md) | Klimat Watch Bezel Timer — Equidistant Geometry, Tick Hierarchy, hvac_action Hue | 2026-08-02 | Accepted (placement superseded by ADR-0063) |
 | [0056](0056-protect-edge-hacs-www-community.md) | Protect Edge HACS www/community from Whitelist CD Wipe | 2026-08-02 | Accepted |
 | [0057](0057-ci-publish-edge-state-sot.md) | CI Must Publish Lovelace SoT to edge-state | 2026-08-02 | Accepted (reload fail-closed by ADR-0058) |
 | [0058](0058-fail-closed-edge-state-ui-reload.md) | Fail-Closed Lovelace Reload After edge-state Sync | 2026-08-02 | Accepted |
@@ -69,3 +69,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0060](0060-swarm-map-reduce-subagent.md) | Swarm & Map-Reduce Sub-Agent Architecture | 2026-08-03 | Accepted |
 | [0061](0061-vcs-execution-governance.md) | Version Control & Execution Governance for AI Agents | 2026-08-03 | Accepted |
 | [0062](0062-self-correction-experience-memory.md) | Self-Correction & Environment Experience Memory | 2026-08-03 | Accepted |
+| [0063](0063-klimat-watch-bezel-thin-centered.md) | Klimat Watch Bezel — Thin Track Centered in Clearance Band | 2026-08-03 | Accepted |

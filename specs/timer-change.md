@@ -39,20 +39,21 @@ Let:
 
 Equidistant Clearance Contract:
 
-D_bezel_gap = Token.Bezel_Clearance (`lg_size_climate_timer_bezel_gap`
-= Token.Radial_Gap / `lg_size_climate_wheel_seg_gap`; ADR-0055 equidistant contract)
+Clearance-band centering (ADR-0063; supersedes ADR-0055 outward-grow placement):
 
-Therefore:
+Band_total = R_card_room_half − R_radial_outer
 
-R_bezel_inner = R_radial_outer + D_bezel_gap
+W_bezel = min(k_weight * W_radial_button, 0.32 * Band_total) with k_weight ≤ 0.16
+
+Air_each = (Band_total − W_bezel) / 2
+
+R_bezel_inner = R_radial_outer + Air_each
 
 R_bezel_outer = R_bezel_inner + W_bezel
 
 Container Geometry Preservation Contract:
 
-The outer bezel boundary MUST NOT displace or clip parent container boundaries:
-
-R_bezel_outer + Padding_container <= R_card_boundary_limit
+Equal air vs radial menu and card room bound — never flush to either edge.
 
 
 
