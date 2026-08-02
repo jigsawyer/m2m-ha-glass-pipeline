@@ -4,20 +4,23 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`fix/timer-bezel-progress-collapse` pushed (`a15790c`). Commit done; host has no
-`gh` CLI — PR must be opened via GitHub UI compare link.
+ADR-0061 accepted on `docs/adr-0061-vcs-execution-governance`. Local quality
+gate passed; awaiting remote delivery (host has no `gh` — PR via operator).
 
 ## LATEST_ARCHITECTURAL_DECISION
 
-ADR-0055 equidistant contract remains SoT: `D_bezel_gap = G_radial`. The 2.5× gap
-token from visual-prominence polish is rejected — it exhausts the pad+stroke
-clearance band and container-preservation zeros `W_bezel` (invisible Ambient Conic).
+ADR-0061 — Version Control & Execution Governance for AI Agents. Sync with
+`main` before new work; mutate only on task branches; local quality gates
+required; fail-fast on first environment restriction; agent scope ends at
+verified local commit; push/PR only via authenticated interface (amends
+ADR-0037 delivery boundary).
 
 ## NEXT_STEPS
 
-1. Open PR: https://github.com/jigsawyer/m2m-ha-glass-pipeline/compare/main...fix/timer-bezel-progress-collapse?expand=1
-2. Confirm CI edge-state publish + Lovelace reload (ADR-0057 / ADR-0058).
-3. Visual verify on Кабінет: active timer shows Watch Bezel progress arc + ticks.
+1. Push branch `docs/adr-0061-vcs-execution-governance` if not already remote.
+2. Open PR via GitHub UI compare:
+   https://github.com/jigsawyer/m2m-ha-glass-pipeline/compare/main...docs/adr-0061-vcs-execution-governance?expand=1
+3. Confirm CI green on the docs PR.
 
 ## KNOWN_ISSUES
 
@@ -29,3 +32,4 @@ clearance band and container-preservation zeros `W_bezel` (invisible Ambient Con
 - ADR-0005 local `publish_edge.sh` executor is CI-only (ADR-0048 / ADR-0057); agents must not run it.
 - MCP stdio requires deps in `.venv` (`mcp`, `jsonpatch`) and `PYTHONPATH=.`.
 - Do not reintroduce `lg_size_climate_timer_bezel_gap` multipliers > 1× without expanding outer clearance (`outer_pct` / pad) — else `W_bezel` collapses again.
+- Host may lack authenticated `gh` — remote PR creation then delegates to operator (ADR-0061).
