@@ -63,4 +63,5 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0054](0054-path-based-conditional-restarts.md) | Path-Based Conditional Restarts | 2026-08-02 | Accepted |
 | [0055](0055-klimat-watch-bezel-timer-geometry.md) | Klimat Watch Bezel Timer — Equidistant Geometry, Tick Hierarchy, hvac_action Hue | 2026-08-02 | Accepted |
 | [0056](0056-protect-edge-hacs-www-community.md) | Protect Edge HACS www/community from Whitelist CD Wipe | 2026-08-02 | Accepted |
-| [0057](0057-ci-publish-edge-state-sot.md) | CI Must Publish Lovelace SoT to edge-state | 2026-08-02 | Accepted |
+| [0057](0057-ci-publish-edge-state-sot.md) | CI Must Publish Lovelace SoT to edge-state | 2026-08-02 | Accepted (reload fail-closed by ADR-0058) |
+| [0058](0058-fail-closed-edge-state-ui-reload.md) | Fail-Closed Lovelace Reload After edge-state Sync | 2026-08-02 | Accepted |
