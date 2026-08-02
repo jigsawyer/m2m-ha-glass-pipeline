@@ -506,7 +506,7 @@
     "lg_size_climate_timer_tick_thick_quarter": "1.55",
     "lg_size_climate_timer_tick_thick_quarter_phone": "1.7",
     "lg_ratio_climate_timer_bezel_weight": "0.36",
-    "lg_size_climate_timer_bezel_gap": "calc(var(--lg_size_climate_wheel_seg_gap) * 2.5)",
+    "lg_size_climate_timer_bezel_gap": "var(--lg_size_climate_wheel_seg_gap)",
     "lg_opacity_climate_timer_tick_active": "0.87",
     "lg_opacity_climate_timer_tick_inactive": "0.18",
     "lg_opacity_climate_timer_tick_dormant": "0.48",
