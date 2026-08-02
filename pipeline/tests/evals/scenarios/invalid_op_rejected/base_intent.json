@@ -1,0 +1,13 @@
+{
+  "target_dashboard": "klimat",
+  "intent_class": "STYLISTIC",
+  "target_agent": "@stylist",
+  "payload": {
+    "action_summary": "negative validation fixture"
+  },
+  "flags": {},
+  "constraints": {
+    "adr": ["0064"],
+    "deploy": ["build_engine.py"]
+  }
+}

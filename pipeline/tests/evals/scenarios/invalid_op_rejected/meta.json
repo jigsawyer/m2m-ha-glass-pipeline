@@ -1,0 +1,6 @@
+{
+  "id": "invalid_op_rejected",
+  "description": "Negative: unknown RFC 6902 op must fail validation",
+  "expect": "fail",
+  "fail_on": "validation"
+}

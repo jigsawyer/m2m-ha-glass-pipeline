@@ -1,4 +1,4 @@
-"""python -m pipeline.harness [stdio|policy-gate]."""
+"""python -m pipeline.harness [stdio|policy-gate|evals|lessons-status]."""
 
 from __future__ import annotations
 
@@ -19,8 +19,19 @@ def main(argv: list[str] | None = None) -> int:
 
         return policy_main(args[1:])
 
+    if command == "evals":
+        from pipeline.harness.evals.runner import main as evals_main
+
+        return evals_main(args[1:])
+
+    if command in {"lessons-status", "lessons"}:
+        from pipeline.harness.lessons import main as lessons_main
+
+        return lessons_main(args[1:])
+
     print(
-        "Usage: python -m pipeline.harness [stdio|policy-gate [--base REF]]",
+        "Usage: python -m pipeline.harness "
+        "[stdio|policy-gate [--base REF]|evals [SCENARIOS_DIR]|lessons-status]",
         file=sys.stderr,
     )
     return 2

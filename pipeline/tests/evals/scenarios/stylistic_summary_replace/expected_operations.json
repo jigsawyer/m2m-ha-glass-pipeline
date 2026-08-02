@@ -1,0 +1,7 @@
+[
+  {
+    "op": "replace",
+    "path": "/payload/action_summary",
+    "value": "golden stylistic summary update"
+  }
+]

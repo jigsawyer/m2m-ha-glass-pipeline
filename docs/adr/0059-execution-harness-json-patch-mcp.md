@@ -1,6 +1,6 @@
 Title: Execution Harness — RFC 6902 Deltas, ADR Policy Gate, MCP stdio Control Plane
 Date: 2026-08-03
-Status: Accepted
+Status: Accepted (observability / risk / eval gates amended by ADR-0064)
 
 # 0059. Execution Harness — RFC 6902 Deltas, ADR Policy Gate, MCP stdio Control Plane
 

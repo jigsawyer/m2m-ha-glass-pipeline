@@ -1,6 +1,6 @@
 Title: Self-Correction & Environment Experience Memory
 Date: 2026-08-03
-Status: Accepted
+Status: Accepted (promotion lifecycle amended by ADR-0064)
 
 # 0062. Self-Correction & Environment Experience Memory
 

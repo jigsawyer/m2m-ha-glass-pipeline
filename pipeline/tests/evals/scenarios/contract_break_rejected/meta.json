@@ -1,0 +1,6 @@
+{
+  "id": "contract_break_rejected",
+  "description": "Negative: patch that clears action_summary must fail intent contract",
+  "expect": "fail",
+  "fail_on": "contract"
+}

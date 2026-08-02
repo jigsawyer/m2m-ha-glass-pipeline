@@ -1,6 +1,6 @@
 Title: CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E
 Date: 2026-08-02
-Status: Accepted (root rsync publish model superseded by ADR-0051; unconditional `ha core restart` amended by ADR-0054; Cloudflare Tunnel transport unchanged)
+Status: Accepted (root rsync publish model superseded by ADR-0051; unconditional `ha core restart` amended by ADR-0054; Cloudflare Tunnel transport unchanged; post-deploy canary rollback amended by ADR-0064)
 
 # 0048. CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E
 

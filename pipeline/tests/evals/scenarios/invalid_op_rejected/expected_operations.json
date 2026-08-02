@@ -1,0 +1,7 @@
+[
+  {
+    "op": "splice",
+    "path": "/payload/action_summary",
+    "value": "should-not-apply"
+  }
+]
