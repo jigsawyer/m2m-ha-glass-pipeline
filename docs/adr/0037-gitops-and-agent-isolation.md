@@ -1,6 +1,6 @@
 Title: Enterprise GitOps, CI/CD Pipeline, and Agent Isolation
 Date: 2026-07-31
-Status: Accepted
+Status: Accepted (agent delivery boundary amended by ADR-0061)
 
 # 0037. Enterprise GitOps, CI/CD Pipeline, and Agent Isolation
 

@@ -46,7 +46,7 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0034](0034-premium-hvac-spatial-depth.md) | Premium HVAC Radial — Spatial Depth & Material Lighting | Unknown | Accepted |
 | [0035](0035-klimat-power-load-fsm.md) | Klimat Power Load FSM — Dual-Surface Main Power + Hard Loader | Unknown | Superseded by ADR-0044 |
 | [0036](0036-klimat-tick-radial-polish.md) | Klimat Timer / Temp — Tick Radial Polish | Unknown | Superseded by ADR-0044 |
-| [0037](0037-gitops-and-agent-isolation.md) | Enterprise GitOps, CI/CD Pipeline, and Agent Isolation | 2026-07-31 | Accepted |
+| [0037](0037-gitops-and-agent-isolation.md) | Enterprise GitOps, CI/CD Pipeline, and Agent Isolation | 2026-07-31 | Accepted (agent delivery boundary amended by ADR-0061) |
 | [0038](0038-ephemeral-ha-sandbox-ci.md) | Ephemeral Home Assistant Sandbox CI Gate | 2026-07-31 | Accepted |
 | [0039](0039-sandbox-primary-stack-resources.md) | Ephemeral Sandbox Must Vendor Primary-Stack Lovelace Resources | 2026-07-31 | Accepted |
 | [0040](0040-ci-deploy-webhook-handoff.md) | CI Deploy Job — Secure Webhook Handoff After E2E | 2026-07-31 | Superseded by ADR-0048 |
@@ -67,3 +67,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0058](0058-fail-closed-edge-state-ui-reload.md) | Fail-Closed Lovelace Reload After edge-state Sync | 2026-08-02 | Accepted |
 | [0059](0059-execution-harness-json-patch-mcp.md) | Execution Harness — RFC 6902 Deltas, ADR Policy Gate, MCP stdio | 2026-08-03 | Accepted |
 | [0060](0060-swarm-map-reduce-subagent.md) | Swarm & Map-Reduce Sub-Agent Architecture | 2026-08-03 | Accepted |
+| [0061](0061-vcs-execution-governance.md) | Version Control & Execution Governance for AI Agents | 2026-08-03 | Accepted |
