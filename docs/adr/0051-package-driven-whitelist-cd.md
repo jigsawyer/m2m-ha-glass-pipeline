@@ -1,6 +1,6 @@
 Title: Package-Driven Architecture and Whitelist CD Deployment
 Date: 2026-08-02
-Status: Accepted
+Status: Accepted (`www` allow-list scope amended by ADR-0056)
 
 # 0051. Package-Driven Architecture and Whitelist CD Deployment
 
@@ -46,7 +46,8 @@ post-E2E main-only gate). This ADR replaces its root `--delete` publish model.
    - `ssh haos-target "mkdir -p /config/$DIR"`
    - `rsync -avz --delete -e ssh build/staging/$DIR/ haos-target:/config/$DIR/`
 4. Allow-listed directories:
-   - `www`
+   - `www/liquid_glass` (Git wallpapers only — **not** bare `www`; Edge
+     `/config/www/community/` is HACS-owned and must never be wiped; ADR-0056)
    - `themes`
    - `dashboards`
    - `packages`

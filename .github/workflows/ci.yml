@@ -143,10 +143,19 @@ jobs:
             exit 1
           fi
 
-          # Whitelist Execution Boundary (ADR-0051): never rsync --delete at /config/.
-          # Scoped --delete only inside explicitly allowed artifact directories.
+          # Whitelist Execution Boundary (ADR-0051 / ADR-0056):
+          # never rsync --delete at /config/. Scoped --delete only inside
+          # explicitly allowed artifact directories.
+          # `www/liquid_glass` only — never bare www/ (would wipe HACS community).
           # `views` is required for Lovelace !include paths from root dashboard.yaml.
-          ALLOWED_DIRS=(www themes dashboards packages views)
+          ALLOWED_DIRS=(themes dashboards packages views)
+
+          if [ -d "${STAGING_DIR}/www/liquid_glass" ]; then
+            ssh haos-target "mkdir -p /config/www/liquid_glass"
+            rsync -avz --delete -e ssh \
+              "${STAGING_DIR}/www/liquid_glass/" \
+              "haos-target:/config/www/liquid_glass/"
+          fi
 
           for dir in "${ALLOWED_DIRS[@]}"; do
             src="${STAGING_DIR}/${dir}"
@@ -155,6 +164,11 @@ jobs:
               rsync -avz --delete -e ssh "${src}/" "haos-target:/config/${dir}/"
             fi
           done
+
+          # Refuse accidental publish of sandbox community bundles to Edge.
+          if [ -d "${STAGING_DIR}/www/community" ]; then
+            echo "WARN: staging www/community present (sandbox residue) — skipped; Edge HACS is SoT (ADR-0056)."
+          fi
 
           # Root YAML only — additive sync, never --delete (preserves HAOS core files).
           shopt -s nullglob
