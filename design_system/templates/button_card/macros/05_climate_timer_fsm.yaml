@@ -188,7 +188,7 @@
            keep base 3D rim here only (no saturate/brightness fill wash). */
         filter: none;
       }
-      /* ADR 0045 — TIMER_ACTIVE outer drain = Ambient Conic + static ticks.
+      /* ADR 0055 — Watch Bezel: Ambient Conic + Major/Medium/Minor ticks.
          conic-gradient 0deg already points at 12 o'clock; no -90deg offset. */
       #timer_drain {
         position: absolute !important;
@@ -210,7 +210,13 @@
           height: var(--lg_size_climate_timer_drain_box_phone) !important;
         }
       }
-      :host(.lg-wheel-timer-active) #timer_drain {
+      /* IDLE dormant tick ring on powered main layer (progress fill opacity 0).
+         Explicit :not(submenu) so cut rules are not lost to specificity. */
+      :host(.lg-wheel-layer-main):not(.lg-power-idle-off):not(.lg-power-unavailable):not(.lg-timer-radial-open):not([data-lg-timer-radial="1"]):not(.lg-timer-manage-open):not([data-lg-timer-manage="1"]):not(.lg-wheel-temp-open):not(.lg-wheel-temp-arming) #timer_drain {
+        display: block !important;
+        opacity: 1 !important;
+      }
+      :host(.lg-wheel-timer-active):not(.lg-timer-radial-open):not([data-lg-timer-radial="1"]):not(.lg-timer-manage-open):not([data-lg-timer-manage="1"]):not(.lg-wheel-layer-mode):not(.lg-wheel-layer-fan):not(.lg-wheel-temp-open):not(.lg-wheel-temp-arming) #timer_drain {
         display: block !important;
         opacity: 1 !important;
       }
@@ -239,6 +245,7 @@
         border-radius: 50% !important;
         pointer-events: none !important;
         z-index: 1 !important;
+        opacity: 0;
         background: conic-gradient(
           from 0deg,
           var(--lg_color_climate_timer_conic_active, var(--lg_color_climate_timer_conic_fill_neutral)) 0 calc(var(--lg_timer_drain_t, 0) * 360deg),
@@ -261,7 +268,10 @@
         filter: drop-shadow(0 0 0.2rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_neutral)));
         transition: var(--lg_transition_climate_timer_state_morph);
       }
-      /* Threshold_Warning breathes; the hue stays mode-owned (ADR 0046). */
+      :host(.lg-wheel-timer-active) #timer_drain .lg-timer-conic-fill {
+        opacity: 1;
+      }
+      /* Threshold_Warning breathes; hue stays mode-owned (ADR 0046 / 0055). */
       :host(.lg-timer-threshold-warn) #timer_drain .lg-timer-conic-fill {
         animation: lg_timer_conic_breath var(--lg_duration_climate_timer_threshold_breath) ease-in-out infinite;
       }

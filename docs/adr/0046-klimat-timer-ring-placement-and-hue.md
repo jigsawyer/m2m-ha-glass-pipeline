@@ -1,6 +1,6 @@
 Title: Klimat Timer Ring — Outer Clearance Band, Mode Hue Rule, Instant Submenu Cut
 Date: 2026-08-01
-Status: Accepted
+Status: Accepted (placement superseded by ADR-0055; hue + submenu cut amended by ADR-0055 hvac_action primary)
 
 # 0046. Klimat Timer Ring — Outer Clearance Band, Mode Hue Rule, Instant Submenu Cut
 
