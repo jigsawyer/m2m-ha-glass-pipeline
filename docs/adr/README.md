@@ -14,7 +14,7 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0002](0002-domain-boundaries.md) | Directory Domain Boundaries | Unknown | Accepted (agent `.mdc` path amended by ADR-0047) |
 | [0003](0003-agents-classification-and-contract.md) | Agent Roster, Intent Classification, and Contract Schema | Unknown | Accepted |
 | [0004](0004-evidence-gate.md) | Zero Hallucination and the Evidence Gate | Unknown | Accepted |
-| [0005](0005-build-stamp-and-deploy.md) | Deterministic Build, Build Stamp, and Single Deploy Path | Unknown | Accepted |
+| [0005](0005-build-stamp-and-deploy.md) | Deterministic Build, Build Stamp, and Single Deploy Path | Unknown | Accepted (publish executor amended by ADR-0048 / ADR-0057) |
 | [0006](0006-option-1-css.md) | Option 1 CSS — Tokens + `extra_styles`, and the Inline Bans | Unknown | Accepted |
 | [0007](0007-fluid-units.md) | Fluid Units — No Hardcoded Pixels | Unknown | Accepted |
 | [0008](0008-template-authoring.md) | Template Authoring — Taxonomy, Override-First, Thin Instances | Unknown | Accepted |
@@ -63,3 +63,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0054](0054-path-based-conditional-restarts.md) | Path-Based Conditional Restarts | 2026-08-02 | Accepted |
 | [0055](0055-klimat-watch-bezel-timer-geometry.md) | Klimat Watch Bezel Timer — Equidistant Geometry, Tick Hierarchy, hvac_action Hue | 2026-08-02 | Accepted |
 | [0056](0056-protect-edge-hacs-www-community.md) | Protect Edge HACS www/community from Whitelist CD Wipe | 2026-08-02 | Accepted |
+| [0057](0057-ci-publish-edge-state-sot.md) | CI Must Publish Lovelace SoT to edge-state | 2026-08-02 | Accepted |
