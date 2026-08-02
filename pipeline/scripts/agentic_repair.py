@@ -5,29 +5,34 @@ State machine for the PR-only CI repair loop:
   1. Fail fast if ANTHROPIC_API_KEY is missing
   2. Circuit-break if the last 3 commits are by agentic-repair-bot
   3. Gather failure log + primary source context
-  4. Call Claude for a strict JSON file patch
-  5. Overwrite source files and push a bot commit
+  4. Call Claude for a strict JSON file patch (legacy full-file or RFC 6902)
+  5. ADR policy gate + apply patches; push a bot commit
 
 Invoked from `.github/workflows/ci.yml` only when pytest fails on a pull_request.
+Patch envelopes: ADR-0059.
 """
 
 from __future__ import annotations
 
-import json
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
-try:
-    import anthropic
-except ImportError:  # pragma: no cover
-    print("FATAL: anthropic package is not installed", file=sys.stderr)
-    sys.exit(1)
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from pipeline.harness.adr_policy import evaluate_paths
+from pipeline.harness.errors import HarnessError, PolicyViolation
+from pipeline.harness.event_stream import append_event
+from pipeline.harness.patch_engine import (
+    apply_json_file_operations,
+    parse_model_patch_response,
+)
+from pipeline.harness.paths import event_stream_path
+
 BOT_AUTHOR = "agentic-repair-bot"
 BOT_EMAIL = "bot@fsocietylair.cc"
 MODEL = "claude-3-5-sonnet-20240620"
@@ -38,8 +43,12 @@ CIRCUIT_BREAKER_DEPTH = 3
 SYSTEM_PROMPT = (
     "You are an expert Home Assistant architect and automation script. "
     "Analyze the E2E test failure logs and the source files. "
-    "Output ONLY the corrected valid code for the source files in a strict "
-    'JSON format: {"filename": "path/to/file", "content": "new_code"}. '
+    "Output ONLY valid JSON describing repairs. Prefer RFC 6902 operations "
+    'for JSON files: {"patches":[{"filename":"path.json","operations":'
+    '[{"op":"replace","path":"/key","value":"..."}]}]}. '
+    "For YAML or non-JSON sources use full-file overwrite: "
+    '{"patches":[{"filename":"path.yaml","content":"new_code"}]}. '
+    "Legacy single-object {\"filename\",\"content\"} remains accepted. "
     "Do not output markdown, prose, or explanations."
 )
 
@@ -52,13 +61,6 @@ PRIMARY_CONTEXT_FILES: tuple[str, ...] = (
     "design_system/templates/layout/room_container.yaml",
     "design_system/templates/layout/climate_floor_container.yaml",
     "design_system/templates/layout/climate_room_container.yaml",
-)
-
-FORBIDDEN_PREFIXES = (
-    ".git/",
-    "build/",
-    "__pycache__/",
-    ".github/workflows/",
 )
 
 
@@ -157,14 +159,20 @@ def build_user_prompt(failure_log: str, sources: dict[str, str]) -> str:
         for path, content in sources.items():
             parts.append(f"\n--- BEGIN {path} ---\n{content}\n--- END {path} ---")
     parts.append(
-        "\nRespond with ONLY valid JSON. "
-        'Use either a single object {"filename": "...", "content": "..."} '
-        'or an array of such objects for multiple files.'
+        "\nRespond with ONLY valid JSON. Prefer "
+        '{"patches":[{"filename":"...","operations":[...]}]} for JSON files, '
+        'or {"patches":[{"filename":"...","content":"..."}]} for full-file. '
+        "Legacy {\"filename\",\"content\"} objects remain accepted."
     )
     return "\n".join(parts)
 
 
 def call_anthropic(api_key: str, user_prompt: str) -> str:
+    try:
+        import anthropic
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError("anthropic package is not installed") from exc
+
     client = anthropic.Anthropic(api_key=api_key)
     try:
         message = client.messages.create(
@@ -197,78 +205,56 @@ def call_anthropic(api_key: str, user_prompt: str) -> str:
     return text
 
 
-def _strip_code_fence(raw: str) -> str:
-    cleaned = raw.strip()
-    fence = re.match(r"^```(?:json)?\s*\n?(.*?)\n?```\s*$", cleaned, re.DOTALL)
-    if fence:
-        return fence.group(1).strip()
-    return cleaned
+def parse_json_patches(response: str) -> list[dict[str, Any]]:
+    """Public parser used by tests — ADR-0059 envelope via harness."""
+    return parse_model_patch_response(response)
 
 
-def _normalize_patches(payload: Any) -> list[dict[str, str]]:
-    if isinstance(payload, dict):
-        if "filename" in payload and "content" in payload:
-            items = [payload]
-        elif isinstance(payload.get("files"), list):
-            items = payload["files"]
-        else:
-            raise ValueError(
-                'JSON object must be {"filename": "...", "content": "..."} '
-                'or {"files": [...]}'
-            )
-    elif isinstance(payload, list):
-        items = payload
-    else:
-        raise ValueError("JSON root must be an object or an array")
-
-    patches: list[dict[str, str]] = []
-    for index, item in enumerate(items):
-        if not isinstance(item, dict):
-            raise ValueError(f"Patch item {index} is not an object")
-        filename = item.get("filename")
-        content = item.get("content")
-        if not isinstance(filename, str) or not filename.strip():
-            raise ValueError(f"Patch item {index} missing string 'filename'")
-        if not isinstance(content, str):
-            raise ValueError(f"Patch item {index} missing string 'content'")
-        patches.append({"filename": filename.strip(), "content": content})
-    if not patches:
-        raise ValueError("Parsed zero file patches from model response")
-    return patches
-
-
-def parse_json_patches(response: str) -> list[dict[str, str]]:
-    cleaned = _strip_code_fence(response)
+def apply_patches(patches: list[dict[str, Any]]) -> list[Path]:
+    """Apply full-file or RFC 6902 patches after ADR policy gate."""
+    paths = [patch["filename"] for patch in patches]
+    policy = evaluate_paths(paths, enforce_repair_blacklist=True)
     try:
-        payload = json.loads(cleaned)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Failed to parse model JSON: {exc}") from exc
-    return _normalize_patches(payload)
+        policy.raise_if_failed()
+    except PolicyViolation as exc:
+        cites = ", ".join(exc.citations) if exc.citations else "ADR-0059"
+        raise PermissionError(f"{exc} ({cites})") from exc
 
-
-def apply_patches(patches: list[dict[str, str]]) -> list[Path]:
     written: list[Path] = []
     root = PROJECT_ROOT.resolve()
     for patch in patches:
-        rel = patch["filename"].lstrip("./")
-        if any(rel.startswith(prefix) for prefix in FORBIDDEN_PREFIXES):
-            raise PermissionError(f"Refusing forbidden path from model: {rel}")
-        if ".." in Path(rel).parts:
-            raise PermissionError(f"Refusing path traversal from model: {rel}")
-
+        rel = patch["filename"]
         target = (PROJECT_ROOT / rel).resolve()
         try:
             target.relative_to(root)
         except ValueError as exc:
             raise PermissionError(f"Path escapes repo root: {rel}") from exc
 
-        target.parent.mkdir(parents=True, exist_ok=True)
-        content = patch["content"]
-        if not content.endswith("\n"):
-            content += "\n"
-        target.write_text(content, encoding="utf-8")
+        if "operations" in patch:
+            if target.suffix.lower() != ".json":
+                raise PermissionError(
+                    f"RFC 6902 operations only allowed for .json targets: {rel}"
+                )
+            if not target.is_file():
+                raise FileNotFoundError(f"JSON patch target missing: {rel}")
+            updated = apply_json_file_operations(target, patch["operations"])
+            append_event(
+                event_stream_path(),
+                target=rel,
+                operations=patch["operations"],
+                document=updated,
+                actor=BOT_AUTHOR,
+            )
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            content = patch["content"]
+            if not content.endswith("\n"):
+                content += "\n"
+            target.write_text(content, encoding="utf-8")
+
         written.append(target)
-        print(f"Applied patch: {rel}")
+        mode = "rfc6902" if "operations" in patch else "full-file"
+        print(f"Applied patch ({mode}): {rel}")
     return written
 
 
@@ -327,6 +313,8 @@ def main(argv: list[str] | None = None) -> int:
 
         try:
             patches = parse_json_patches(response)
+        except HarnessError as exc:
+            return _fail(f"JSON parse/validate failed: {exc}")
         except Exception as exc:
             return _fail(f"JSON parse/validate failed: {exc}")
 

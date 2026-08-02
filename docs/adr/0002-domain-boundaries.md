@@ -1,6 +1,6 @@
 Title: Directory Domain Boundaries
 Date: Unknown
-Status: Accepted (agent `.mdc` path amended by ADR-0047)
+Status: Accepted (agent `.mdc` path amended by ADR-0047; `harness/` ownership amended by ADR-0059)
 
 # 0002. Directory Domain Boundaries
 
@@ -14,7 +14,7 @@ Four domains. No agent writes outside its scope.
 
 | Domain | Path | Owns |
 |---|---|---|
-| **Pipeline** | `pipeline/` | `agents/` (`.mdc` instructions), `schemas/` (intents, contracts), `scripts/` (deterministic engines) |
+| **Pipeline** | `pipeline/` | `harness/` (Execution Harness — MCP, RFC 6902, ADR policy; ADR-0059), `schemas/` (intents, contracts), `scripts/` (deterministic engines), `tests/`. IDE agent `.mdc` instructions live under `.cursor/rules/` (ADR-0047), not under `pipeline/agents/`. |
 | **Design System** | `design_system/` | **HOW it looks** — `tokens/` (UI variables), `templates/` (component YAML) |
 | **Multi-Tenant State** | `environments/` | **WHAT exists** — `global_hardware_map.json`, `global_spatial_topology.json`, `dashboards/{target}/local_content_map.json`, `dashboards/{target}/config.json` |
 | **Ephemeral Output** | `build/` | `staging/` (regenerated every run), published only by `publish_edge.sh` |

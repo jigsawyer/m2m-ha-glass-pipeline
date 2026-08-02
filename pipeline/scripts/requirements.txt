@@ -1,3 +1,5 @@
 Jinja2
 PyYAML
 anthropic
+jsonpatch
+mcp
