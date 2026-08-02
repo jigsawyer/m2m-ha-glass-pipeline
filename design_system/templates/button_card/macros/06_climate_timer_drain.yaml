@@ -33,41 +33,47 @@
             len: num(phone ? '--lg_size_climate_timer_tick_len_phone' : '--lg_size_climate_timer_tick_len', phone ? 2.25 : 2.0),
             lenM: remToVb(
               phone ? '--lg_size_climate_timer_tick_len_medium_phone' : '--lg_size_climate_timer_tick_len_medium',
-              phone ? '0.32rem' : '0.28rem'
+              phone ? '0.48rem' : '0.42rem'
             ) || (phone ? 2.5 : 2.25),
-            lenQ: num(phone ? '--lg_size_climate_timer_tick_len_quarter_phone' : '--lg_size_climate_timer_tick_len_quarter', phone ? 2.85 : 2.55),
-            thick: num(phone ? '--lg_size_climate_timer_tick_thick_phone' : '--lg_size_climate_timer_tick_thick', phone ? 0.95 : 0.85),
+            lenQ: num(phone ? '--lg_size_climate_timer_tick_len_quarter_phone' : '--lg_size_climate_timer_tick_len_quarter', phone ? 2.35 : 2.1),
+            thick: num(phone ? '--lg_size_climate_timer_tick_thick_phone' : '--lg_size_climate_timer_tick_thick', phone ? 1.05 : 0.95),
             thickM: remToVb(
               phone ? '--lg_size_climate_timer_tick_thick_medium_phone' : '--lg_size_climate_timer_tick_thick_medium',
-              phone ? '0.085rem' : '0.075rem'
-            ) || (phone ? 1.05 : 1.0),
-            thickQ: num(phone ? '--lg_size_climate_timer_tick_thick_quarter_phone' : '--lg_size_climate_timer_tick_thick_quarter', phone ? 1.35 : 1.2),
-            opDormant: num('--lg_opacity_climate_timer_tick_dormant', 0.2),
+              phone ? '0.125rem' : '0.11rem'
+            ) || (phone ? 1.2 : 1.1),
+            thickQ: num(phone ? '--lg_size_climate_timer_tick_thick_quarter_phone' : '--lg_size_climate_timer_tick_thick_quarter', phone ? 1.7 : 1.55),
+            opDormant: num('--lg_opacity_climate_timer_tick_dormant', 0.48),
             opInactive: num('--lg_opacity_climate_timer_tick_inactive', 0.18),
           };
         };
-        const __lgEnsureDrainTicks = (g, host, outerR, drainW) => {
+        const __lgEnsureDrainTicks = (g, host, outerR, innerR, drainW) => {
           if (!g) return;
           const geo = __lgReadDrainTickGeo(host, drainW);
-          const geoKey = `${outerR}|${geo.len}|${geo.lenM}|${geo.thick}|${geo.thickM}|${geo.lenQ}|${geo.thickQ}`;
+          const band = Math.max(0.2, outerR - Math.max(0, innerR));
+          const geoKey = `${outerR}|${innerR}|${geo.len}|${geo.lenM}|${geo.thick}|${geo.thickM}|${geo.lenQ}|${geo.thickQ}|${band}`;
           const needRebuild = g.childElementCount !== __lgTickN
             || g.getAttribute('data-geo') !== geoKey;
           if (!needRebuild) return;
           while (g.firstChild) g.removeChild(g.firstChild);
           g.setAttribute('data-geo', geoKey);
           g.setAttribute('data-r', String(outerR));
+          g.setAttribute('data-ri', String(innerR));
           const ns = 'http://www.w3.org/2000/svg';
           const CX = 50, CY = 50;
+          /* Ticks stay inside the Watch Bezel band so D_bezel_gap reads as clear air. */
+          const lenMinor = Math.min(geo.len, band * 0.52);
+          const lenMed = Math.min(geo.lenM, band * 0.78);
+          const lenMaj = Math.min(geo.lenQ, band * 0.98);
           for (let i = 0; i < __lgTickN; i += 1) {
             const quarter = (i % 15) === 0;
             const medium = !quarter && (i % 5) === 0;
-            const len = quarter ? geo.lenQ : (medium ? geo.lenM : geo.len);
+            const len = quarter ? lenMaj : (medium ? lenMed : lenMinor);
             const thick = quarter ? geo.thickQ : (medium ? geo.thickM : geo.thick);
             const theta = (i / __lgTickN) * Math.PI * 2;
             const cos = Math.cos(theta);
             const sin = Math.sin(theta);
             const rOut = outerR;
-            const rIn = Math.max(0, outerR - len);
+            const rIn = Math.max(innerR, outerR - len);
             const line = document.createElementNS(ns, 'line');
             let cls = 'lg-timer-drain-tick';
             if (quarter) cls += ' lg-timer-drain-tick--quarter';
@@ -83,12 +89,12 @@
             g.appendChild(line);
           }
         };
-        const __lgApplyDrainTicks = (host, t, outerR, drainW) => {
+        const __lgApplyDrainTicks = (host, t, outerR, innerR, drainW) => {
           try {
             const root = host.shadowRoot;
             const g = root && root.querySelector('#timer_drain .lg-timer-drain-ticks');
             if (!g) return false;
-            __lgEnsureDrainTicks(g, host, outerR, drainW);
+            __lgEnsureDrainTicks(g, host, outerR, innerR, drainW);
             const geo = __lgReadDrainTickGeo(host, drainW);
             const lines = g.querySelectorAll('.lg-timer-drain-tick');
             for (let i = 0; i < lines.length; i += 1) {
@@ -119,9 +125,9 @@
           try {
             const root = host.shadowRoot;
             const el = root && root.querySelector('#timer_drain');
-            if (!el) return { r: 0, drainW: 0 };
+            if (!el) return { r: 0, ri: 0, drainW: 0 };
             const hostW = host.clientWidth || 0;
-            if (!(hostW > 0)) return { r: 0, drainW: 0 };
+            if (!(hostW > 0)) return { r: 0, ri: 0, drainW: 0 };
             const cs = getComputedStyle(host);
             const phone = window.matchMedia && window.matchMedia('(max-width: 48rem)').matches;
             const outerPct = parseFloat(cs.getPropertyValue(
@@ -135,7 +141,7 @@
             const gRadialPx = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_wheel_seg_gap'), hostW);
             const kWeight = (() => {
               const v = parseFloat(cs.getPropertyValue('--lg_ratio_climate_timer_bezel_weight'));
-              return Number.isFinite(v) && v > 0 ? v : 0.1;
+              return Number.isFinite(v) && v > 0 ? v : 0.24;
             })();
             const hostHalf = hostW / 2;
             const rRadialOuter = (outerPct / 100) * hostHalf;
@@ -166,11 +172,13 @@
               el.style.setProperty('--lg_timer_bezel_weight_px', String(__lgR4(wBezel)));
             }
             const r = viewHalf > 0 ? (rBezelOuter / viewHalf) * 50 : 46;
+            const ri = viewHalf > 0 ? (rBezelInner / viewHalf) * 50 : 40;
             return {
               r: Math.min(49, Math.round(r * 1000) / 1000),
+              ri: Math.min(48, Math.round(ri * 1000) / 1000),
               drainW,
             };
-          } catch (e) { return { r: 0, drainW: 0 }; }
+          } catch (e) { return { r: 0, ri: 0, drainW: 0 }; }
         };
         const __lgSyncDrain = (host, t, show) => {
           const once = () => {
@@ -183,8 +191,10 @@
             if (show) {
               const layout = __lgLayoutDrain(host);
               const r = layout.r || 48.5;
+              const ri = layout.ri || Math.max(0, r - 2);
               host.__lgTimerDrainR = r;
-              __lgApplyDrainTicks(host, t, r, layout.drainW || el.clientWidth || host.clientWidth || 0);
+              host.__lgTimerDrainRi = ri;
+              __lgApplyDrainTicks(host, t, r, ri, layout.drainW || el.clientWidth || host.clientWidth || 0);
             }
             return true;
           };
