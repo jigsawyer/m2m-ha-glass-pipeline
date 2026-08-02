@@ -4,20 +4,21 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`IDLE` — Orchestration evolution Phase 1+2 delivered (ADR-0059).
+`IDLE` — ADR-0060 Swarm & Map-Reduce delivered in `pipeline/harness/swarm/`.
 
 ## LATEST_ARCHITECTURAL_DECISION
 
-ADR-0059 / `specs/orchestration-evolution.md` Phase 1+2: `pipeline/harness/`
-owns RFC 6902 deltas + append-only event stream, shift-left ADR policy gate,
-and MCP stdio control plane (`mcp` 2.x). Amends ADR-0002/0003/0043 for JSON
-registry mutations. Tier-3 eval + swarm deferred.
+ADR-0060: Swarm decomposition by topology / device_type; sub-agents return
+RFC 6902-only deltas; reduce center validates via adr_policy + pointer
+conflicts and applies through patch_engine / event stream. MCP tools:
+`decompose_swarm_task`, `get_subtask_context`, `aggregate_swarm_deltas`.
+Builds on ADR-0059 Execution Harness.
 
 ## NEXT_STEPS
 
-1. Commit / push Change Set; confirm CI: policy-gate + unit tests + build + E2E.
-2. In Cursor: reload MCP — server `m2m-ha-glass-harness` (`.cursor/mcp.json`).
-3. Later phases (new ADRs): Tier-3 Eval Harness; hierarchical swarm / map-reduce.
+1. Open / merge PR for ADR-0059 (`feat/adr-0059-execution-harness`); then PR ADR-0060.
+2. Reload Cursor MCP after merge so swarm tools appear on `m2m-ha-glass-harness`.
+3. Later: Tier-3 Eval Harness (new ADR).
 
 ## KNOWN_ISSUES
 
@@ -28,3 +29,4 @@ registry mutations. Tier-3 eval + swarm deferred.
 - Stale cross-references to `pipeline/agents/*.mdc` remain in some older ADRs; `docs/adr/` is SoT.
 - ADR-0005 local `publish_edge.sh` executor is CI-only (ADR-0048 / ADR-0057); agents must not run it.
 - MCP stdio requires deps in `.venv` (`mcp`, `jsonpatch`) and `PYTHONPATH=.`.
+- Host shell lacks `gh` CLI / GitHub token — ADR-0059 branch pushed; PR must be opened via GitHub UI or authenticated API.

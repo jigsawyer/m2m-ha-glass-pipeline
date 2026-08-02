@@ -21,3 +21,11 @@ class PolicyViolation(HarnessError):
 
 class IntentContractError(HarnessError):
     """active_intent.json no longer satisfies the required contract."""
+
+
+class SwarmError(HarnessError):
+    """Swarm decomposition or Map-Reduce aggregation failed (ADR-0060)."""
+
+    def __init__(self, message: str, *, citations: list[str] | None = None) -> None:
+        super().__init__(message)
+        self.citations = citations or ["ADR-0060"]
