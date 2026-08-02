@@ -39,8 +39,8 @@ Let:
 
 Equidistant Clearance Contract:
 
-D_bezel_gap = Token.Bezel_Clearance (`lg_size_climate_timer_bezel_gap`,
-derived as a multiple of Token.Radial_Gap / `lg_size_climate_wheel_seg_gap`)
+D_bezel_gap = Token.Bezel_Clearance (`lg_size_climate_timer_bezel_gap`
+= Token.Radial_Gap / `lg_size_climate_wheel_seg_gap`; ADR-0055 equidistant contract)
 
 Therefore:
 

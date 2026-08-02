@@ -4,21 +4,20 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`IDLE` — ADR-0060 Swarm & Map-Reduce delivered in `pipeline/harness/swarm/`.
+`fix/timer-bezel-progress-collapse` pushed (`a15790c`). Commit done; host has no
+`gh` CLI — PR must be opened via GitHub UI compare link.
 
 ## LATEST_ARCHITECTURAL_DECISION
 
-ADR-0060: Swarm decomposition by topology / device_type; sub-agents return
-RFC 6902-only deltas; reduce center validates via adr_policy + pointer
-conflicts and applies through patch_engine / event stream. MCP tools:
-`decompose_swarm_task`, `get_subtask_context`, `aggregate_swarm_deltas`.
-Builds on ADR-0059 Execution Harness.
+ADR-0055 equidistant contract remains SoT: `D_bezel_gap = G_radial`. The 2.5× gap
+token from visual-prominence polish is rejected — it exhausts the pad+stroke
+clearance band and container-preservation zeros `W_bezel` (invisible Ambient Conic).
 
 ## NEXT_STEPS
 
-1. Open / merge PR for ADR-0059 (`feat/adr-0059-execution-harness`); then PR ADR-0060.
-2. Reload Cursor MCP after merge so swarm tools appear on `m2m-ha-glass-harness`.
-3. Later: Tier-3 Eval Harness (new ADR).
+1. Open PR: https://github.com/jigsawyer/m2m-ha-glass-pipeline/compare/main...fix/timer-bezel-progress-collapse?expand=1
+2. Confirm CI edge-state publish + Lovelace reload (ADR-0057 / ADR-0058).
+3. Visual verify on Кабінет: active timer shows Watch Bezel progress arc + ticks.
 
 ## KNOWN_ISSUES
 
@@ -29,4 +28,4 @@ Builds on ADR-0059 Execution Harness.
 - Stale cross-references to `pipeline/agents/*.mdc` remain in some older ADRs; `docs/adr/` is SoT.
 - ADR-0005 local `publish_edge.sh` executor is CI-only (ADR-0048 / ADR-0057); agents must not run it.
 - MCP stdio requires deps in `.venv` (`mcp`, `jsonpatch`) and `PYTHONPATH=.`.
-- Host shell lacks `gh` CLI / GitHub token — ADR-0059 branch pushed; PR must be opened via GitHub UI or authenticated API.
+- Do not reintroduce `lg_size_climate_timer_bezel_gap` multipliers > 1× without expanding outer clearance (`outer_pct` / pad) — else `W_bezel` collapses again.

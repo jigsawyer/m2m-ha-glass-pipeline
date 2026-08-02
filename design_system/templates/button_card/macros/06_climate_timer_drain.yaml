@@ -120,7 +120,9 @@
             return true;
           } catch (e) { return false; }
         };
-        /* ADR 0055 — Watch Bezel: D_bezel_gap from bezel_gap token; W_bezel = k * W_radial_button. */
+        /* ADR 0055 — Watch Bezel: D_bezel_gap = G_radial; W_bezel = k * W_radial_button.
+           Oversized gap tokens must not collapse the progress track to 0 width:
+           clamp gap down toward G_radial first, then shrink W_bezel to fit room. */
         const __lgLayoutDrain = (host) => {
           try {
             const root = host.shadowRoot;
@@ -139,9 +141,9 @@
             const padPx = __lgParseCssLen(cs.getPropertyValue('--lg_space_climate_pad'), hostW);
             const strokeGlassPx = __lgParseCssLen(cs.getPropertyValue('--lg_stroke_glass'), hostW);
             const gRadialPx = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_wheel_seg_gap'), hostW);
-            const bezelGapPx = (() => {
+            let bezelGapPx = (() => {
               const dedicated = __lgParseCssLen(cs.getPropertyValue('--lg_size_climate_timer_bezel_gap'), hostW);
-              return dedicated > 0 ? dedicated : (gRadialPx * 2.5);
+              return dedicated > 0 ? dedicated : gRadialPx;
             })();
             const kWeight = (() => {
               const v = parseFloat(cs.getPropertyValue('--lg_ratio_climate_timer_bezel_weight'));
@@ -151,10 +153,16 @@
             const rRadialOuter = (outerPct / 100) * hostHalf;
             const wRadialButton = Math.max(0, ((outerPct - innerPct) / 100) * hostHalf);
             let wBezel = kWeight * wRadialButton;
-            const rBezelInner = rRadialOuter + bezelGapPx;
             const roomHalfPx = hostHalf + padPx + strokeGlassPx;
+            let rBezelInner = rRadialOuter + bezelGapPx;
             let rBezelOuter = rBezelInner + wBezel;
             if (rBezelOuter > roomHalfPx) {
+              const overflow = rBezelOuter - roomHalfPx;
+              const gapFloor = Math.max(0, gRadialPx);
+              const gapSlack = Math.max(0, bezelGapPx - gapFloor);
+              const gapCut = Math.min(overflow, gapSlack);
+              bezelGapPx -= gapCut;
+              rBezelInner = rRadialOuter + bezelGapPx;
               wBezel = Math.max(0, roomHalfPx - rBezelInner);
               rBezelOuter = rBezelInner + wBezel;
             }
