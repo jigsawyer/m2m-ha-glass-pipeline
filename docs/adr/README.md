@@ -66,3 +66,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0057](0057-ci-publish-edge-state-sot.md) | CI Must Publish Lovelace SoT to edge-state | 2026-08-02 | Accepted (reload fail-closed by ADR-0058) |
 | [0058](0058-fail-closed-edge-state-ui-reload.md) | Fail-Closed Lovelace Reload After edge-state Sync | 2026-08-02 | Accepted |
 | [0059](0059-execution-harness-json-patch-mcp.md) | Execution Harness — RFC 6902 Deltas, ADR Policy Gate, MCP stdio | 2026-08-03 | Accepted |
+| [0060](0060-swarm-map-reduce-subagent.md) | Swarm & Map-Reduce Sub-Agent Architecture | 2026-08-03 | Accepted |

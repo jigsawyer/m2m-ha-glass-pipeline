@@ -35,22 +35,11 @@ def resolve_diff_base(explicit_base: str | None) -> str | None:
     return None
 
 
-def collect_changed_paths(base: str | None) -> list[str]:
-    """List paths changed vs base...HEAD, falling back to working tree status."""
-    if base:
-        result = _run_git(["diff", "--name-only", f"{base}...HEAD"])
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"git diff failed against {base}: {result.stderr.strip()}"
-            )
-        paths = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-        if paths:
-            return paths
-
+def _working_tree_paths() -> list[str]:
     status = _run_git(["status", "--porcelain"])
     if status.returncode != 0:
         raise RuntimeError(f"git status failed: {status.stderr.strip()}")
-    paths = []
+    paths: list[str] = []
     for line in status.stdout.splitlines():
         if len(line) < 4:
             continue
@@ -61,6 +50,33 @@ def collect_changed_paths(base: str | None) -> list[str]:
         if entry:
             paths.append(entry)
     return paths
+
+
+def collect_changed_paths(base: str | None) -> list[str]:
+    """Union of committed diff vs base...HEAD and dirty working-tree paths."""
+    paths: list[str] = []
+    if base:
+        result = _run_git(["diff", "--name-only", f"{base}...HEAD"])
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"git diff failed against {base}: {result.stderr.strip()}"
+            )
+        paths.extend(
+            line.strip() for line in result.stdout.splitlines() if line.strip()
+        )
+
+    paths.extend(_working_tree_paths())
+
+    # Preserve order while deduplicating; skip ephemeral bytecode.
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for path in paths:
+        if path.endswith(".pyc") or "/__pycache__/" in f"/{path}/":
+            continue
+        if path not in seen:
+            seen.add(path)
+            ordered.append(path)
+    return ordered
 
 
 def run_policy_gate(base: str | None = None) -> int:

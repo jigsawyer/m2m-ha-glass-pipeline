@@ -1,9 +1,9 @@
-"""MCP stdio Execution Harness server (ADR-0059, official mcp 2.x SDK)."""
+"""MCP stdio Execution Harness server (ADR-0059 / ADR-0060, official mcp 2.x SDK)."""
 
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
 
@@ -12,18 +12,29 @@ from pipeline.harness.errors import HarnessError
 from pipeline.harness.intent_state import apply_intent_patch, load_active_intent
 from pipeline.harness.patch_engine import apply_json_patch, validate_operations
 from pipeline.harness.paths import ADR_INDEX_PATH, ACTIVE_INTENT_PATH
+from pipeline.harness.swarm.aggregate import (
+    aggregate_swarm_deltas as reduce_swarm_deltas,
+)
+from pipeline.harness.swarm.decompose import DEFAULT_ENVIRONMENT
+from pipeline.harness.swarm.decompose import (
+    decompose_swarm_task as plan_swarm_task,
+)
+from pipeline.harness.swarm.decompose import (
+    get_subtask_context as load_subtask_context,
+)
 from pipeline.harness.working_memory import load_working_memory
 
 INSTRUCTIONS = (
-    "M2M HA Glass Pipeline Execution Harness (ADR-0059). "
+    "M2M HA Glass Pipeline Execution Harness (ADR-0059 / ADR-0060). "
     "Use precision tools for active_intent, working memory, RFC 6902 validation, "
-    "and ADR path policy. Do not request full ADR corpus dumps through this server."
+    "ADR path policy, and swarm Map-Reduce (decompose / subtask context / aggregate). "
+    "Do not request full ADR corpus dumps through this server."
 )
 
 mcp = MCPServer(
     "m2m-ha-glass-harness",
     instructions=INSTRUCTIONS,
-    version="1.0.0",
+    version="1.1.0",
 )
 
 
@@ -120,6 +131,56 @@ def check_adr_policy(
         "domains": sorted(result.domains),
         "paths": list(result.paths),
     }
+
+
+@mcp.tool(name="decompose_swarm_task")
+def decompose_swarm_task(
+    axis: Literal["topology", "device_type"],
+    environment: str = DEFAULT_ENVIRONMENT,
+    zone_ids: list[str] | None = None,
+    include_empty: bool = False,
+) -> dict[str, Any]:
+    """Decompose the active intent into swarm sub-tasks (ADR-0060)."""
+    try:
+        plan = plan_swarm_task(
+            axis=axis,
+            environment=environment,
+            zone_ids=zone_ids,
+            include_empty=include_empty,
+        )
+        return {"ok": True, "plan": plan.to_dict()}
+    except HarnessError as exc:
+        return _error_payload(exc)
+
+
+@mcp.tool(name="get_subtask_context")
+def get_subtask_context(
+    subtask_id: str,
+    environment: str = DEFAULT_ENVIRONMENT,
+) -> dict[str, Any]:
+    """Return a narrow topology/hardware/intent slice for one sub-task."""
+    try:
+        context = load_subtask_context(subtask_id, environment=environment)
+        return {"ok": True, "context": context.to_dict()}
+    except HarnessError as exc:
+        return _error_payload(exc)
+
+
+@mcp.tool(name="aggregate_swarm_deltas")
+def aggregate_swarm_deltas(
+    deltas: list[dict[str, Any]],
+    dry_run: bool = True,
+    actor: str = "mcp-swarm",
+) -> dict[str, Any]:
+    """Validate/policy-check/conflict-check swarm RFC 6902 deltas; optionally apply."""
+    result = reduce_swarm_deltas(
+        deltas,
+        dry_run=dry_run,
+        actor=actor,
+    )
+    payload = result.to_dict()
+    payload["ok"] = result.ok
+    return payload
 
 
 @mcp.resource("m2m://state/active_intent")

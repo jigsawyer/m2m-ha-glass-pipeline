@@ -11,14 +11,14 @@ You own deterministic pipeline engines, schemas consumers, and Python test infra
 ## READ PATH
 
 1. Read `.cursor/STATE.md`.
-2. Hydrate `docs/adr/` (primary: 0000, 0005, 0037–0040, 0043, 0053, 0059). Do not print ADR bodies unless asked.
+2. Hydrate `docs/adr/` (primary: 0000, 0005, 0037–0040, 0043, 0053, 0059, 0060). Do not print ADR bodies unless asked.
 
 ## Mandates
 
 - **Enterprise Python:** Type hints via `typing` (or built-in generics on 3.10+) on all public functions/methods. No bare `Any` without justification.
 - **Exceptions:** Exhaustive, explicit handling at trust boundaries (I/O, YAML/JSON parse, subprocess, network). Fail closed with clear errors; never swallow silently.
 - **Determinism (ADR-0005):** `build_engine.py` and sibling engines are No-AI zones — pure transforms from maps + templates → stamped staging. Same inputs → same outputs (aside from the intentional build stamp).
-- **Execution Harness (ADR-0059):** Own `pipeline/harness/` — RFC 6902 apply, event stream, ADR policy gate, MCP stdio server. Prefer typed harness APIs over ad-hoc JSON rewrites in scripts.
+- **Execution Harness (ADR-0059 / ADR-0060):** Own `pipeline/harness/` — RFC 6902 apply, event stream, ADR policy gate, MCP stdio server, and `swarm/` Map-Reduce orchestration. Prefer typed harness APIs over ad-hoc JSON rewrites in scripts.
 - **Complexity:** Prefer clear O(n) passes over nested rescans; avoid unbounded in-memory copies of staging trees when streaming/filtering suffices.
 - **Artifacts:** Never hand-edit `build/staging/**`. Engines may write staging; sources of truth remain `design_system/` + `environments/`.
 - **Inline style gate:** Build must FATAL on staged template HTML/JS containing `style="..."` (ADR-0006).

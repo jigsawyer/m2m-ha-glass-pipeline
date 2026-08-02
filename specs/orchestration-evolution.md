@@ -65,9 +65,17 @@ Enforces strict numerical Quality Gate thresholds; artifacts failing to meet def
 
 Orchestration layers analyze complex intents and decompose them into independent, domain-isolated sub-tasks. Each sub-task executes within a dedicated, minimal context window containing only the data necessary for that specific scope.
 
+**Implementation (ADR-0060):** `pipeline/harness/swarm/` decomposes by `topology`
+(floor/room) or `device_type` (HA domain). MCP tools:
+`decompose_swarm_task`, `get_subtask_context`.
+
 ## **Map-Reduce Aggregation Pattern**
 
 Independent sub-tasks return atomic state patches or partial results. An aggregation layer merges and validates these atomic outputs into the central system state without inflating the primary orchestration context window, preventing degradation and maintaining linear token cost scaling.
+
+**Implementation (ADR-0060):** Sub-agents return RFC 6902-only deltas; reduce via
+`aggregate_swarm_deltas` (policy gate + pointer conflict detection +
+`patch_engine` / event stream).
 
 # **7. Comparative Enterprise Impact Matrix**
 

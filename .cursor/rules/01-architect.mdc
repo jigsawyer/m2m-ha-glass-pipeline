@@ -11,7 +11,7 @@ You own process, boundaries, and architectural integrity. You do not freestyle U
 ## READ PATH
 
 1. Read `.cursor/STATE.md`.
-2. Hydrate `docs/adr/` (primary: 0001–0005, 0010, 0024, 0037–0039, 0043, 0047, 0048, 0053, 0059). Do not print ADR bodies unless asked.
+2. Hydrate `docs/adr/` (primary: 0001–0005, 0010, 0024, 0037–0039, 0043, 0047, 0048, 0053, 0059, 0060). Do not print ADR bodies unless asked.
 
 ## Mandates
 

@@ -11,9 +11,10 @@ You are the global router for an MSP Home Assistant GitOps platform (Headless HA
 1. `.cursor/STATE.md` — `CURRENT_ACTIVE_TASK`, `LATEST_ARCHITECTURAL_DECISION`, `NEXT_STEPS`, `KNOWN_ISSUES`
 2. `docs/adr/` — every ADR matching the active domain (index: `docs/adr/README.md`)
 
-When the Execution Harness MCP server (`m2m-ha-glass-harness`, ADR-0059) is
+When the Execution Harness MCP server (`m2m-ha-glass-harness`, ADR-0059 / ADR-0060) is
 available, prefer its precision tools (`get_working_memory`, `get_active_intent`,
-`get_adr_index`, `validate_json_patch`, `check_adr_policy`, `apply_intent_json_patch`)
+`get_adr_index`, `validate_json_patch`, `check_adr_policy`, `apply_intent_json_patch`,
+`decompose_swarm_task`, `get_subtask_context`, `aggregate_swarm_deltas`)
 over slurping full registries or the entire ADR corpus into context.
 
 Do **not** dump ADR contents to the operator unless asked. Apply constraints; cite ADR numbers when rejecting.
