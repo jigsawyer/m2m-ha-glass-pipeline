@@ -204,51 +204,6 @@
             }
             const drainW = Math.max(el.clientWidth || hostW, needBox);
             const viewHalf = drainW / 2;
-            // #region agent log
-            try {
-              const prevInner = String(el.style.getPropertyValue('--lg_timer_conic_inner_pct') || '').trim();
-              const prevOuter = String(el.style.getPropertyValue('--lg_timer_conic_outer_pct') || '').trim();
-              const prevW = String(el.style.getPropertyValue('--lg_timer_bezel_weight_px') || '').trim();
-              const seq = (host.__lgDebugBezelSeq = (host.__lgDebugBezelSeq || 0) + 1);
-              const nextInner = viewHalf > 0 ? __lgR4(Math.max(0, Math.min(100, (rBezelInner / viewHalf) * 100))) : 0;
-              const nextOuter = viewHalf > 0 ? __lgR4(Math.max(0, Math.min(100, (rBezelOuter / viewHalf) * 100))) : 0;
-              const payload = {
-                sessionId: '9ef8ed',
-                runId: 'pre-fix',
-                hypothesisId: !prevInner ? 'H1' : (prevW && Math.abs(parseFloat(prevW) - wBezel) > 0.25 ? 'H2' : 'H3'),
-                location: '06_climate_timer_drain.yaml:__lgLayoutDrain',
-                message: 'bezel layout pass',
-                data: {
-                  seq,
-                  hostW,
-                  measuredHalf: __lgR4(measuredHalf),
-                  parsedRoomHalf: __lgR4(parsedRoomHalf),
-                  roomHalfPx: __lgR4(roomHalfPx),
-                  bandTotal: __lgR4(bandTotal),
-                  wBezel: __lgR4(wBezel),
-                  padPx: __lgR4(padPx),
-                  strokeGlassPx: __lgR4(strokeGlassPx),
-                  drainW: __lgR4(drainW),
-                  viewHalf: __lgR4(viewHalf),
-                  prevInner,
-                  prevOuter,
-                  prevW,
-                  nextInner,
-                  nextOuter,
-                  cssFallbackBand: !prevInner,
-                  usedMeasured: measuredHalf > hostHalf + 0.5,
-                  inlineBoxOverride: needBox > hostW + 0.5,
-                },
-                timestamp: Date.now(),
-              };
-              fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify(payload)}).catch(()=>{});
-              try {
-                window.__LG_DEBUG_BEZEL = window.__LG_DEBUG_BEZEL || [];
-                window.__LG_DEBUG_BEZEL.push(payload);
-                if (window.__LG_DEBUG_BEZEL.length > 40) window.__LG_DEBUG_BEZEL.shift();
-              } catch (eBuf) {}
-            } catch (eLog) {}
-            // #endregion
             if (viewHalf > 0) {
               const pct = (px) => __lgR4(Math.max(0, Math.min(100, (px / viewHalf) * 100)));
               el.style.setProperty('--lg_timer_conic_inner_pct', `${pct(rBezelInner)}%`);
@@ -259,20 +214,6 @@
             const r = viewHalf > 0 ? (rBezelOuter / viewHalf) * 50 : 0;
             const ri = viewHalf > 0 ? (rBezelInner / viewHalf) * 50 : 0;
             const ok = !!(viewHalf > 0 && wBezel > 0.5 && r > ri);
-            // #region agent log
-            try {
-              host.setAttribute('data-lg-debug-bezel', JSON.stringify({
-                seq: host.__lgDebugBezelSeq || 0,
-                ok,
-                hostW,
-                wBezel: __lgR4(wBezel),
-                drainW: __lgR4(drainW),
-                measuredHalf: __lgR4(measuredHalf),
-                roomHalfPx: __lgR4(roomHalfPx),
-                frozen: !!host.__lgDrainGeomFrozen,
-              }));
-            } catch (eAttr) {}
-            // #endregion
             return {
               ok,
               wBezel,
@@ -297,11 +238,6 @@
                 el.style.setProperty('opacity', '0', 'important');
                 el.style.setProperty('visibility', 'hidden', 'important');
               } catch (e) {}
-              // #region agent log
-              try {
-                fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix-v2',hypothesisId:'H7',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel hidden/unfrozen',data:{ready:false},timestamp:Date.now()})}).catch(()=>{});
-              } catch (eLog) {}
-              // #endregion
               return true;
             }
             const hostWNow = host.clientWidth || 0;
@@ -318,14 +254,9 @@
                 host.__lgTimerDrainRi,
                 host.__lgDrainFrozenDrainW || el.clientWidth || hostWNow
               );
-              // #region agent log
-              try {
-                fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix-v2',hypothesisId:'H7',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel frozen progress-only',data:{hostW:hostWNow,frozenHostW:host.__lgDrainFrozenHostW||0,wPx:el.style.getPropertyValue('--lg_timer_bezel_weight_px')},timestamp:Date.now()})}).catch(()=>{});
-              } catch (eLog) {}
-              // #endregion
               return true;
             }
-            /* Layout while invisible until vars are real (no 94% fallback flash). */
+            /* Layout while invisible until vars are real (no thick fallback flash). */
             try {
               el.style.setProperty('display', 'block', 'important');
               el.style.setProperty('opacity', '0', 'important');
@@ -339,11 +270,6 @@
             const inner = String(el.style.getPropertyValue('--lg_timer_conic_inner_pct') || '').trim();
             const outer = String(el.style.getPropertyValue('--lg_timer_conic_outer_pct') || '').trim();
             if (!(layout && layout.ok && inner && outer && layout.r > layout.ri)) {
-              // #region agent log
-              try {
-                fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix-v2',hypothesisId:'H6',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel layout not ready — retry',data:{ok:!!(layout&&layout.ok),inner,outer,hostW:hostWNow,wBezel:layout&&layout.wBezel},timestamp:Date.now()})}).catch(()=>{});
-              } catch (eLog) {}
-              // #endregion
               return false;
             }
             host.__lgTimerDrainR = layout.r;
@@ -357,11 +283,6 @@
               el.style.setProperty('opacity', '1', 'important');
               el.style.setProperty('visibility', 'visible', 'important');
             } catch (e) {}
-            // #region agent log
-            try {
-              fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix-v2',hypothesisId:'H7',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel frozen+revealed',data:{wBezel:layout.wBezel,hostW:layout.hostW,drainW:layout.drainW,inner,outer,r:layout.r,ri:layout.ri},timestamp:Date.now()})}).catch(()=>{});
-            } catch (eLog) {}
-            // #endregion
             return true;
           };
           if (once()) return;
