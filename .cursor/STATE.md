@@ -4,8 +4,8 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`feat/adr-0065-canonical-std-layer` — Bounded-context STD storage + path-scoped
-`check_adr_policy`; awaiting local commit / operator push-PR.
+`feat/adr-0065-canonical-std-layer` — committed (`6aad7b7`) and pushed; operator
+opens PR via compare URL (`gh` unavailable on host).
 
 ## LATEST_ARCHITECTURAL_DECISION
 
@@ -16,11 +16,10 @@ only path-relevant STD domain bodies. STD-02 PAUSED. STD-13 DEFERRED.
 
 ## NEXT_STEPS
 
-1. Local quality gates: unit tests + `python -m pipeline.harness policy-gate` +
-   `python -m pipeline.harness evals`.
-2. Structured local commit on `feat/adr-0065-canonical-std-layer` (operator asks).
-3. Push / open PR when authenticated remote interface is available (STD-14).
-4. Do **not** implement STD-02 (HomeKit) or STD-13 (Tier-3 judge) until status flips.
+1. Operator opens PR:
+   https://github.com/jigsawyer/m2m-ha-glass-pipeline/pull/new/feat/adr-0065-canonical-std-layer
+2. After merge to `main`: confirm CI Golden Intent evals + policy-gate on STD paths.
+3. Do **not** implement STD-02 (HomeKit) or STD-13 (Tier-3 judge) until status flips.
 
 ## KNOWN_ISSUES
 
