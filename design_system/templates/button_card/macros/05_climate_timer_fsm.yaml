@@ -267,17 +267,17 @@
         );
         -webkit-mask-image: radial-gradient(
           farthest-side,
-          transparent var(--lg_timer_conic_inner_pct, 94%),
-          #000 calc(var(--lg_timer_conic_inner_pct, 94%) + 0.35%),
-          #000 var(--lg_timer_conic_outer_pct, 100%),
-          transparent calc(var(--lg_timer_conic_outer_pct, 100%) + 0.35%)
+          transparent var(--lg_timer_conic_inner_pct, 97.2%),
+          #000 calc(var(--lg_timer_conic_inner_pct, 97.2%) + 0.35%),
+          #000 var(--lg_timer_conic_outer_pct, 99.5%),
+          transparent calc(var(--lg_timer_conic_outer_pct, 99.5%) + 0.35%)
         );
         mask-image: radial-gradient(
           farthest-side,
-          transparent var(--lg_timer_conic_inner_pct, 94%),
-          #000 calc(var(--lg_timer_conic_inner_pct, 94%) + 0.35%),
-          #000 var(--lg_timer_conic_outer_pct, 100%),
-          transparent calc(var(--lg_timer_conic_outer_pct, 100%) + 0.35%)
+          transparent var(--lg_timer_conic_inner_pct, 97.2%),
+          #000 calc(var(--lg_timer_conic_inner_pct, 97.2%) + 0.35%),
+          #000 var(--lg_timer_conic_outer_pct, 99.5%),
+          transparent calc(var(--lg_timer_conic_outer_pct, 99.5%) + 0.35%)
         );
         filter: drop-shadow(0 0 0.35rem var(--lg_color_climate_timer_conic_active_glow, var(--lg_color_climate_timer_conic_glow_neutral)));
         transition: var(--lg_transition_climate_timer_state_morph);
