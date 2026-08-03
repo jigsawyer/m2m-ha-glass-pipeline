@@ -234,6 +234,67 @@ def get_std_decision(std_id: str) -> dict[str, Any]:
     )
 
 
+def load_domain_subgraph(
+    domain: str,
+    *,
+    include_inactive: bool = True,
+    include_core: bool = True,
+) -> dict[str, Any]:
+    """
+    O(1) bounded STD sub-graph for ``m2m://graph/std/{domain}``.
+
+    Returns only the requested domain's decisions. When ``include_core`` is True
+    and ``domain`` is not ``core``, also attaches the always-on core decisions
+    (never the full multi-domain corpus).
+    """
+    key = domain.strip().lower()
+    if not key:
+        raise StdRegistryError("domain must be a non-empty string")
+
+    index = load_std_index()
+    domains_meta = index.get("domains") or {}
+    if key not in domains_meta:
+        raise StdRegistryError(
+            f"Unknown STD domain {domain!r}; known: {sorted(domains_meta)}"
+        )
+
+    domains_to_load: list[str] = []
+    if include_core and key != "core" and "core" in domains_meta:
+        domains_to_load.append("core")
+    domains_to_load.append(key)
+
+    decisions: list[dict[str, Any]] = []
+    files_loaded: list[str] = []
+    for name in domains_to_load:
+        payload = load_domain_file(name, index=index)
+        rel = _domain_rel_path(index, name)
+        files_loaded.append(rel)
+        for item in payload["decisions"]:
+            if not isinstance(item, dict):
+                continue
+            status = str(item.get("status", "")).upper()
+            if not include_inactive and status not in ACTIVE_STATUSES:
+                continue
+            row = dict(item)
+            row["domain"] = name
+            row["source"] = rel
+            decisions.append(row)
+
+    return {
+        "ok": True,
+        "uri": f"m2m://graph/std/{key}",
+        "domain": key,
+        "domains_loaded": domains_to_load,
+        "files_loaded": files_loaded,
+        "decisions": decisions,
+        "index_entries": [
+            row
+            for row in parse_std_index(index, include_inactive=include_inactive)
+            if row.get("domain") in domains_to_load
+        ],
+    }
+
+
 # Back-compat name used by older call sites during ADR-0065 rollout.
 def load_std_document() -> dict[str, Any]:
     """Deprecated monolith loader — returns index metadata only (no rule bodies)."""

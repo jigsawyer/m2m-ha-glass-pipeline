@@ -72,3 +72,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0063](0063-klimat-watch-bezel-thin-centered.md) | Klimat Watch Bezel — Thin Track Centered in Clearance Band | 2026-08-03 | Accepted |
 | [0064](0064-enterprise-observability-evals-resilience.md) | Enterprise Observability, Evals & Resilience | 2026-08-03 | Accepted (MCP tool/resource names amended by ADR-0065) |
 | [0065](0065-canonical-std-layer-transition.md) | Canonical STD Layer Transition — Machine-First Development SoT | 2026-08-03 | Accepted (bounded-context `std/` layout; path-scoped `check_adr_policy`) |
+| [0066](0066-machine-native-bounded-graph.md) | Machine-Native Bounded Knowledge Graph — Experience LTM, FSM STM, A2A | 2026-08-03 | Accepted (hard cutover; hybrid runtime isolation) |

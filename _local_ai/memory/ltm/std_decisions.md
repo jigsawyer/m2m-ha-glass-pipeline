@@ -1,14 +1,16 @@
 # Shadow Technical Decisions — Bounded Context Index
 
-> **Machine SoT root:** `_local_ai/memory/ltm/std/` (ADR-0065)  
-> **Lightweight manifest:** `std/index.json`  
-> **Domain bodies:** `std/core.json`, `std/domains/{backend,frontend,integrations}.json`  
-> Monolithic `std_decisions.json` is **retired** (Monolithic Memory antipattern).
+> **Machine SoT root:** `_local_ai/memory/ltm/` (ADR-0065 / ADR-0066)  
+> **STD rules:** `std/{index.json,core.json,domains/*}`  
+> **Experience LTM:** `experience/{index.json,domains/*}`  
+> **STM (runtime):** `_local_ai/memory/stm/state.json` (gitignored; template tracked)  
+> Monolithic `std_decisions.json` and `playbook/lessons.json` are **retired**.
 
 Agents MUST:
-1. Read `index.json` (or MCP `get_std_index`) for ID/domain/status only.
-2. Call MCP `check_adr_policy(modified_paths=[...])` to hydrate **only** matching domain files.
-3. Never load every STD domain file into one conversation turn.
+1. Read `std/index.json` (or MCP `get_std_index`) for ID/domain/status only.
+2. Call MCP `check_adr_policy(modified_paths=[...])` or `m2m://graph/std/{domain}` for matching domain files.
+3. Read `experience/index.json` then `intercept_lesson` / `m2m://graph/lessons?intent=` — never load every experience domain in one turn.
+4. Never load every STD domain file into one conversation turn.
 
 | ID | Domain | Status | Title |
 |---|---|---|---|

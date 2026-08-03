@@ -10,8 +10,9 @@ You own deterministic pipeline engines, schemas consumers, and Python test infra
 
 ## READ PATH
 
-1. Read `.cursor/STATE.md`.
-2. Hydrate `_local_ai/memory/ltm/std/index.json` (STD SoT / ADR-0065). Use path-scoped `check_adr_policy` for domain bodies. Legacy ADR archive only when archaeology is required.
+1. Hydrate FSM via `get_working_memory` (STATE.md is optional human export only).
+2. Call `intercept_lesson` before shell/env work (experience LTM under `_local_ai/memory/ltm/experience/`).
+3. Hydrate `_local_ai/memory/ltm/std/index.json` (STD SoT / ADR-0065). Prefer `m2m://graph/std/{domain}` or path-scoped `check_adr_policy`. Legacy ADR archive only when archaeology is required.
 
 ## Mandates
 

@@ -38,9 +38,9 @@
       "id": "STD-10",
       "title": "MCP Control Plane Execution Harness",
       "status": "ACTIVE",
-      "rule": "Agents MUST prefer m2m-ha-glass-harness typed Tools, Resources, and Prompts. Load STD via index + path-scoped domain files only — never the full STD corpus in one turn.",
+      "rule": "Agents MUST prefer m2m-ha-glass-harness typed Tools, Resources, and Prompts. Load STD via index + path-scoped domain files or m2m://graph/std/{domain} — never the full STD corpus in one turn. Working memory SoT is FSM _local_ai/memory/stm/state.json (m2m://graph/state/{task_id}). Inter-agent exchange uses m2m/v1 A2A payloads.",
       "enforcement": ["mcp", "agent-guardrail"],
-      "legacy_adr": ["ADR-0059", "ADR-0064", "ADR-0065"]
+      "legacy_adr": ["ADR-0059", "ADR-0064", "ADR-0065", "ADR-0066"]
     },
     {
       "id": "STD-12",
@@ -71,17 +71,17 @@
       "id": "STD-15",
       "title": "Experience Memory Bank",
       "status": "ACTIVE",
-      "rule": "Read .agent/lessons.md before shell/env work. Capture resolved environment failures with Symptom / Operational Reality / Correct Action. Promote multi-cycle lessons during scheduled review.",
-      "enforcement": ["agent-guardrail", "harness:lessons-status"],
-      "legacy_adr": ["ADR-0062", "ADR-0064"]
+      "rule": "Experience SoT is bounded LTM _local_ai/memory/ltm/experience/ (index.json + domains/*). Before shell/env work call intercept_lesson / m2m://graph/lessons?intent= — never dual-read .agent/lessons.md. Capture new nodes into the owning domain file + index entry. Promote multi-cycle lessons during scheduled review.",
+      "enforcement": ["agent-guardrail", "harness:lessons-status", "mcp:intercept_lesson"],
+      "legacy_adr": ["ADR-0062", "ADR-0064", "ADR-0066"]
     },
     {
       "id": "STD-16",
       "title": "Thin Instructions; Bounded STD SoT",
       "status": "ACTIVE",
-      "rule": "IDE .mdc / .cursorrules hold role, gates, and STD indices — never full constraint prose. Machine SoT is the bounded tree _local_ai/memory/ltm/std/ (index.json + core + domains). docs/adr/ is a legacy narrative archive. Monolithic std_decisions.json is forbidden.",
+      "rule": "IDE .mdc / .cursorrules hold role, gates, and STD indices — never full constraint prose. Machine SoT lives under _local_ai/memory/ltm/ as bounded trees: std/ (rules) and experience/ (lessons). docs/adr/ is a legacy narrative archive. Monolithic std_decisions.json and playbook/lessons.json are forbidden.",
       "enforcement": ["agent-guardrail"],
-      "legacy_adr": ["ADR-0024", "ADR-0047", "ADR-0065"]
+      "legacy_adr": ["ADR-0024", "ADR-0047", "ADR-0065", "ADR-0066"]
     }
   ]
 }

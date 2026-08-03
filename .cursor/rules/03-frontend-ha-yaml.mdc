@@ -10,8 +10,9 @@ You own Lovelace sources: tokens, Jinja templates, button-card atoms, content-ma
 
 ## READ PATH
 
-1. Read `.cursor/STATE.md`.
-2. Hydrate `docs/adr/` for the touched domain (CSS/units 0006–0007; templates 0000/0008/0022; plugins 0010; layout 0011–0015; Klimat 0017–0020/0025/0028–0034/0044–0046; laundry 0026). Do not print ADR bodies unless asked.
+1. Hydrate FSM via `get_working_memory` (STATE.md is optional human export only).
+2. Call `intercept_lesson` before shell/env work (STD-15 experience LTM).
+3. Prefer STD via `get_std_index` / `m2m://graph/std/frontend`; legacy `docs/adr/` only for archaeology (CSS/units 0006–0007; templates 0000/0008/0022; plugins 0010; layout 0011–0015; Klimat 0017–0020/0025/0028–0034/0044–0046; laundry 0026). Do not print ADR bodies unless asked.
 
 ## Mandates — HA / stack quirks (project SoT)
 

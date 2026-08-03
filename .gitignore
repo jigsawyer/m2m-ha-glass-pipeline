@@ -11,3 +11,9 @@ pipeline/logs/*
 .venv/*
 __pycache__/
 *.py[cod]
+
+# Hybrid Zero-Footprint runtime (ADR-0066): STM + local experience overlay.
+# Tracked SoT remains: _local_ai/memory/ltm/std/** and ltm/experience/{index,domains/*}.
+_local_ai/memory/stm/state.json
+_local_ai/memory/ltm/experience/domains/local.json
+_local_ai/memory/playbook/

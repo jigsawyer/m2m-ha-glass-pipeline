@@ -23,7 +23,7 @@ class RiskAuthorizationError(HarnessError):
         self.citations = citations or ["STD-12", "ADR-0064"]
 
 
-# Canonical registry — every MCP tool MUST appear exactly once (ADR-0065).
+# Canonical registry — every MCP tool MUST appear exactly once (ADR-0066).
 TOOL_RISK_REGISTRY: dict[str, RiskLevel] = {
     "get_active_intent": RiskLevel.READ_ONLY,
     "get_working_memory": RiskLevel.READ_ONLY,
@@ -34,8 +34,14 @@ TOOL_RISK_REGISTRY: dict[str, RiskLevel] = {
     "decompose_swarm_task": RiskLevel.READ_ONLY,
     "get_subtask_context": RiskLevel.READ_ONLY,
     "get_tool_risk_registry": RiskLevel.READ_ONLY,
+    "get_experience_index": RiskLevel.READ_ONLY,
+    "match_lessons": RiskLevel.READ_ONLY,
+    "intercept_lesson": RiskLevel.READ_ONLY,
+    "get_fsm_state": RiskLevel.READ_ONLY,
+    "validate_a2a_payload": RiskLevel.READ_ONLY,
     "apply_json_patch": RiskLevel.LOCAL_MUTATION,
     "aggregate_swarm_deltas": RiskLevel.LOCAL_MUTATION,
+    "apply_fsm_patch": RiskLevel.LOCAL_MUTATION,
     "request_critical_deploy": RiskLevel.CRITICAL_DEPLOY,
 }
 

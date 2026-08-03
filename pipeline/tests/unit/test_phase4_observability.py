@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 
 from pipeline.harness.evals.runner import run_eval_suite, run_scenario
-from pipeline.harness.lessons import lessons_status, parse_lessons
-from pipeline.harness.paths import EVALS_SCENARIOS_DIR, PROJECT_ROOT
+from pipeline.harness.lessons import lessons_status
+from pipeline.harness.paths import EVALS_SCENARIOS_DIR
 from pipeline.harness.resilience.edge_health import (
     check_ha_api_health,
     format_canary_failure,
@@ -38,10 +38,17 @@ def test_all_mcp_tools_have_risk_levels() -> None:
         "aggregate_swarm_deltas",
         "get_tool_risk_registry",
         "request_critical_deploy",
+        "get_experience_index",
+        "match_lessons",
+        "intercept_lesson",
+        "get_fsm_state",
+        "apply_fsm_patch",
+        "validate_a2a_payload",
     }
     assert required <= set(TOOL_RISK_REGISTRY)
     assert risk_for_tool("get_active_intent") is RiskLevel.READ_ONLY
     assert risk_for_tool("apply_json_patch") is RiskLevel.LOCAL_MUTATION
+    assert risk_for_tool("apply_fsm_patch") is RiskLevel.LOCAL_MUTATION
     assert risk_for_tool("request_critical_deploy") is RiskLevel.CRITICAL_DEPLOY
 
 
@@ -139,10 +146,9 @@ def test_format_canary_failure_includes_stable_sha() -> None:
     assert payload["event"] == "edge_canary_failure"
 
 
-def test_lessons_parser_reads_bank() -> None:
-    path = PROJECT_ROOT / ".agent" / "lessons.md"
-    entries = parse_lessons(path)
-    assert entries
-    status = lessons_status(path)
+def test_lessons_status_reads_experience_ltm() -> None:
+    status = lessons_status()
     assert status["ok"] is True
-    assert status["total"] == len(entries)
+    assert status["layout"] == "bounded_context"
+    assert status["total"] >= 4
+    assert any(row["id"] == "EXP-001" for row in status["active"])  # type: ignore[union-attr]

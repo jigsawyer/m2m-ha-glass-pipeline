@@ -1,0 +1,17 @@
+{
+  "domain": "harness",
+  "title": "Harness / MCP Experience Nodes",
+  "experience_nodes": [
+    {
+      "id": "EXP-002",
+      "title": "Harness MCP stdio needs project venv",
+      "intents": ["start_mcp", "run_harness", "mcp_stdio", "harness_stdio"],
+      "symptom": "mcp_venv_missing",
+      "hard_constraint": "REQUIRE_PROJECT_VENV",
+      "deterministic_action": "USE_PROJECT_VENV_PYTHON",
+      "python_interpreter": ".venv/bin/python",
+      "env": {"PYTHONPATH": "."},
+      "status": "ACTIVE"
+    }
+  ]
+}

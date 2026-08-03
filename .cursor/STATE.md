@@ -1,25 +1,28 @@
-# Working Memory — Cursor Agentic State Machine
+# Working Memory — Human Export (optional)
 
-> Updated automatically on major task completion. Read before any code generation.
+> Machine SoT is `_local_ai/memory/stm/state.json` (ADR-0066).
+> Agents MUST hydrate via MCP `get_working_memory` / `m2m://graph/state/{task_id}` — not this file.
 
 ## CURRENT_ACTIVE_TASK
 
-`feat/adr-0065-canonical-std-layer` — committed (`6aad7b7`) and pushed; operator
-opens PR via compare URL (`gh` unavailable on host).
+`TASK-ADR-0066` — Machine-Native Agents Evolution (Phase 1–4) completed on
+`feat/adr-0065-canonical-std-layer`. Experience LTM is bounded under
+`_local_ai/memory/ltm/experience/` (index + domains).
 
 ## LATEST_ARCHITECTURAL_DECISION
 
-ADR-0065 — Canonical STD Layer (bounded context). Machine SoT:
-`_local_ai/memory/ltm/std/{index.json,core.json,domains/*}`. Monolithic
-`std_decisions.json` retired. MCP `check_adr_policy(modified_paths)` returns
-only path-relevant STD domain bodies. STD-02 PAUSED. STD-13 DEFERRED.
+ADR-0066 — Machine-Native Bounded Knowledge Graph (Experience LTM, FSM STM, A2A).
+Amends STD-10 / STD-15 / STD-16. Hybrid git: tracked `ltm/std/**` +
+`ltm/experience/{index,domains/*}`; runtime `stm/state.json` +
+`experience/domains/local.json` gitignored.
 
 ## NEXT_STEPS
 
-1. Operator opens PR:
-   https://github.com/jigsawyer/m2m-ha-glass-pipeline/pull/new/feat/adr-0065-canonical-std-layer
-2. After merge to `main`: confirm CI Golden Intent evals + policy-gate on STD paths.
-3. Do **not** implement STD-02 (HomeKit) or STD-13 (Tier-3 judge) until status flips.
+- `S1` GRAPH_STD_URI: COMPLETED
+- `S2` EXPERIENCE_LTM: COMPLETED
+- `S3` FSM_A2A: COMPLETED
+- `S4` TESTS_GOVERNANCE: COMPLETED
+- Operator: local commit when ready; PR via compare URL if `gh` absent (EXP-001).
 
 ## KNOWN_ISSUES
 
@@ -33,3 +36,4 @@ only path-relevant STD domain bodies. STD-02 PAUSED. STD-13 DEFERRED.
 - ADR-0005 local `publish_edge.sh` executor is CI-only (STD-08); agents must not run it.
 - MCP stdio requires deps in `.venv` (`mcp`, `jsonpatch`) and `PYTHONPATH=.`.
 - PDF under `specs/` may be gitignored / untracked — keep as operator reference artifact.
+- Monolithic `playbook/lessons.json` and markdown lesson SoT are retired (ADR-0066).

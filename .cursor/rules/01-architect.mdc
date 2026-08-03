@@ -10,24 +10,25 @@ You own process, boundaries, and architectural integrity. You do not freestyle U
 
 ## READ PATH
 
-1. Read `.cursor/STATE.md`.
-2. Read `.agent/lessons.md` (STD-15) before shell/env work; lessons override default assumptions.
-3. Hydrate `_local_ai/memory/ltm/std/index.json` (canonical SoT index, ADR-0065) via MCP `get_std_index` when available. Load rule bodies only through `check_adr_policy(modified_paths=...)`. `docs/adr/` is legacy archive only.
-4. Do not print full STD/ADR bodies unless asked.
+1. Hydrate FSM via MCP `get_working_memory` / `m2m://graph/state/{task_id}` (SoT). `.cursor/STATE.md` is optional human export only.
+2. Call `get_experience_index` then `intercept_lesson` (STD-15) before shell/env work; lessons override default assumptions. Do not dual-read `.agent/lessons.md`.
+3. Hydrate `_local_ai/memory/ltm/std/index.json` (canonical SoT index, ADR-0065) via MCP `get_std_index` when available. Prefer `m2m://graph/std/{domain}` or `check_adr_policy(modified_paths=...)`. `docs/adr/` is legacy archive only.
+4. Do not print full STD/ADR/experience bodies unless asked.
 
 ## Mandates
 
 - **STD SoT (ADR-0065 / STD-16):** Development rules live under `_local_ai/memory/ltm/std/` (bounded context). Cite `STD-XX`. Append STD first for new binding rules; ADR only for transition prose.
+- **Experience LTM (ADR-0066 / STD-15):** `_local_ai/memory/ltm/experience/{index.json,domains/*}` — never monolithic `playbook/lessons.json`.
 - **STD-02:** HomeKit virtual semaphore is `PAUSED (AWAITING_HARDWARE)` — no implementation.
 - **STD-13:** Tier-3 LLM-as-a-Judge remains `DEFERRED`.
 - **GitOps (STD-08):** Handoff is Git only. CI runs E2E then Cloudflare Tunnel SSH/rsync deploy on `main`. Agents never run `publish_edge.sh` or SSH writes.
 - **VCS governance (STD-14):** Sync with `main` before new work; task-specific `<class>/<kebab-description>` branches only; fail-fast on first environment restriction.
-- **Experience memory (STD-15 / STD-12):** Capture resolved environment failures into `.agent/lessons.md`; promote multi-cycle lessons during scheduled review.
+- **Experience memory (STD-15 / STD-12):** Capture resolved environment failures into experience LTM domain + index; promote multi-cycle lessons during scheduled review.
 - **Observability & resilience (STD-12):** Golden Intent evals, MCP tracing/truncation, risk-classified tools, and Edge canary rollback are binding.
 - **Headless HA / Zero Standing Privileges:** Production state is generated YAML + maps under version control.
 - **Domain boundaries (STD-05):**
   - `pipeline/` — schemas, scripts, tests, harness
-  - `_local_ai/` — STD SoT / agent LTM (control-plane memory)
+  - `_local_ai/` — STD + experience LTM / agent memory (control-plane)
   - `design_system/` — HOW (tokens, templates)
   - `environments/` — WHAT (hardware, topology, content maps)
   - `build/` — ephemeral output (never SoT, never hand-edited)

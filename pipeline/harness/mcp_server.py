@@ -1,4 +1,4 @@
-"""MCP stdio Execution Harness server (ADR-0059 / 0060 / 0064 / 0065)."""
+"""MCP stdio Execution Harness server (ADR-0059 / 0060 / 0064 / 0065 / 0066)."""
 
 from __future__ import annotations
 
@@ -8,12 +8,23 @@ from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
 
+from pipeline.harness.a2a import validate_a2a_payload as check_a2a_payload
 from pipeline.harness.adr_policy import evaluate_paths
 from pipeline.harness.errors import HarnessError
+from pipeline.harness.fsm_state import apply_fsm_patch as patch_fsm
+from pipeline.harness.fsm_state import get_task_state, load_working_memory
 from pipeline.harness.intent_state import apply_intent_patch, load_active_intent
+from pipeline.harness.lessons_engine import intercept as intercept_lessons
+from pipeline.harness.lessons_engine import load_experience_index
+from pipeline.harness.lessons_engine import match_lessons as match_lesson_nodes
+from pipeline.harness.lessons_engine import parse_experience_index
 from pipeline.harness.patch_engine import apply_json_patch as patch_apply
 from pipeline.harness.patch_engine import validate_operations
-from pipeline.harness.paths import ACTIVE_INTENT_PATH, STD_INDEX_PATH
+from pipeline.harness.paths import (
+    ACTIVE_INTENT_PATH,
+    EXPERIENCE_INDEX_PATH,
+    STD_INDEX_PATH,
+)
 from pipeline.harness.risk import (
     RiskAuthorizationError,
     authorize_tool,
@@ -23,6 +34,7 @@ from pipeline.harness.std_registry import (
     get_entity_state as lookup_entity_state,
 )
 from pipeline.harness.std_registry import (
+    load_domain_subgraph,
     load_std_index,
     load_stds_for_paths,
     load_topology_registry,
@@ -39,16 +51,21 @@ from pipeline.harness.swarm.decompose import (
     get_subtask_context as load_subtask_context,
 )
 from pipeline.harness.tracing import run_traced
-from pipeline.harness.working_memory import load_working_memory
 
 INSTRUCTIONS = (
     "M2M HA Glass Pipeline Execution Harness "
-    "(ADR-0059 / ADR-0060 / ADR-0064 / ADR-0065). "
+    "(ADR-0059 / ADR-0060 / ADR-0064 / ADR-0065 / ADR-0066). "
     "Canonical development SoT is the bounded STD tree "
     "_local_ai/memory/ltm/std/ (index.json + core + domains). "
     "Use get_std_index for the lightweight manifest only. "
+    "Use m2m://graph/std/{domain} for O(1) domain sub-graphs. "
     "Use check_adr_policy(modified_paths=...) to load ONLY path-relevant "
     "STD domain files — never the full STD corpus. "
+    "Experience SoT is bounded LTM _local_ai/memory/ltm/experience/ "
+    "(index.json + domains/*); use get_experience_index then "
+    "intercept_lesson / m2m://graph/lessons?intent= before shell work (STD-15). "
+    "Working memory SoT is FSM _local_ai/memory/stm/state.json "
+    "(get_working_memory / m2m://graph/state/{task_id}). "
     "Tool executions are traced to pipeline/logs/traces.jsonl; oversized "
     "responses are truncated in-conversation with a trace_ref. "
     "STD-02 HomeKit is PAUSED (AWAITING_HARDWARE). "
@@ -58,7 +75,7 @@ INSTRUCTIONS = (
 mcp = MCPServer(
     "m2m-ha-glass-harness",
     instructions=INSTRUCTIONS,
-    version="1.4.0",
+    version="1.5.0",
 )
 
 
@@ -101,10 +118,10 @@ def get_active_intent() -> dict[str, Any]:
 
 @mcp.tool()
 def get_working_memory(sections: list[str] | None = None) -> dict[str, Any]:
-    """Return precision slices from .cursor/STATE.md (named ## sections)."""
+    """Return FSM short-term memory (state.json). Optional key filter via sections."""
 
     def body() -> dict[str, Any]:
-        return {"ok": True, "sections": load_working_memory(sections=sections)}
+        return {"ok": True, "fsm": load_working_memory(sections=sections)}
 
     return _invoke("get_working_memory", body)
 
@@ -130,7 +147,7 @@ def get_std_index(include_inactive: bool = True) -> dict[str, Any]:
             "stds": parse_std_index(index, include_inactive=include_inactive),
             "note": (
                 "Index only. For rule bodies call check_adr_policy(modified_paths=...) "
-                "which loads solely the matching domain files."
+                "or read m2m://graph/std/{domain}."
             ),
         }
 
@@ -296,6 +313,94 @@ def aggregate_swarm_deltas(
 
 
 @mcp.tool()
+def get_experience_index(include_inactive: bool = True) -> dict[str, Any]:
+    """Return lightweight experience index.json rows only (no domain node bodies)."""
+
+    def body() -> dict[str, Any]:
+        index = load_experience_index()
+        return {
+            "ok": True,
+            "path": str(EXPERIENCE_INDEX_PATH),
+            "schema_version": index.get("schema_version"),
+            "layout": index.get("layout"),
+            "domains": {
+                name: {
+                    "path": meta.get("path") if isinstance(meta, dict) else None,
+                }
+                for name, meta in dict(index.get("domains") or {}).items()
+            },
+            "entries": parse_experience_index(
+                index, include_inactive=include_inactive
+            ),
+            "note": (
+                "Index only. For node bodies call match_lessons / intercept_lesson "
+                "or read m2m://graph/lessons?intent=... which loads solely matching "
+                "domain files."
+            ),
+        }
+
+    return _invoke("get_experience_index", body)
+
+
+@mcp.tool()
+def match_lessons(intent: str, command: str | None = None) -> dict[str, Any]:
+    """Match experience nodes for an execution intent (STD-15)."""
+
+    def body() -> dict[str, Any]:
+        return match_lesson_nodes(intent, command=command)
+
+    return _invoke("match_lessons", body)
+
+
+@mcp.tool()
+def intercept_lesson(intent: str, command: str | None = None) -> dict[str, Any]:
+    """Pre-execution lesson interceptor — returns hard_constraint actions when matched."""
+
+    def body() -> dict[str, Any]:
+        return intercept_lessons(intent, command=command)
+
+    return _invoke("intercept_lesson", body)
+
+
+@mcp.tool()
+def get_fsm_state(task_id: str | None = None) -> dict[str, Any]:
+    """Return the active FSM state node (machine-native STM)."""
+
+    def body() -> dict[str, Any]:
+        return get_task_state(task_id)
+
+    return _invoke("get_fsm_state", body)
+
+
+@mcp.tool()
+def apply_fsm_patch(
+    operations: list[dict[str, Any]],
+    gates_passed: bool = False,
+) -> dict[str, Any]:
+    """Apply RFC 6902 ops to STM state.json (LOCAL_MUTATION)."""
+
+    def body() -> dict[str, Any]:
+        return patch_fsm(operations)
+
+    return _invoke(
+        "apply_fsm_patch",
+        body,
+        gates_passed=gates_passed,
+        mutating=True,
+    )
+
+
+@mcp.tool()
+def validate_a2a_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Validate an inter-agent m2m/v1 RPC envelope against the A2A schema."""
+
+    def body() -> dict[str, Any]:
+        return check_a2a_payload(payload)
+
+    return _invoke("validate_a2a_payload", body)
+
+
+@mcp.tool()
 def get_tool_risk_registry() -> dict[str, Any]:
     """Return STD-12 / ADR-0064 risk classification for every MCP tool."""
     return _invoke("get_tool_risk_registry", registry_payload)
@@ -337,7 +442,7 @@ def resource_active_intent() -> str:
 
 @mcp.resource("m2m://state/working_memory")
 def resource_working_memory() -> str:
-    """JSON object of known STATE.md sections."""
+    """JSON object of FSM working memory (machine SoT)."""
     return json.dumps(load_working_memory(), indent=2, ensure_ascii=False)
 
 
@@ -357,6 +462,38 @@ def resource_std_registry() -> str:
     return STD_INDEX_PATH.read_text(encoding="utf-8")
 
 
+@mcp.resource("m2m://registry/experience")
+def resource_experience_registry() -> str:
+    """Lightweight experience index.json only (bounded context; never domain bodies)."""
+    return EXPERIENCE_INDEX_PATH.read_text(encoding="utf-8")
+
+
+@mcp.resource("m2m://graph/std/{domain}")
+def resource_graph_std(domain: str) -> str:
+    """Bounded STD domain sub-graph (O(1) token scaling)."""
+    return json.dumps(
+        load_domain_subgraph(domain),
+        indent=2,
+        ensure_ascii=False,
+    )
+
+
+@mcp.resource("m2m://graph/lessons?intent={intent}")
+def resource_graph_lessons(intent: str) -> str:
+    """Experience nodes matching the execution intent."""
+    return json.dumps(
+        match_lesson_nodes(intent),
+        indent=2,
+        ensure_ascii=False,
+    )
+
+
+@mcp.resource("m2m://graph/state/{task_id}")
+def resource_graph_state(task_id: str) -> str:
+    """Active FSM state node for task_id."""
+    return json.dumps(get_task_state(task_id), indent=2, ensure_ascii=False)
+
+
 @mcp.prompt(
     name="analyze_intent",
     title="Analyze Intent",
@@ -365,15 +502,16 @@ def resource_std_registry() -> str:
 def prompt_analyze_intent(operator_request: str) -> str:
     return (
         "You are the M2M HA Glass Pipeline analyzer.\n"
-        "1. Call get_working_memory and get_active_intent.\n"
-        "2. Call get_std_index for the lightweight manifest only "
+        "1. Call get_working_memory (FSM) and get_active_intent.\n"
+        "2. Call intercept_lesson for the operator intent before shell work.\n"
+        "3. Call get_std_index for the lightweight manifest only "
         "(never open every domain STD file).\n"
-        "3. When evaluating constraints for concrete files, call "
-        "check_adr_policy(modified_paths=[...]) to receive ONLY applicable STDs.\n"
-        "4. Prefer get_entity_state and m2m://registry/topology over file slurps.\n"
-        "5. Patch active_intent via validate_json_patch then apply_json_patch.\n"
-        "6. Cite STD-XX on every rejection. Do not invent entities (STD-06).\n"
-        "7. Respect STD-02 PAUSED and STD-13 DEFERRED.\n\n"
+        "4. Prefer m2m://graph/std/{domain} or "
+        "check_adr_policy(modified_paths=[...]) for rule bodies.\n"
+        "5. Prefer get_entity_state and m2m://registry/topology over file slurps.\n"
+        "6. Patch active_intent via validate_json_patch then apply_json_patch.\n"
+        "7. Cite STD-XX on every rejection. Do not invent entities (STD-06).\n"
+        "8. Respect STD-02 PAUSED and STD-13 DEFERRED.\n\n"
         f"Operator request:\n{operator_request}"
     )
 

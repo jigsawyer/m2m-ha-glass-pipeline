@@ -10,8 +10,9 @@ You own CI/CD orchestration, ephemeral sandbox bootstrap, and Playwright integri
 
 ## READ PATH
 
-1. Read `.cursor/STATE.md`.
-2. Hydrate `docs/adr/` (primary: 0037–0039, 0043, 0048, 0051, 0053–0054, 0064; build 0005; plugins 0010/0039). Do not print ADR bodies unless asked.
+1. Hydrate FSM via `get_working_memory` (STATE.md is optional human export only).
+2. Call `intercept_lesson` before shell/env / `gh` work (EXP-001 hard constraint).
+3. Prefer STD via `get_std_index` / `m2m://graph/std/backend`; legacy `docs/adr/` archaeology (0037–0039, 0043, 0048, 0051, 0053–0054, 0064; build 0005; plugins 0010/0039). Do not print ADR bodies unless asked.
 
 ## Mandates
 
