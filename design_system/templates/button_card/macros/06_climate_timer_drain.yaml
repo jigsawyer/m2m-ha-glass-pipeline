@@ -149,9 +149,9 @@
           try {
             const root = host.shadowRoot;
             const el = root && root.querySelector('#timer_drain');
-            if (!el) return { r: 0, ri: 0, drainW: 0 };
+            if (!el) return { ok: false, wBezel: 0, r: 0, ri: 0, drainW: 0, hostW: 0 };
             const hostW = host.clientWidth || 0;
-            if (!(hostW > 0)) return { r: 0, ri: 0, drainW: 0 };
+            if (!(hostW > 0)) return { ok: false, wBezel: 0, r: 0, ri: 0, drainW: 0, hostW: 0 };
             const cs = getComputedStyle(host);
             const phone = window.matchMedia && window.matchMedia('(max-width: 48rem)').matches;
             const outerPct = parseFloat(cs.getPropertyValue(
@@ -256,14 +256,32 @@
               el.style.setProperty('--lg_timer_bezel_gap_px', String(__lgR4(bezelGapPx)));
               el.style.setProperty('--lg_timer_bezel_weight_px', String(__lgR4(wBezel)));
             }
-            const r = viewHalf > 0 ? (rBezelOuter / viewHalf) * 50 : 46;
-            const ri = viewHalf > 0 ? (rBezelInner / viewHalf) * 50 : 40;
+            const r = viewHalf > 0 ? (rBezelOuter / viewHalf) * 50 : 0;
+            const ri = viewHalf > 0 ? (rBezelInner / viewHalf) * 50 : 0;
+            const ok = !!(viewHalf > 0 && wBezel > 0.5 && r > ri);
+            // #region agent log
+            try {
+              host.setAttribute('data-lg-debug-bezel', JSON.stringify({
+                seq: host.__lgDebugBezelSeq || 0,
+                ok,
+                hostW,
+                wBezel: __lgR4(wBezel),
+                drainW: __lgR4(drainW),
+                measuredHalf: __lgR4(measuredHalf),
+                roomHalfPx: __lgR4(roomHalfPx),
+                frozen: !!host.__lgDrainGeomFrozen,
+              }));
+            } catch (eAttr) {}
+            // #endregion
             return {
-              r: Math.min(49, Math.round(r * 1000) / 1000),
-              ri: Math.min(48, Math.round(ri * 1000) / 1000),
+              ok,
+              wBezel,
+              r: ok ? Math.min(49, Math.round(r * 1000) / 1000) : 0,
+              ri: ok ? Math.min(48, Math.round(ri * 1000) / 1000) : 0,
               drainW,
+              hostW,
             };
-          } catch (e) { return { r: 0, ri: 0, drainW: 0 }; }
+          } catch (e) { return { ok: false, wBezel: 0, r: 0, ri: 0, drainW: 0, hostW: 0 }; }
         };
         const __lgSyncDrain = (host, t, show) => {
           const once = () => {
@@ -272,34 +290,68 @@
             if (!show) {
               try {
                 host.removeAttribute('data-lg-drain-ready');
+                host.__lgDrainGeomFrozen = false;
+                host.__lgDrainFrozenHostW = 0;
+                host.__lgDrainFrozenDrainW = 0;
                 el.style.setProperty('display', 'none', 'important');
                 el.style.setProperty('opacity', '0', 'important');
                 el.style.setProperty('visibility', 'hidden', 'important');
               } catch (e) {}
               // #region agent log
               try {
-                fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix',hypothesisId:'H1',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel hidden',data:{ready:false,timerActive:!!host.classList.contains('lg-wheel-timer-active')},timestamp:Date.now()})}).catch(()=>{});
+                fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix-v2',hypothesisId:'H7',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel hidden/unfrozen',data:{ready:false},timestamp:Date.now()})}).catch(()=>{});
               } catch (eLog) {}
               // #endregion
               return true;
             }
-            /* Layout while invisible — avoid thick CSS-fallback first paint.
-               Two passes: first may set needBox px; second settles measuredHalf
-               so reveal uses final W_bezel (no post-visible shrink). */
+            const hostWNow = host.clientWidth || 0;
+            const frozen = !!host.__lgDrainGeomFrozen
+              && host.getAttribute('data-lg-drain-ready') === '1'
+              && host.__lgTimerDrainR > 0
+              && Math.abs(hostWNow - (host.__lgDrainFrozenHostW || 0)) < 2;
+            if (frozen) {
+              /* Progress-only updates — never recompute W_bezel after first good layout. */
+              __lgApplyDrainTicks(
+                host,
+                t,
+                host.__lgTimerDrainR,
+                host.__lgTimerDrainRi,
+                host.__lgDrainFrozenDrainW || el.clientWidth || hostWNow
+              );
+              // #region agent log
+              try {
+                fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix-v2',hypothesisId:'H7',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel frozen progress-only',data:{hostW:hostWNow,frozenHostW:host.__lgDrainFrozenHostW||0,wPx:el.style.getPropertyValue('--lg_timer_bezel_weight_px')},timestamp:Date.now()})}).catch(()=>{});
+              } catch (eLog) {}
+              // #endregion
+              return true;
+            }
+            /* Layout while invisible until vars are real (no 94% fallback flash). */
             try {
               el.style.setProperty('display', 'block', 'important');
               el.style.setProperty('opacity', '0', 'important');
               el.style.setProperty('visibility', 'hidden', 'important');
+              host.removeAttribute('data-lg-drain-ready');
             } catch (e) {}
             void el.offsetWidth;
-            const layout1 = __lgLayoutDrain(host);
+            __lgLayoutDrain(host);
             void el.offsetWidth;
             const layout = __lgLayoutDrain(host);
-            const r = layout.r || 48.5;
-            const ri = layout.ri || Math.max(0, r - 2);
-            host.__lgTimerDrainR = r;
-            host.__lgTimerDrainRi = ri;
-            __lgApplyDrainTicks(host, t, r, ri, layout.drainW || el.clientWidth || host.clientWidth || 0);
+            const inner = String(el.style.getPropertyValue('--lg_timer_conic_inner_pct') || '').trim();
+            const outer = String(el.style.getPropertyValue('--lg_timer_conic_outer_pct') || '').trim();
+            if (!(layout && layout.ok && inner && outer && layout.r > layout.ri)) {
+              // #region agent log
+              try {
+                fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix-v2',hypothesisId:'H6',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel layout not ready — retry',data:{ok:!!(layout&&layout.ok),inner,outer,hostW:hostWNow,wBezel:layout&&layout.wBezel},timestamp:Date.now()})}).catch(()=>{});
+              } catch (eLog) {}
+              // #endregion
+              return false;
+            }
+            host.__lgTimerDrainR = layout.r;
+            host.__lgTimerDrainRi = layout.ri;
+            host.__lgDrainFrozenHostW = layout.hostW || hostWNow;
+            host.__lgDrainFrozenDrainW = layout.drainW;
+            host.__lgDrainGeomFrozen = true;
+            __lgApplyDrainTicks(host, t, layout.r, layout.ri, layout.drainW);
             try {
               host.setAttribute('data-lg-drain-ready', '1');
               el.style.setProperty('opacity', '1', 'important');
@@ -307,11 +359,7 @@
             } catch (e) {}
             // #region agent log
             try {
-              const wPx = String(el.style.getPropertyValue('--lg_timer_bezel_weight_px') || '').trim();
-              const inner = String(el.style.getPropertyValue('--lg_timer_conic_inner_pct') || '').trim();
-              const outer = String(el.style.getPropertyValue('--lg_timer_conic_outer_pct') || '').trim();
-              const w1 = layout1 && layout1.drainW;
-              fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix',hypothesisId:'H1',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel revealed after settled layout',data:{ready:true,wPx,inner,outer,r,ri,drainW:layout.drainW||0,drainW1:w1||0,hostW:host.clientWidth||0},timestamp:Date.now()})}).catch(()=>{});
+              fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix-v2',hypothesisId:'H7',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel frozen+revealed',data:{wBezel:layout.wBezel,hostW:layout.hostW,drainW:layout.drainW,inner,outer,r:layout.r,ri:layout.ri},timestamp:Date.now()})}).catch(()=>{});
             } catch (eLog) {}
             // #endregion
             return true;

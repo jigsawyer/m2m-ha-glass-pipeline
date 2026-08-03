@@ -79,6 +79,9 @@ def test_drain_ready_gate_and_timer_active_only() -> None:
     assert "lg-wheel-timer-active" in drain
     assert 'data-lg-drain-ready="1"' in fsm
     assert "lg-wheel-layer-main):not(.lg-power-idle-off)" not in fsm
+    assert "__lgDrainGeomFrozen" in drain
+    assert "97.2%" in fsm
+    assert "94%" not in fsm.split("#timer_drain .lg-timer-conic-fill")[1].split(":host(.lg-wheel-timer-active)")[0]
 
 
 def test_drain_resolves_var_and_clamp_tokens() -> None:
