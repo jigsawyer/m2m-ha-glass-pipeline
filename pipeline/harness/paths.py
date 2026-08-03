@@ -38,6 +38,8 @@ EVALS_DIR = PROJECT_ROOT / "pipeline" / "tests" / "evals"
 EVALS_SCENARIOS_DIR = EVALS_DIR / "scenarios"
 DEFAULT_EVENT_STREAM = PROJECT_ROOT / "build" / "harness" / "event_stream.jsonl"
 DEFAULT_TRACE_LOG = PROJECT_ROOT / "pipeline" / "logs" / "traces.jsonl"
+# Ephemeral speculative hypothesis worktrees (gitignored via build/*).
+SPECULATIVE_WORKTREE_ROOT = PROJECT_ROOT / "build" / "harness" / "worktrees"
 
 
 def event_stream_path() -> Path:

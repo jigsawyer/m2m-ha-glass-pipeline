@@ -1,9 +1,10 @@
-"""MCP stdio Execution Harness server (ADR-0059 / 0060 / 0064 / 0065 / 0066)."""
+"""MCP stdio Execution Harness server (ADR-0059 / 0060 / 0064 / 0065 / 0066 / 0067)."""
 
 from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
@@ -25,11 +26,19 @@ from pipeline.harness.paths import (
     EXPERIENCE_INDEX_PATH,
     STD_INDEX_PATH,
 )
+from pipeline.harness.reflection_engine import analyze_traces
+from pipeline.harness.reflection_engine import reflect as run_reflect
 from pipeline.harness.risk import (
     RiskAuthorizationError,
     authorize_tool,
     registry_payload,
 )
+from pipeline.harness.speculative_worktree import (
+    create_hypothesis_worktree,
+    dispose_hypothesis_worktree,
+    list_hypothesis_worktrees,
+)
+from pipeline.harness.static_fastpath import analyze_paths as run_fastpath
 from pipeline.harness.std_registry import (
     get_entity_state as lookup_entity_state,
 )
@@ -50,11 +59,12 @@ from pipeline.harness.swarm.decompose import (
 from pipeline.harness.swarm.decompose import (
     get_subtask_context as load_subtask_context,
 )
+from pipeline.harness.tdd_hooks import tdd_gate_check as run_tdd_gate
 from pipeline.harness.tracing import run_traced
 
 INSTRUCTIONS = (
     "M2M HA Glass Pipeline Execution Harness "
-    "(ADR-0059 / ADR-0060 / ADR-0064 / ADR-0065 / ADR-0066). "
+    "(ADR-0059 / ADR-0060 / ADR-0064 / ADR-0065 / ADR-0066 / ADR-0067). "
     "Canonical development SoT is the bounded STD tree "
     "_local_ai/memory/ltm/std/ (index.json + core + domains). "
     "Use get_std_index for the lightweight manifest only. "
@@ -64,6 +74,9 @@ INSTRUCTIONS = (
     "Experience SoT is bounded LTM _local_ai/memory/ltm/experience/ "
     "(index.json + domains/*); use get_experience_index then "
     "intercept_lesson / m2m://graph/lessons?intent= before shell work (STD-15). "
+    "After tasks use analyze_trace_failures / reflect_on_traces for ENVIRONMENT "
+    "failures (ADR-0067); verified appends go to experience/domains/local.json. "
+    "Prefer fastpath_analyze and tdd_gate_check before LLM mutation loops. "
     "Working memory SoT is FSM _local_ai/memory/stm/state.json "
     "(get_working_memory / m2m://graph/state/{task_id}). "
     "Tool executions are traced to pipeline/logs/traces.jsonl; oversized "
@@ -75,7 +88,7 @@ INSTRUCTIONS = (
 mcp = MCPServer(
     "m2m-ha-glass-harness",
     instructions=INSTRUCTIONS,
-    version="1.5.0",
+    version="1.6.0",
 )
 
 
@@ -398,6 +411,131 @@ def validate_a2a_payload(payload: dict[str, Any]) -> dict[str, Any]:
         return check_a2a_payload(payload)
 
     return _invoke("validate_a2a_payload", body)
+
+
+@mcp.tool()
+def analyze_trace_failures(trace_path: str | None = None) -> dict[str, Any]:
+    """READ_ONLY classify failures from traces.jsonl (no LTM write)."""
+
+    def body() -> dict[str, Any]:
+        path = Path(trace_path) if trace_path else None
+        return analyze_traces(path)
+
+    return _invoke("analyze_trace_failures", body)
+
+
+@mcp.tool()
+def reflect_on_traces(
+    verified_success: bool = False,
+    trace_path: str | None = None,
+    events: list[dict[str, Any]] | None = None,
+    hard_constraint: str | None = None,
+    deterministic_action: str | None = None,
+    gates_passed: bool = False,
+) -> dict[str, Any]:
+    """
+    Post-task reflection (§4.2). Writes local experience overlay only when
+    verified_success=true (LOCAL_MUTATION + gates_passed).
+    """
+
+    mutating = bool(verified_success)
+
+    def body() -> dict[str, Any]:
+        path = Path(trace_path) if trace_path else None
+        return run_reflect(
+            verified_success=verified_success,
+            events=events,
+            trace_path=path,
+            hard_constraint=hard_constraint,
+            deterministic_action=deterministic_action,
+        )
+
+    return _invoke(
+        "reflect_on_traces",
+        body,
+        gates_passed=gates_passed,
+        mutating=mutating,
+    )
+
+
+@mcp.tool()
+def fastpath_analyze(paths: list[str]) -> dict[str, Any]:
+    """Deterministic sub-10ms AST/JSON/YAML parse before LLM review (§6.2)."""
+
+    def body() -> dict[str, Any]:
+        return run_fastpath(paths)
+
+    return _invoke("fastpath_analyze", body)
+
+
+@mcp.tool()
+def tdd_gate_check(
+    paths: list[str],
+    phase: Literal["red", "green"] = "red",
+    run_pytest: bool = False,
+    test_path: str | None = None,
+) -> dict[str, Any]:
+    """TDD Red/Green hooks for agentic synthesis (§6.3)."""
+
+    def body() -> dict[str, Any]:
+        return run_tdd_gate(
+            paths,
+            phase=phase,
+            run_pytest=run_pytest,
+            test_path=test_path,
+        )
+
+    return _invoke("tdd_gate_check", body)
+
+
+@mcp.tool()
+def speculative_worktree_list() -> dict[str, Any]:
+    """List ephemeral hypothesis worktrees under build/harness/worktrees/."""
+
+    def body() -> dict[str, Any]:
+        return list_hypothesis_worktrees()
+
+    return _invoke("speculative_worktree_list", body)
+
+
+@mcp.tool()
+def speculative_worktree_create(
+    hypothesis_id: str,
+    base_ref: str = "HEAD",
+    gates_passed: bool = False,
+) -> dict[str, Any]:
+    """Create ephemeral git worktree for a speculative hypothesis (§6.1)."""
+
+    def body() -> dict[str, Any]:
+        return create_hypothesis_worktree(hypothesis_id, base_ref=base_ref)
+
+    return _invoke(
+        "speculative_worktree_create",
+        body,
+        gates_passed=gates_passed,
+        mutating=True,
+    )
+
+
+@mcp.tool()
+def speculative_worktree_dispose(
+    hypothesis_id: str,
+    delete_branch: bool = True,
+    gates_passed: bool = False,
+) -> dict[str, Any]:
+    """Remove ephemeral hypothesis worktree and optionally delete hypo/* branch."""
+
+    def body() -> dict[str, Any]:
+        return dispose_hypothesis_worktree(
+            hypothesis_id, delete_branch=delete_branch
+        )
+
+    return _invoke(
+        "speculative_worktree_dispose",
+        body,
+        gates_passed=gates_passed,
+        mutating=True,
+    )
 
 
 @mcp.tool()

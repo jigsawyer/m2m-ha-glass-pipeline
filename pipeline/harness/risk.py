@@ -39,9 +39,16 @@ TOOL_RISK_REGISTRY: dict[str, RiskLevel] = {
     "intercept_lesson": RiskLevel.READ_ONLY,
     "get_fsm_state": RiskLevel.READ_ONLY,
     "validate_a2a_payload": RiskLevel.READ_ONLY,
+    "analyze_trace_failures": RiskLevel.READ_ONLY,
+    "fastpath_analyze": RiskLevel.READ_ONLY,
+    "tdd_gate_check": RiskLevel.READ_ONLY,
+    "speculative_worktree_list": RiskLevel.READ_ONLY,
     "apply_json_patch": RiskLevel.LOCAL_MUTATION,
     "aggregate_swarm_deltas": RiskLevel.LOCAL_MUTATION,
     "apply_fsm_patch": RiskLevel.LOCAL_MUTATION,
+    "reflect_on_traces": RiskLevel.LOCAL_MUTATION,
+    "speculative_worktree_create": RiskLevel.LOCAL_MUTATION,
+    "speculative_worktree_dispose": RiskLevel.LOCAL_MUTATION,
     "request_critical_deploy": RiskLevel.CRITICAL_DEPLOY,
 }
 

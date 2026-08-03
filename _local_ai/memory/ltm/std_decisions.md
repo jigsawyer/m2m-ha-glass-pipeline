@@ -30,3 +30,7 @@ Agents MUST:
 | STD-14 | core | ACTIVE | VCS & Execution Governance |
 | STD-15 | core | ACTIVE | Experience Memory Bank |
 | STD-16 | core | ACTIVE | Thin Instructions; Bounded STD SoT |
+
+Post-task reflection + Section 6 harness tools: ADR-0067
+(`reflect` / `fastpath` / `tdd-gate` / `worktree` CLI; MCP siblings).
+

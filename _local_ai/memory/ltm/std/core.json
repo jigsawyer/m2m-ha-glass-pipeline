@@ -46,9 +46,9 @@
       "id": "STD-12",
       "title": "Observability, Golden Evals & Risk Gates",
       "status": "ACTIVE",
-      "rule": "Golden Intent evals gate harness regressions. MCP tools are risk-classified (READ_ONLY / LOCAL_MUTATION / CRITICAL_DEPLOY). LOCAL_MUTATION requires gates_passed=true. Edge CD runs a 60s REST canary with auto-rollback.",
-      "enforcement": ["ci", "mcp", "evals"],
-      "legacy_adr": ["ADR-0064"]
+      "rule": "Golden Intent evals gate harness regressions. MCP tools are risk-classified (READ_ONLY / LOCAL_MUTATION / CRITICAL_DEPLOY). LOCAL_MUTATION requires gates_passed=true. Edge CD runs a 60s REST canary with auto-rollback. Prefer fastpath_analyze before LLM review and tdd_gate_check Red/Green hooks for pipeline Python mutations (ADR-0067).",
+      "enforcement": ["ci", "mcp", "evals", "harness:fastpath", "harness:tdd-gate"],
+      "legacy_adr": ["ADR-0064", "ADR-0067"]
     },
     {
       "id": "STD-13",
@@ -71,9 +71,9 @@
       "id": "STD-15",
       "title": "Experience Memory Bank",
       "status": "ACTIVE",
-      "rule": "Experience SoT is bounded LTM _local_ai/memory/ltm/experience/ (index.json + domains/*). Before shell/env work call intercept_lesson / m2m://graph/lessons?intent= — never dual-read .agent/lessons.md. Capture new nodes into the owning domain file + index entry. Promote multi-cycle lessons during scheduled review.",
-      "enforcement": ["agent-guardrail", "harness:lessons-status", "mcp:intercept_lesson"],
-      "legacy_adr": ["ADR-0062", "ADR-0064", "ADR-0066"]
+      "rule": "Experience SoT is bounded LTM _local_ai/memory/ltm/experience/ (index.json + domains/*). Before shell/env work call intercept_lesson / m2m://graph/lessons?intent= — never dual-read .agent/lessons.md. After tasks call reflect (analyze_trace_failures / reflect_on_traces) for ENVIRONMENT failures; append verified nodes only to domains/local.json (or promote to seed domains during review). Promote multi-cycle lessons during scheduled review.",
+      "enforcement": ["agent-guardrail", "harness:lessons-status", "harness:reflect", "mcp:intercept_lesson", "mcp:reflect_on_traces"],
+      "legacy_adr": ["ADR-0062", "ADR-0064", "ADR-0066", "ADR-0067"]
     },
     {
       "id": "STD-16",
