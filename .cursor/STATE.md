@@ -5,22 +5,20 @@
 
 ## CURRENT_ACTIVE_TASK
 
-`TASK-ADR-0066` — Machine-Native Agents Evolution (Phase 1–4) completed on
-`feat/adr-0065-canonical-std-layer`. Experience LTM is bounded under
-`_local_ai/memory/ltm/experience/` (index + domains).
+`TASK-ADR-0067` — Reflection Engine + Section 6 innovations on
+`feat/m2m-reflection-and-section6-innovations`.
 
 ## LATEST_ARCHITECTURAL_DECISION
 
-ADR-0066 — Machine-Native Bounded Knowledge Graph (Experience LTM, FSM STM, A2A).
-Amends STD-10 / STD-15 / STD-16. Hybrid git: tracked `ltm/std/**` +
-`ltm/experience/{index,domains/*}`; runtime `stm/state.json` +
-`experience/domains/local.json` gitignored.
+ADR-0067 — Post-task `reflection_engine` (§4.2), `static_fastpath` (§6.2),
+`tdd_hooks` (§6.3), speculative worktree helpers (§6.1). Amends STD-12 / STD-15.
+Verified experience appends go to gitignored `experience/domains/local.json`.
 
 ## NEXT_STEPS
 
-- `S1` GRAPH_STD_URI: COMPLETED
-- `S2` EXPERIENCE_LTM: COMPLETED
-- `S3` FSM_A2A: COMPLETED
+- `S1` REFLECTION_ENGINE: COMPLETED
+- `S2` FASTPATH_TDD: COMPLETED
+- `S3` SPECULATIVE_WORKTREE: COMPLETED
 - `S4` TESTS_GOVERNANCE: COMPLETED
 - Operator: local commit when ready; PR via compare URL if `gh` absent (EXP-001).
 
@@ -37,3 +35,4 @@ Amends STD-10 / STD-15 / STD-16. Hybrid git: tracked `ltm/std/**` +
 - MCP stdio requires deps in `.venv` (`mcp`, `jsonpatch`) and `PYTHONPATH=.`.
 - PDF under `specs/` may be gitignored / untracked — keep as operator reference artifact.
 - Monolithic `playbook/lessons.json` and markdown lesson SoT are retired (ADR-0066).
+- Auto-reflection writes only `domains/local.json`; promote to tracked seed domains during review (ADR-0067).
