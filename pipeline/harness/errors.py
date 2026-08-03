@@ -28,4 +28,4 @@ class SwarmError(HarnessError):
 
     def __init__(self, message: str, *, citations: list[str] | None = None) -> None:
         super().__init__(message)
-        self.citations = citations or ["ADR-0060"]
+        self.citations = citations or ["STD-11", "ADR-0060"]

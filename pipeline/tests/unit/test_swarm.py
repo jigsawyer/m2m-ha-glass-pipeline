@@ -157,7 +157,7 @@ def test_aggregate_rejects_policy_mix() -> None:
         dry_run=True,
     )
     assert result.ok is False
-    assert "ADR-0002" in result.citations
+    assert "STD-05" in result.citations
 
 
 def test_aggregate_rejects_pointer_conflict() -> None:
@@ -190,7 +190,7 @@ def test_aggregate_rejects_pointer_conflict() -> None:
     )
     assert result.ok is False
     assert any("Conflict" in item for item in result.violations)
-    assert "ADR-0060" in result.citations
+    assert "STD-11" in result.citations
 
 
 def test_aggregate_rejects_build_staging() -> None:
@@ -205,4 +205,4 @@ def test_aggregate_rejects_build_staging() -> None:
         dry_run=True,
     )
     assert result.ok is False
-    assert "ADR-0002" in result.citations
+    assert "STD-05" in result.citations

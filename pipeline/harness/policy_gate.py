@@ -1,4 +1,4 @@
-"""CLI / library entry for git-diff ADR policy gate (ADR-0059)."""
+"""CLI / library entry for git-diff STD policy gate (ADR-0065 / STD-05)."""
 
 from __future__ import annotations
 
@@ -89,12 +89,12 @@ def run_policy_gate(base: str | None = None) -> int:
         return 1
 
     if not paths:
-        print("ADR policy gate: no changed paths — OK")
+        print("STD policy gate: no changed paths — OK")
         return 0
 
     result = evaluate_paths(paths, enforce_repair_blacklist=False)
     print(
-        "ADR policy gate paths "
+        "STD policy gate paths "
         f"({len(result.paths)}; base={resolved or 'working-tree'}):"
     )
     for path in result.paths:
@@ -102,10 +102,10 @@ def run_policy_gate(base: str | None = None) -> int:
     print(f"domains: {', '.join(sorted(result.domains)) or '(none)'}")
 
     if result.ok:
-        print("ADR policy gate: OK")
+        print("STD policy gate: OK")
         return 0
 
-    print("FATAL_EXCEPTION: ADR policy gate failed", file=sys.stderr)
+    print("FATAL_EXCEPTION: STD policy gate failed", file=sys.stderr)
     for violation in result.violations:
         print(f"  - {violation}", file=sys.stderr)
     if result.citations:

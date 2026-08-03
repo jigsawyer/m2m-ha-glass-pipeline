@@ -1,6 +1,6 @@
 Title: Agent Instructions Are Thin; Constraints Live in `docs/adr/`
 Date: Unknown
-Status: Accepted (instruction surface relocated by ADR-0047; thin-instruction principle unchanged)
+Status: Legacy archive — operational SoT is STD (ADR-0065); thin-instruction principle preserved (instruction surface relocated by ADR-0047)
 
 # 0024. Agent Instructions Are Thin; Constraints Live in `docs/adr/`
 

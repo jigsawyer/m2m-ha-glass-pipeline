@@ -1,6 +1,6 @@
 Title: Enterprise Observability, Evals & Resilience
 Date: 2026-08-03
-Status: Accepted
+Status: Accepted (MCP tool/resource names amended by ADR-0065)
 
 # 0064. Enterprise Observability, Evals & Resilience
 

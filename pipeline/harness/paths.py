@@ -10,6 +10,12 @@ ACTIVE_INTENT_PATH = PROJECT_ROOT / "pipeline" / "schemas" / "active_intent.json
 STATE_MD_PATH = PROJECT_ROOT / ".cursor" / "STATE.md"
 ADR_DIR = PROJECT_ROOT / "docs" / "adr"
 ADR_INDEX_PATH = ADR_DIR / "README.md"
+STD_DIR = PROJECT_ROOT / "_local_ai" / "memory" / "ltm"
+STD_ROOT = STD_DIR / "std"
+STD_INDEX_PATH = STD_ROOT / "index.json"
+STD_DECISIONS_MD_PATH = STD_DIR / "std_decisions.md"
+# Retired monolith path — kept only so callers can detect/forbid it.
+STD_MONOLITH_PATH = STD_DIR / "std_decisions.json"
 LESSONS_PATH = PROJECT_ROOT / ".agent" / "lessons.md"
 EVALS_DIR = PROJECT_ROOT / "pipeline" / "tests" / "evals"
 EVALS_SCENARIOS_DIR = EVALS_DIR / "scenarios"

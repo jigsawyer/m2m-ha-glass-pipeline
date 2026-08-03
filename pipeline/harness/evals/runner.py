@@ -101,7 +101,7 @@ def run_scenario(scenario_dir: Path) -> ScenarioResult:
             if not policy.ok:
                 raise PolicyViolation(
                     "; ".join(policy.violations),
-                    citations=list(policy.citations) or ["ADR-0002", "ADR-0064"],
+                    citations=list(policy.citations) or ["STD-05", "ADR-0064"],
                 )
 
         expected_path = scenario_dir / "expected_document.json"

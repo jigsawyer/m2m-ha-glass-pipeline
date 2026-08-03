@@ -1,0 +1,38 @@
+{
+  "domain": "backend",
+  "description": "Backend / packages / harness / CI Shadow Technical Decisions",
+  "decisions": [
+    {
+      "id": "STD-01",
+      "title": "Package-Driven Architecture",
+      "status": "ACTIVE",
+      "rule": "Git-managed HA business logic MUST reside exclusively under Edge /config/packages/ via Whitelist CD. Direct agent edits to automations.yaml / scripts.yaml / configuration.yaml on Edge are forbidden.",
+      "enforcement": ["policy-gate", "ci-deploy"],
+      "legacy_adr": ["ADR-0051"]
+    },
+    {
+      "id": "STD-04",
+      "title": "Path-Based Differential Deployment",
+      "status": "ACTIVE",
+      "rule": "Frontend-only Change Sets sync without ha core restart. Backend package Change Sets enforce ha core restart. Restart is driven by git source paths, not build/staging/**.",
+      "enforcement": ["ci-deploy"],
+      "legacy_adr": ["ADR-0054"]
+    },
+    {
+      "id": "STD-09",
+      "title": "RFC 6902 Delta Mutations",
+      "status": "ACTIVE",
+      "rule": "JSON registries mutate via validated RFC 6902 patches through the Execution Harness. YAML templates remain full-file overwrite. Append-only event stream records successful JSON applies.",
+      "enforcement": ["mcp:apply_json_patch", "mcp:validate_json_patch", "evals"],
+      "legacy_adr": ["ADR-0059"]
+    },
+    {
+      "id": "STD-11",
+      "title": "Swarm Map-Reduce Context Partitioning",
+      "status": "ACTIVE",
+      "rule": "Multi-zone / multi-domain intents decompose via topology or device_type axes. Sub-agents return RFC 6902 deltas only; reduce via aggregate_swarm_deltas with policy + conflict checks.",
+      "enforcement": ["mcp:decompose_swarm_task", "mcp:aggregate_swarm_deltas"],
+      "legacy_adr": ["ADR-0060"]
+    }
+  ]
+}

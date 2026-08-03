@@ -1,0 +1,15 @@
+{
+  "domain": "integrations",
+  "description": "External integration Shadow Technical Decisions",
+  "decisions": [
+    {
+      "id": "STD-02",
+      "title": "Virtual Semaphore Integration (HomeKit)",
+      "status": "PAUSED",
+      "status_detail": "AWAITING_HARDWARE",
+      "rule": "Apple HomeKit MAY act as the presentation trigger layer via virtual input_boolean semaphores; HAOS remains the master orchestrator. Implementation is frozen until Apple HomePod hardware is procured. No code, packages, tests, or MCP surfaces for this layer while PAUSED.",
+      "enforcement": ["manual-gate"],
+      "legacy_adr": []
+    }
+  ]
+}

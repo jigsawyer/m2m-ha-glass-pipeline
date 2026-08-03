@@ -28,19 +28,20 @@ def test_all_mcp_tools_have_risk_levels() -> None:
     required = {
         "get_active_intent",
         "get_working_memory",
-        "get_adr_index",
+        "get_std_index",
+        "get_entity_state",
         "validate_json_patch",
         "check_adr_policy",
         "decompose_swarm_task",
         "get_subtask_context",
-        "apply_intent_json_patch",
+        "apply_json_patch",
         "aggregate_swarm_deltas",
         "get_tool_risk_registry",
         "request_critical_deploy",
     }
     assert required <= set(TOOL_RISK_REGISTRY)
     assert risk_for_tool("get_active_intent") is RiskLevel.READ_ONLY
-    assert risk_for_tool("apply_intent_json_patch") is RiskLevel.LOCAL_MUTATION
+    assert risk_for_tool("apply_json_patch") is RiskLevel.LOCAL_MUTATION
     assert risk_for_tool("request_critical_deploy") is RiskLevel.CRITICAL_DEPLOY
 
 
@@ -48,9 +49,9 @@ def test_local_mutation_requires_gates(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     monkeypatch.delenv("M2M_CRITICAL_DEPLOY_OK", raising=False)
     with pytest.raises(RiskAuthorizationError, match="gates_passed"):
-        authorize_tool("apply_intent_json_patch", mutating=True, gates_passed=False)
+        authorize_tool("apply_json_patch", mutating=True, gates_passed=False)
     assert (
-        authorize_tool("apply_intent_json_patch", mutating=True, gates_passed=True)
+        authorize_tool("apply_json_patch", mutating=True, gates_passed=True)
         is RiskLevel.LOCAL_MUTATION
     )
     # dry-run aggregate does not require gates
@@ -82,7 +83,7 @@ def test_tracing_appends_and_truncates(tmp_path: Path, monkeypatch: pytest.Monke
     monkeypatch.setenv("M2M_TRACE_MAX_CHARS", "120")
     monkeypatch.setenv("M2M_TRACE_MAX_LINES", "5")
 
-    small = run_traced("get_adr_index", lambda: {"ok": True, "n": 1}, log_path=log)
+    small = run_traced("get_std_index", lambda: {"ok": True, "n": 1}, log_path=log)
     assert small == {"ok": True, "n": 1}
 
     big_payload = {"ok": True, "blob": "x" * 400}
@@ -94,7 +95,7 @@ def test_tracing_appends_and_truncates(tmp_path: Path, monkeypatch: pytest.Monke
     lines = log.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 2
     first = json.loads(lines[0])
-    assert first["tool"] == "get_adr_index"
+    assert first["tool"] == "get_std_index"
     assert first["status"] == "success"
     assert "duration_ms" in first
     assert "response_payload_bytes" in first

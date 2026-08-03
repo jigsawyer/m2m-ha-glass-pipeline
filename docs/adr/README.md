@@ -33,7 +33,7 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0021](0021-klimat-timer-picker.md) | Klimat Sleep-Timer Picker — Per-Breakpoint Controls | Unknown | Superseded by ADR-0025 |
 | [0022](0022-jinja-whitespace-in-yaml-lists.md) | Jinja Whitespace Control Is Forbidden in YAML List Bodies | Unknown | Accepted |
 | [0023](0023-analyzer-human-channel-language.md) | Analyzer Human Channel Is Ukrainian; Machine Channel Stays English | Unknown | Accepted |
-| [0024](0024-agent-instructions-reference-adrs.md) | Agent Instructions Are Thin; Constraints Live in `docs/adr/` | Unknown | Accepted (instruction surface relocated by ADR-0047; thin-instruction principle unchanged) |
+| [0024](0024-agent-instructions-reference-adrs.md) | Agent Instructions Are Thin; Constraints Live in `docs/adr/` | Unknown | Legacy archive — operational SoT is STD (ADR-0065); thin-instruction principle preserved |
 | [0025](0025-klimat-timer-radial.md) | Klimat Sleep-Timer — In-Place Radial Duration Picker | Unknown | Accepted |
 | [0026](0026-laundry-smartthings-entities.md) | Laundry SmartThings Entities and Delayed-Start FSM | Unknown | Accepted |
 | [0027](0027-reports-domain-partitioning.md) | Reports Domain-Driven Hierarchical Partitioning | Unknown | Accepted |
@@ -56,7 +56,7 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0044](0044-klimat-state-polish.md) | Klimat State Polish — Ambient Conic Timer + Optimistic Entity FSM | 2026-07-31 | Accepted (§1 picker/leading-edge amended by ADR-0045) |
 | [0045](0045-klimat-conic-chrome-correction.md) | Klimat Conic Chrome Correction — 12 o'clock Origin, Mode Hue, Picker Mechanism Frozen | 2026-08-01 | Accepted (warn hue/ring mask amended by ADR-0046) |
 | [0046](0046-klimat-timer-ring-placement-and-hue.md) | Klimat Timer Ring — Outer Clearance Band, Mode Hue Rule, Instant Submenu Cut | 2026-08-01 | Accepted (placement superseded by ADR-0055; hue + submenu cut amended by ADR-0055) |
-| [0047](0047-cursor-multi-agent-routing-and-working-memory.md) | Cursor Multi-Agent Routing and Working Memory | 2026-08-02 | Accepted (hydration amended by ADR-0062) |
+| [0047](0047-cursor-multi-agent-routing-and-working-memory.md) | Cursor Multi-Agent Routing and Working Memory | 2026-08-02 | Legacy archive — operational SoT is STD (ADR-0065); hydration amended by ADR-0062 / 0065 |
 | [0048](0048-ci-deploy-cloudflare-tunnel-rsync.md) | CI Deploy Job — Cloudflare Tunnel SSH + Rsync After E2E | 2026-08-02 | Accepted (root rsync publish model superseded by ADR-0051; unconditional restart amended by ADR-0054) |
 | [0051](0051-package-driven-whitelist-cd.md) | Package-Driven Architecture and Whitelist CD Deployment | 2026-08-02 | Accepted (`www` scope amended by ADR-0056) |
 | [0053](0053-evergreen-dependency-model.md) | Evergreen Dependency Model & Zero Warnings Policy | 2026-08-02 | Accepted |
@@ -70,4 +70,5 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0061](0061-vcs-execution-governance.md) | Version Control & Execution Governance for AI Agents | 2026-08-03 | Accepted |
 | [0062](0062-self-correction-experience-memory.md) | Self-Correction & Environment Experience Memory | 2026-08-03 | Accepted |
 | [0063](0063-klimat-watch-bezel-thin-centered.md) | Klimat Watch Bezel — Thin Track Centered in Clearance Band | 2026-08-03 | Accepted |
-| [0064](0064-enterprise-observability-evals-resilience.md) | Enterprise Observability, Evals & Resilience | 2026-08-03 | Accepted |
+| [0064](0064-enterprise-observability-evals-resilience.md) | Enterprise Observability, Evals & Resilience | 2026-08-03 | Accepted (MCP tool/resource names amended by ADR-0065) |
+| [0065](0065-canonical-std-layer-transition.md) | Canonical STD Layer Transition — Machine-First Development SoT | 2026-08-03 | Accepted (bounded-context `std/` layout; path-scoped `check_adr_policy`) |
