@@ -64,6 +64,23 @@ def test_drain_centers_with_band_cap() -> None:
     assert "0.16" in src
 
 
+def test_drain_ready_gate_and_timer_active_only() -> None:
+    """Reload flash + IDLE ring: show only after layout, only when timer active."""
+    drain = DRAIN.read_text(encoding="utf-8")
+    fsm = (
+        ROOT
+        / "design_system"
+        / "templates"
+        / "button_card"
+        / "macros"
+        / "05_climate_timer_fsm.yaml"
+    ).read_text(encoding="utf-8")
+    assert "data-lg-drain-ready" in drain
+    assert "lg-wheel-timer-active" in drain
+    assert 'data-lg-drain-ready="1"' in fsm
+    assert "lg-wheel-layer-main):not(.lg-power-idle-off)" not in fsm
+
+
 def test_drain_resolves_var_and_clamp_tokens() -> None:
     src = DRAIN.read_text(encoding="utf-8")
     assert "measuredHalf" in src
