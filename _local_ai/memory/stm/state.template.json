@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "task_id": "IDLE",
+  "current_fsm_state": "IDLE",
+  "active_branch": "",
+  "step_matrix": [],
+  "human_summary_export": ".cursor/STATE.md"
+}

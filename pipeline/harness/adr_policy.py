@@ -1,4 +1,4 @@
-"""Shift-left ADR path/domain policy evaluation (ADR-0059 / ADR-0002)."""
+"""Shift-left STD path/domain policy evaluation (ADR-0065 / STD-05 / STD-09)."""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ DOMAIN_PREFIXES: dict[str, tuple[str, ...]] = {
     "ci": (".github/",),
     "cursor": (".cursor/", ".cursorrules"),
     "specs": ("specs/",),
+    "ltm": ("_local_ai/",),
 }
 
 
@@ -53,7 +54,7 @@ def normalize_repo_path(path: str) -> str:
     if not rel or ".." in PurePosixPath(rel).parts:
         raise PolicyViolation(
             f"Illegal path (empty or traversal): {path!r}",
-            citations=["ADR-0059"],
+            citations=["STD-05", "ADR-0065"],
         )
     return rel
 
@@ -74,7 +75,7 @@ def evaluate_paths(
     *,
     enforce_repair_blacklist: bool = False,
 ) -> PolicyResult:
-    """Evaluate a Change Set path list against active ADR domain rules."""
+    """Evaluate a Change Set path list against active STD domain rules."""
     normalized: list[str] = []
     violations: list[str] = []
     citations: list[str] = []
@@ -92,19 +93,19 @@ def evaluate_paths(
         violations.append(
             "Change Set mixes environments/ (WHAT) and design_system/ (HOW)"
         )
-        citations.append("ADR-0002")
+        citations.append("STD-05")
 
     for rel in normalized:
         if rel == "build/staging" or rel.startswith("build/staging/"):
             violations.append(
                 f"Hand-edit of build/staging is forbidden: {rel}"
             )
-            citations.append("ADR-0002")
+            citations.append("STD-05")
 
         if enforce_repair_blacklist:
             if any(rel.startswith(prefix) for prefix in FORBIDDEN_WRITE_PREFIXES):
                 violations.append(f"Repair write forbidden for path: {rel}")
-                citations.append("ADR-0059")
+                citations.append("STD-09")
 
     # Deduplicate while preserving order
     seen_v: set[str] = set()

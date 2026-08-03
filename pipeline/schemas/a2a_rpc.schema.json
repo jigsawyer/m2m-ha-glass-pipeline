@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://m2m.local/schemas/a2a_rpc.schema.json",
+  "title": "M2M Inter-Agent RPC Payload (m2m/v1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "sender_node", "target_node", "intent", "payload"],
+  "properties": {
+    "protocol": {
+      "type": "string",
+      "const": "m2m/v1"
+    },
+    "sender_node": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target_node": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload": {
+      "type": "object"
+    },
+    "correlation_id": {
+      "type": "string"
+    },
+    "required_constraints": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

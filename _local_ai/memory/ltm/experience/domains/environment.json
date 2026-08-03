@@ -1,0 +1,15 @@
+{
+  "domain": "environment",
+  "title": "Host / Sandbox Environment Experience Nodes",
+  "experience_nodes": [
+    {
+      "id": "EXP-003",
+      "title": "Sandbox DNS can block git fetch / GitHub",
+      "intents": ["git_fetch", "git_push", "git_remote", "ssh_github"],
+      "symptom": "sandbox_dns_blocks_github",
+      "hard_constraint": "RETRY_ONCE_UNSANDBOXED_THEN_FAIL_FAST",
+      "deterministic_action": "REQUEST_FULL_NETWORK_ONCE_THEN_HALT",
+      "status": "ACTIVE"
+    }
+  ]
+}

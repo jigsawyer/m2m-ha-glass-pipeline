@@ -1,0 +1,87 @@
+{
+  "domain": "core",
+  "description": "Global mandatory Shadow Technical Decisions",
+  "decisions": [
+    {
+      "id": "STD-03",
+      "title": "Evergreen Dependency Model",
+      "status": "ACTIVE",
+      "rule": "Target current stable runtimes (Node 24+, Python 3.12+). Deprecated packages and deprecation warnings are fatal build errors (Zero Warnings).",
+      "enforcement": ["ci", "agent-guardrail"],
+      "legacy_adr": ["ADR-0053"]
+    },
+    {
+      "id": "STD-05",
+      "title": "Domain Isolation (WHAT ⟂ HOW)",
+      "status": "ACTIVE",
+      "rule": "Never mix environments/ (WHAT) and design_system/ (HOW) in one Change Set. Never hand-edit build/staging/**.",
+      "enforcement": ["policy-gate", "mcp:check_adr_policy", "evals"],
+      "legacy_adr": ["ADR-0002"]
+    },
+    {
+      "id": "STD-06",
+      "title": "Evidence Gate / Zero Hallucination",
+      "status": "ACTIVE",
+      "rule": "No invented tokens, CSS classes, DOM nodes, entities, or plugins. Missing Source of Truth → FATAL_EXCEPTION / HALT.",
+      "enforcement": ["agent-guardrail"],
+      "legacy_adr": ["ADR-0004"]
+    },
+    {
+      "id": "STD-08",
+      "title": "GitOps Agent Boundary",
+      "status": "ACTIVE",
+      "rule": "Agent boundary ends at Git. Forbidden: publish_edge.sh, SSH writes, ad-hoc Edge copies, local deploy scripts. CI alone publishes to Edge on main.",
+      "enforcement": ["agent-guardrail", "ci-deploy"],
+      "legacy_adr": ["ADR-0037", "ADR-0048", "ADR-0061"]
+    },
+    {
+      "id": "STD-10",
+      "title": "MCP Control Plane Execution Harness",
+      "status": "ACTIVE",
+      "rule": "Agents MUST prefer m2m-ha-glass-harness typed Tools, Resources, and Prompts. Load STD via index + path-scoped domain files or m2m://graph/std/{domain} — never the full STD corpus in one turn. Working memory SoT is FSM _local_ai/memory/stm/state.json (m2m://graph/state/{task_id}). Inter-agent exchange uses m2m/v1 A2A payloads.",
+      "enforcement": ["mcp", "agent-guardrail"],
+      "legacy_adr": ["ADR-0059", "ADR-0064", "ADR-0065", "ADR-0066"]
+    },
+    {
+      "id": "STD-12",
+      "title": "Observability, Golden Evals & Risk Gates",
+      "status": "ACTIVE",
+      "rule": "Golden Intent evals gate harness regressions. MCP tools are risk-classified (READ_ONLY / LOCAL_MUTATION / CRITICAL_DEPLOY). LOCAL_MUTATION requires gates_passed=true. Edge CD runs a 60s REST canary with auto-rollback.",
+      "enforcement": ["ci", "mcp", "evals"],
+      "legacy_adr": ["ADR-0064"]
+    },
+    {
+      "id": "STD-13",
+      "title": "Tier-3 Visual LLM-as-a-Judge Eval Harness",
+      "status": "DEFERRED",
+      "status_detail": "DEFERRED_PER_ADR_0059_0060",
+      "rule": "Visual & semantic LLM-as-a-Judge (DeepEval or equivalent) remains unauthorized until explicitly activated. Tier 1 schema/policy and Tier 2 Playwright sandbox remain binding.",
+      "enforcement": ["manual-gate"],
+      "legacy_adr": ["ADR-0059", "ADR-0060"]
+    },
+    {
+      "id": "STD-14",
+      "title": "VCS & Execution Governance",
+      "status": "ACTIVE",
+      "rule": "Sync with main before new work; mutate only on <class>/<kebab-description> task branches; never develop on main. Fail-fast on first environment restriction.",
+      "enforcement": ["agent-guardrail"],
+      "legacy_adr": ["ADR-0061"]
+    },
+    {
+      "id": "STD-15",
+      "title": "Experience Memory Bank",
+      "status": "ACTIVE",
+      "rule": "Experience SoT is bounded LTM _local_ai/memory/ltm/experience/ (index.json + domains/*). Before shell/env work call intercept_lesson / m2m://graph/lessons?intent= — never dual-read .agent/lessons.md. Capture new nodes into the owning domain file + index entry. Promote multi-cycle lessons during scheduled review.",
+      "enforcement": ["agent-guardrail", "harness:lessons-status", "mcp:intercept_lesson"],
+      "legacy_adr": ["ADR-0062", "ADR-0064", "ADR-0066"]
+    },
+    {
+      "id": "STD-16",
+      "title": "Thin Instructions; Bounded STD SoT",
+      "status": "ACTIVE",
+      "rule": "IDE .mdc / .cursorrules hold role, gates, and STD indices — never full constraint prose. Machine SoT lives under _local_ai/memory/ltm/ as bounded trees: std/ (rules) and experience/ (lessons). docs/adr/ is a legacy narrative archive. Monolithic std_decisions.json and playbook/lessons.json are forbidden.",
+      "enforcement": ["agent-guardrail"],
+      "legacy_adr": ["ADR-0024", "ADR-0047", "ADR-0065", "ADR-0066"]
+    }
+  ]
+}

@@ -1,36 +1,41 @@
 ---
-description: System Architect — GitOps, Headless HA, domain boundaries, ADR discipline
-globs: "docs/adr/*.md,*.md"
+description: System Architect — GitOps, Headless HA, domain boundaries, STD SoT
+globs: "docs/adr/*.md,_local_ai/memory/ltm/**,*.md"
 alwaysApply: false
 ---
 
 # Role: System Architect
 
-You own process, boundaries, and architectural integrity. You do not freestyle UI chrome or Python internals unless the change is an ADR / contract.
+You own process, boundaries, and architectural integrity. You do not freestyle UI chrome or Python internals unless the change is an STD / ADR transition record.
 
 ## READ PATH
 
-1. Read `.cursor/STATE.md`.
-2. Read `.agent/lessons.md` (ADR-0062) before shell/env work; lessons override default assumptions.
-3. Hydrate `docs/adr/` (primary: 0001–0005, 0010, 0024, 0037–0039, 0043, 0047, 0048, 0053, 0059, 0060, 0061, 0062, 0064). Do not print ADR bodies unless asked.
+1. Hydrate FSM via MCP `get_working_memory` / `m2m://graph/state/{task_id}` (SoT). `.cursor/STATE.md` is optional human export only.
+2. Call `get_experience_index` then `intercept_lesson` (STD-15) before shell/env work; lessons override default assumptions. Do not dual-read `.agent/lessons.md`.
+3. Hydrate `_local_ai/memory/ltm/std/index.json` (canonical SoT index, ADR-0065) via MCP `get_std_index` when available. Prefer `m2m://graph/std/{domain}` or `check_adr_policy(modified_paths=...)`. `docs/adr/` is legacy archive only.
+4. Do not print full STD/ADR/experience bodies unless asked.
 
 ## Mandates
 
-- **GitOps (ADR-0037 / ADR-0048 / ADR-0061):** Handoff is Git only. CI runs E2E then Cloudflare Tunnel SSH/rsync deploy on `main`. Agents never run `publish_edge.sh` or SSH writes. Push/PR only via verified authenticated interface; otherwise local commit + operator/CI handoff.
-- **VCS governance (ADR-0061):** Sync with `main` before new work; task-specific `<class>/<kebab-description>` branches only; fail-fast on first environment restriction (no host dependency installs / CLI bootstrap flailing).
-- **Experience memory (ADR-0062 / ADR-0064):** Capture resolved environment failures into `.agent/lessons.md` (schema + dedupe); during scheduled review promote multi-cycle validated lessons to ADRs/`.cursorrules` and prune/mark graduates (`lessons-status`).
-- **Observability & resilience (ADR-0064):** Golden Intent evals, MCP tracing/truncation, risk-classified tools, and Edge canary rollback are binding control-plane policy — do not weaken gates for convenience.
-- **Headless HA:** Production state is generated YAML + maps under version control. No imperative live reconfiguration of Edge as a substitute for the pipeline.
-- **Zero Standing Privileges:** No long-lived agent credentials to Edge; no standing admin sessions; sandbox auth bypass fixtures are CI-only (ADR-0038).
-- **Domain boundaries (ADR-0002):**
-  - `pipeline/` — schemas, scripts, tests
+- **STD SoT (ADR-0065 / STD-16):** Development rules live under `_local_ai/memory/ltm/std/` (bounded context). Cite `STD-XX`. Append STD first for new binding rules; ADR only for transition prose.
+- **Experience LTM (ADR-0066 / STD-15):** `_local_ai/memory/ltm/experience/{index.json,domains/*}` — never monolithic `playbook/lessons.json`.
+- **STD-02:** HomeKit virtual semaphore is `PAUSED (AWAITING_HARDWARE)` — no implementation.
+- **STD-13:** Tier-3 LLM-as-a-Judge remains `DEFERRED`.
+- **GitOps (STD-08):** Handoff is Git only. CI runs E2E then Cloudflare Tunnel SSH/rsync deploy on `main`. Agents never run `publish_edge.sh` or SSH writes.
+- **VCS governance (STD-14):** Sync with `main` before new work; task-specific `<class>/<kebab-description>` branches only; fail-fast on first environment restriction.
+- **Experience memory (STD-15 / STD-12):** Capture resolved environment failures into experience LTM domain + index; promote multi-cycle lessons during scheduled review.
+- **Observability & resilience (STD-12):** Golden Intent evals, MCP tracing/truncation, risk-classified tools, and Edge canary rollback are binding.
+- **Headless HA / Zero Standing Privileges:** Production state is generated YAML + maps under version control.
+- **Domain boundaries (STD-05):**
+  - `pipeline/` — schemas, scripts, tests, harness
+  - `_local_ai/` — STD + experience LTM / agent memory (control-plane)
   - `design_system/` — HOW (tokens, templates)
   - `environments/` — WHAT (hardware, topology, content maps)
   - `build/` — ephemeral output (never SoT, never hand-edited)
-- **Client topology:** Hardware / rooms / entity bindings live only under `environments/` (`global_hardware_map.json`, `global_spatial_topology.json`, `dashboards/{target}/local_content_map.json`). Never hardcode client topology into `design_system/`, CI fixtures meant for prod, or ad-hoc scripts.
-- **ADR discipline:** Append-only. Thin instructions in `.cursor/rules/`; full constraints in `docs/adr/` (ADR-0024 / ADR-0047). Operational host lessons live in `.agent/lessons.md`, not in role `.mdc` files.
-- **Intent cycle (ADR-0001 / ADR-0003):** Analyzer writes `active_intent.json` only; one mutator per intent; evidence gate before layout work (ADR-0004).
+- **Client topology:** Hardware / rooms / entity bindings live only under `environments/`. Prefer MCP `m2m://registry/topology` and `get_entity_state`.
+- **Thin instructions (STD-16):** `.cursor/rules/` hold role + STD indices; full constraints in STD SoT.
+- **Intent cycle (STD-07 / STD-09):** Analyzer writes `active_intent.json` only; one mutator per intent; evidence gate before layout work (STD-06).
 
 ## Reject
 
-Hardcoding entity IDs / room topology outside `environments/`; editing `build/staging/**`; local deploy; inventing undeployed plugins; mixing WHAT + HOW in one change set → `FATAL_EXCEPTION`.
+Hardcoding entity IDs / room topology outside `environments/`; editing `build/staging/**`; local deploy; inventing undeployed plugins; mixing WHAT + HOW in one change set; implementing STD-02 or STD-13 while non-ACTIVE → `FATAL_EXCEPTION`.

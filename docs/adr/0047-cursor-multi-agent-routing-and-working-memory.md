@@ -1,6 +1,6 @@
 Title: Cursor Multi-Agent Routing and Working Memory
 Date: 2026-08-02
-Status: Accepted
+Status: Legacy archive — operational SoT is STD (ADR-0065); routing/STATE mechanics remain binding
 
 # 0047. Cursor Multi-Agent Routing and Working Memory
 

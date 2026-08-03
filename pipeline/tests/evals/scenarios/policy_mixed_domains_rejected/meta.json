@@ -1,6 +1,6 @@
 {
   "id": "policy_mixed_domains_rejected",
-  "description": "Negative: mixed environments + design_system paths must fail ADR-0002 policy",
+  "description": "Negative: mixed environments + design_system paths must fail STD-05 policy",
   "expect": "fail",
   "fail_on": "policy",
   "policy_paths": [

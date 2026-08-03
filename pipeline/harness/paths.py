@@ -10,7 +10,30 @@ ACTIVE_INTENT_PATH = PROJECT_ROOT / "pipeline" / "schemas" / "active_intent.json
 STATE_MD_PATH = PROJECT_ROOT / ".cursor" / "STATE.md"
 ADR_DIR = PROJECT_ROOT / "docs" / "adr"
 ADR_INDEX_PATH = ADR_DIR / "README.md"
-LESSONS_PATH = PROJECT_ROOT / ".agent" / "lessons.md"
+STD_DIR = PROJECT_ROOT / "_local_ai" / "memory" / "ltm"
+STD_ROOT = STD_DIR / "std"
+STD_INDEX_PATH = STD_ROOT / "index.json"
+STD_DECISIONS_MD_PATH = STD_DIR / "std_decisions.md"
+# Retired monolith path — kept only so callers can detect/forbid it.
+STD_MONOLITH_PATH = STD_DIR / "std_decisions.json"
+# Bounded experience LTM (mirrors STD layout): index + domain node files.
+EXPERIENCE_ROOT = STD_DIR / "experience"
+EXPERIENCE_INDEX_PATH = EXPERIENCE_ROOT / "index.json"
+# Runtime-only local overlay domain file (gitignored).
+EXPERIENCE_LOCAL_DOMAIN_PATH = EXPERIENCE_ROOT / "domains" / "local.json"
+# Retired monolith playbook path — detect/forbid.
+LESSONS_MONOLITH_PATH = (
+    PROJECT_ROOT / "_local_ai" / "memory" / "playbook" / "lessons.json"
+)
+# Back-compat alias: lightweight index is the experience SoT entrypoint.
+LESSONS_PATH = EXPERIENCE_INDEX_PATH
+# FSM short-term memory — runtime file is gitignored; template is versioned.
+STM_DIR = PROJECT_ROOT / "_local_ai" / "memory" / "stm"
+FSM_STATE_PATH = STM_DIR / "state.json"
+FSM_STATE_TEMPLATE_PATH = STM_DIR / "state.template.json"
+A2A_RPC_SCHEMA_PATH = (
+    PROJECT_ROOT / "pipeline" / "schemas" / "a2a_rpc.schema.json"
+)
 EVALS_DIR = PROJECT_ROOT / "pipeline" / "tests" / "evals"
 EVALS_SCENARIOS_DIR = EVALS_DIR / "scenarios"
 DEFAULT_EVENT_STREAM = PROJECT_ROOT / "build" / "harness" / "event_stream.jsonl"

@@ -1,4 +1,4 @@
-"""Operational risk classification for MCP tools (ADR-0064)."""
+"""Operational risk classification for MCP tools (ADR-0064 / ADR-0065)."""
 
 from __future__ import annotations
 
@@ -20,21 +20,28 @@ class RiskAuthorizationError(HarnessError):
 
     def __init__(self, message: str, *, citations: list[str] | None = None) -> None:
         super().__init__(message)
-        self.citations = citations or ["ADR-0064"]
+        self.citations = citations or ["STD-12", "ADR-0064"]
 
 
-# Canonical registry — every MCP tool MUST appear exactly once.
+# Canonical registry — every MCP tool MUST appear exactly once (ADR-0066).
 TOOL_RISK_REGISTRY: dict[str, RiskLevel] = {
     "get_active_intent": RiskLevel.READ_ONLY,
     "get_working_memory": RiskLevel.READ_ONLY,
-    "get_adr_index": RiskLevel.READ_ONLY,
+    "get_std_index": RiskLevel.READ_ONLY,
+    "get_entity_state": RiskLevel.READ_ONLY,
     "validate_json_patch": RiskLevel.READ_ONLY,
     "check_adr_policy": RiskLevel.READ_ONLY,
     "decompose_swarm_task": RiskLevel.READ_ONLY,
     "get_subtask_context": RiskLevel.READ_ONLY,
     "get_tool_risk_registry": RiskLevel.READ_ONLY,
-    "apply_intent_json_patch": RiskLevel.LOCAL_MUTATION,
+    "get_experience_index": RiskLevel.READ_ONLY,
+    "match_lessons": RiskLevel.READ_ONLY,
+    "intercept_lesson": RiskLevel.READ_ONLY,
+    "get_fsm_state": RiskLevel.READ_ONLY,
+    "validate_a2a_payload": RiskLevel.READ_ONLY,
+    "apply_json_patch": RiskLevel.LOCAL_MUTATION,
     "aggregate_swarm_deltas": RiskLevel.LOCAL_MUTATION,
+    "apply_fsm_patch": RiskLevel.LOCAL_MUTATION,
     "request_critical_deploy": RiskLevel.CRITICAL_DEPLOY,
 }
 
@@ -44,7 +51,7 @@ def risk_for_tool(tool_name: str) -> RiskLevel:
         return TOOL_RISK_REGISTRY[tool_name]
     except KeyError as exc:
         raise RiskAuthorizationError(
-            f"MCP tool {tool_name!r} has no risk classification (ADR-0064)"
+            f"MCP tool {tool_name!r} has no risk classification (STD-12)"
         ) from exc
 
 
@@ -65,7 +72,7 @@ def authorize_tool(
     mutating: bool | None = None,
 ) -> RiskLevel:
     """
-    Enforce ADR-0064 risk gates before tool body execution.
+    Enforce STD-12 / ADR-0064 risk gates before tool body execution.
 
     - READ_ONLY: always allowed.
     - LOCAL_MUTATION: allowed when not mutating, or when gates_passed is True.
@@ -83,7 +90,7 @@ def authorize_tool(
         if not gates_passed:
             raise RiskAuthorizationError(
                 f"{tool_name}: LOCAL_MUTATION requires gates_passed=true "
-                "(unit tests + ADR policy gate must have succeeded)"
+                "(unit tests + STD policy gate must have succeeded)"
             )
         return level
 

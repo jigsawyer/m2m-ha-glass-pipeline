@@ -30,13 +30,13 @@ def parse_swarm_deltas(payload: Any) -> list[SwarmDelta]:
     else:
         raise SwarmError(
             "swarm deltas root must be an object or array",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
 
     if not isinstance(items, list) or not items:
         raise SwarmError(
             "swarm deltas must be a non-empty list",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
 
     deltas: list[SwarmDelta] = []
@@ -44,13 +44,13 @@ def parse_swarm_deltas(payload: Any) -> list[SwarmDelta]:
         if not isinstance(item, dict):
             raise SwarmError(
                 f"delta[{index}] must be an object",
-                citations=["ADR-0060"],
+                citations=["STD-11"],
             )
         if "content" in item:
             raise SwarmError(
                 f"delta[{index}] full-file 'content' is forbidden on swarm path; "
                 "return RFC 6902 operations only",
-                citations=["ADR-0060"],
+                citations=["STD-11"],
             )
         subtask_id = item.get("subtask_id")
         filename = item.get("filename")
@@ -58,12 +58,12 @@ def parse_swarm_deltas(payload: Any) -> list[SwarmDelta]:
         if not isinstance(subtask_id, str) or not subtask_id.strip():
             raise SwarmError(
                 f"delta[{index}] requires string 'subtask_id'",
-                citations=["ADR-0060"],
+                citations=["STD-11"],
             )
         if not isinstance(filename, str) or not filename.strip():
             raise SwarmError(
                 f"delta[{index}] requires string 'filename'",
-                citations=["ADR-0060"],
+                citations=["STD-11"],
             )
         try:
             rel = normalize_repo_path(filename)
@@ -74,8 +74,8 @@ def parse_swarm_deltas(payload: Any) -> list[SwarmDelta]:
             ops = validate_operations(operations)
         except HarnessError as exc:
             citations = list(getattr(exc, "citations", []) or [])
-            if "ADR-0060" not in citations:
-                citations.append("ADR-0060")
+            if "STD-11" not in citations:
+                citations.append("STD-11")
             raise SwarmError(str(exc), citations=citations) from exc
 
         deltas.append(
@@ -125,17 +125,17 @@ def _load_document(rel: str) -> dict[str, Any] | list[Any]:
     except FileNotFoundError as exc:
         raise SwarmError(
             f"JSON target missing for swarm reduce: {rel}",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         ) from exc
     except json.JSONDecodeError as exc:
         raise SwarmError(
             f"Invalid JSON at {rel}: {exc}",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         ) from exc
     if not isinstance(data, (dict, list)):
         raise SwarmError(
             f"JSON target {rel} must be object or array",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
     return data
 
@@ -160,7 +160,7 @@ def aggregate_swarm_deltas(
             dry_run=dry_run,
             rejected=(),
             violations=(str(exc),),
-            citations=tuple(exc.citations or ["ADR-0060"]),
+            citations=tuple(exc.citations or ["STD-11"]),
         )
 
     paths = [delta.filename for delta in deltas]
@@ -169,8 +169,8 @@ def aggregate_swarm_deltas(
 
     violations = list(policy.violations) + conflicts
     citations = list(policy.citations)
-    if conflicts and "ADR-0060" not in citations:
-        citations.append("ADR-0060")
+    if conflicts and "STD-11" not in citations:
+        citations.append("STD-11")
 
     if violations:
         return AggregationResult(
@@ -198,8 +198,8 @@ def aggregate_swarm_deltas(
             previews[rel] = apply_json_patch(document, ops)
     except (SwarmError, PatchValidationError) as exc:
         cites = list(getattr(exc, "citations", []) or [])
-        if "ADR-0060" not in cites:
-            cites.append("ADR-0060")
+        if "STD-11" not in cites:
+            cites.append("STD-11")
         return AggregationResult(
             ok=False,
             dry_run=dry_run,
@@ -245,7 +245,7 @@ def aggregate_swarm_deltas(
                 applied=tuple(applied),
                 rejected=tuple(delta.subtask_id for delta in deltas),
                 violations=(f"Reduce apply failed: {exc}",),
-                citations=("ADR-0060",),
+                citations=("STD-11",),
                 previews=previews,
                 event_ids=tuple(event_ids),
             )

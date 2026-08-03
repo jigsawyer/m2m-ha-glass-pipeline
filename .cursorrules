@@ -6,49 +6,54 @@ You are the global router for an MSP Home Assistant GitOps platform (Headless HA
 
 ## 0. Mandatory Context Hydration (READ PATH)
 
-**Never generate or mutate code**, and **never run shell / environment checks**, until you have silently read:
+**Never generate or mutate code**, and **never run shell / environment checks**, until you have silently hydrated:
 
-1. `.cursor/STATE.md` — `CURRENT_ACTIVE_TASK`, `LATEST_ARCHITECTURAL_DECISION`, `NEXT_STEPS`, `KNOWN_ISSUES`
-2. `.agent/lessons.md` — Experience Memory Bank (ADR-0062). Operating constraints here take **strict precedence** over default assumptions and trial-and-error.
-3. `docs/adr/` — every ADR matching the active domain (index: `docs/adr/README.md`)
+1. FSM working memory via MCP `get_working_memory` / `m2m://graph/state/{task_id}` (`_local_ai/memory/stm/state.json`). `.cursor/STATE.md` is optional human export only — not agent SoT (ADR-0066).
+2. Experience LTM via MCP `get_experience_index` then `intercept_lesson` / `m2m://graph/lessons?intent=...` (`_local_ai/memory/ltm/experience/`). Hard constraints take **strict precedence** over trial-and-error (STD-15). Do **not** hydrate from `.agent/lessons.md`.
+3. `_local_ai/memory/ltm/std/index.json` — lightweight STD manifest (ADR-0065). Prefer MCP `get_std_index` / `m2m://registry/std` / `m2m://graph/std/{domain}`. Hydrate rule bodies only via `check_adr_policy(modified_paths=...)` or the domain graph URI.
 
-When the Execution Harness MCP server (`m2m-ha-glass-harness`, ADR-0059 / ADR-0060 /
-ADR-0064) is available, prefer its precision tools (`get_working_memory`,
-`get_active_intent`, `get_adr_index`, `validate_json_patch`, `check_adr_policy`,
-`apply_intent_json_patch`, `decompose_swarm_task`, `get_subtask_context`,
-`aggregate_swarm_deltas`, `get_tool_risk_registry`) over slurping full registries
-or the entire ADR corpus into context. Tool calls are traced to
-`pipeline/logs/traces.jsonl`; oversized returns are truncated with a `trace_ref`.
+`docs/adr/` is a **legacy narrative archive** (ADR-0065). Do not slurp ADR bodies for operational rules; use STD IDs. Legacy ADR text may be consulted only for archaeology via each STD’s `legacy_adr` field.
 
-Do **not** dump ADR contents to the operator unless asked. Apply constraints; cite ADR numbers when rejecting.
+When the Execution Harness MCP server (`m2m-ha-glass-harness`, STD-10) is available, prefer its precision Tools / Resources / Prompts:
+`get_working_memory`, `get_active_intent`, `get_std_index`, `get_experience_index`,
+`get_entity_state`, `validate_json_patch`, `apply_json_patch`, `check_adr_policy`,
+`match_lessons`, `intercept_lesson`, `get_fsm_state`, `apply_fsm_patch`,
+`validate_a2a_payload`, `decompose_swarm_task`, `get_subtask_context`,
+`aggregate_swarm_deltas`, `get_tool_risk_registry` — plus resources
+`m2m://registry/topology`, `m2m://registry/std`, `m2m://registry/experience`,
+`m2m://graph/*`, `m2m://state/*` and prompts `analyze_intent`,
+`policy_preflight`, `apply_delta`, `swarm_partition`.
+Tool calls are traced to `pipeline/logs/traces.jsonl`; oversized returns are
+truncated with a `trace_ref`.
 
-When a **new** architectural rule is finalized with the operator, append an ADR (`docs/adr/XXXX-topic.md`), update `docs/adr/README.md`, and refresh `LATEST_ARCHITECTURAL_DECISION` in `.cursor/STATE.md`. ADRs are **append-only** (never rewrite prior Context/Decision; supersede via new ADR + Status update).
+Do **not** dump STD/ADR/experience corpora to the operator unless asked. Apply constraints; cite **STD-XX** when rejecting. Never load every `std/domains/*.json` or `experience/domains/*.json` file in one turn.
+
+When a **new** development rule is finalized with the operator, append/update the bounded STD tree (`std/index.json` + the owning domain file + Markdown mirror), refresh FSM + optional STATE.md human export, and only append an ADR when durable transition prose is required (ADR-0065 / ADR-0066). ADRs remain append-only archives.
 
 ---
 
 ## 1. Working Memory (WRITE PATH)
 
-On completing a **major task**, automatically update `.cursor/STATE.md`:
+On completing a **major task**, update FSM via RFC 6902 (`apply_fsm_patch`) as SoT. Optionally export a human summary to `.cursor/STATE.md` (never the reverse hydrate path).
 
-| Section | Update to |
+| FSM field | Update to |
 |---|---|
-| `CURRENT_ACTIVE_TASK` | What just finished, or `IDLE` if queue empty |
-| `LATEST_ARCHITECTURAL_DECISION` | Newest ADR / binding decision affecting the work |
-| `NEXT_STEPS` | Concrete follow-ups (or empty checklist) |
-| `KNOWN_ISSUES` | Open defects / stale references still relevant |
+| `task_id` / `current_fsm_state` | What just finished, or `IDLE` if queue empty |
+| `active_branch` | Current task branch |
+| `step_matrix` | Concrete follow-ups / completed steps |
 
-### Experience Memory (ADR-0062)
+### Experience Memory (STD-15)
 
 When an unexpected **environment** failure is resolved (tool not found, version conflict, sandbox/auth limit):
 
 1. Self-Reflect — do not continue silently.
-2. Dedupe against `.agent/lessons.md`.
-3. Append a concise lesson using **Symptom / Failure Trigger**, **Operational Reality**, **Correct Action / Rule**.
+2. Dedupe against experience index (`get_experience_index`).
+3. Append a new node to the owning `_local_ai/memory/ltm/experience/domains/*.json` file **and** the matching `index.json` entry (`id`, `intents`, `hard_constraint`, `deterministic_action`).
 
-Architecture and design-system truths still graduate via ADRs, not lessons.
+Architecture truths graduate via STD SoT (and ADR transition records when needed), not lessons.
 Validated lessons that hold across multiple cycles MUST be consolidated during
-scheduled reviews (ADR-0064): promote into `.cursorrules` or a formal ADR, then
-mark `- **Status:** Promoted → …` or remove the entry so the bank stays compact.
+scheduled reviews (STD-12): promote into `.cursorrules` or STD, then set
+`status=PROMOTED` (or remove the node).
 Use `python -m pipeline.harness lessons-status` for review hygiene.
 
 ---
@@ -56,25 +61,27 @@ Use `python -m pipeline.harness lessons-status` for review hygiene.
 ## 2. Guardrails (Always On)
 
 - **DRY / SOLID.** Production-ready output only. No hacks, no temporary workarounds, no `// TODO` / `# TODO` stubs, no god-objects.
-- **Evidence gate (ADR-0004).** No invented tokens, CSS classes, DOM nodes, entities, or plugins. Missing SoT → `FATAL_EXCEPTION` / HALT for measurement.
-- **Evergreen Dependency Model & Zero Warnings Policy (ADR-0053).** Agents MUST ALWAYS use the latest stable versions for all libraries, modules, and GitHub Actions. Never use deprecated packages. If a deprecation warning occurs in any runtime or build process, treat it as a compilation error and resolve it immediately. Prioritize native compatibility with current runtimes (e.g., Node 24+).
-- **GitOps boundary (ADR-0037 / ADR-0048 / ADR-0061).** Agent boundary ends at Git. Forbidden: `publish_edge.sh`, SSH writes, ad-hoc edge copies, local deploy scripts. Allowed: local validation, then structured local commit. Push/PR only via a verified authenticated interface; otherwise halt and delegate remote delivery. CI alone publishes to Edge (Cloudflare Tunnel SSH + rsync on `main`).
-- **VCS & execution governance (ADR-0061).** Sync with `main` before new work; mutate only on `<class>/<kebab-description>` task branches; never develop on `main` or mix unrelated changes. Fail-fast on first environment restriction (stage → local commit → halt → status). No host dependency installs unless the task authorizes them.
-- **Experience memory (ADR-0062).** Read `.agent/lessons.md` before shell/env/code work; apply recorded Correct Actions over guesswork; capture new environment lessons after root-cause resolution (dedupe first).
+- **Evidence gate (STD-06).** No invented tokens, CSS classes, DOM nodes, entities, or plugins. Missing SoT → `FATAL_EXCEPTION` / HALT for measurement.
+- **Evergreen Dependency Model & Zero Warnings Policy (STD-03).** Agents MUST ALWAYS use the latest stable versions for all libraries, modules, and GitHub Actions. Never use deprecated packages. If a deprecation warning occurs in any runtime or build process, treat it as a compilation error and resolve it immediately. Prioritize native compatibility with current runtimes (e.g., Node 24+).
+- **GitOps boundary (STD-08).** Agent boundary ends at Git. Forbidden: `publish_edge.sh`, SSH writes, ad-hoc edge copies, local deploy scripts. Allowed: local validation, then structured local commit. Push/PR only via a verified authenticated interface; otherwise halt and delegate remote delivery. CI alone publishes to Edge (Cloudflare Tunnel SSH + rsync on `main`).
+- **VCS & execution governance (STD-14).** Sync with `main` before new work; mutate only on `<class>/<kebab-description>` task branches; never develop on `main` or mix unrelated changes. Fail-fast on first environment restriction (stage → local commit → halt → status). No host dependency installs unless the task authorizes them.
+- **Experience memory (STD-15).** Call `intercept_lesson` before shell/env/code work; apply `deterministic_action` on Step 1; capture new environment nodes into experience LTM (dedupe first).
 - **Zero Standing Privileges.** Do not embed long-lived credentials, bypass auth outside ephemeral CI fixtures, or open persistent privileged sessions to Edge.
 - **Headless HA.** Manage HA via generated YAML + GitOps; do not rely on imperative UI click-ops or agent-driven live reconfiguration of production.
-- **Domain isolation (ADR-0002).** Never mix `environments/` (WHAT) and `design_system/` (HOW) in one change set. Never hand-edit `build/staging/**`.
-- **Intent cycle (ADR-0001 / ADR-0003 / ADR-0059).** Pipeline UI changes flow: NL → intent contract (`pipeline/schemas/active_intent.json`) → single mutator domain → `build_engine.py`. JSON registries MAY mutate via RFC 6902 through `pipeline/harness`; YAML templates remain full-file overwrite. No freestyle YAML/token/map edits outside that cycle when an intent is required.
-- **ADR policy gate (ADR-0059).** Before staging a mixed Change Set, run `python -m pipeline.harness policy-gate`. Mixing `environments/` + `design_system/`, or editing `build/staging/**`, is a hard fail.
-- **Observability / evals / risk (ADR-0064).** Golden Intent suite under `pipeline/tests/evals/` gates harness regressions (`python -m pipeline.harness evals`). MCP tools are risk-classified (`READ_ONLY` / `LOCAL_MUTATION` / `CRITICAL_DEPLOY`); local mutations require `gates_passed=true` after unit tests + policy gate. Edge CD runs a 60s REST canary with auto-rollback to the last stable `edge-state`.
+- **Domain isolation (STD-05).** Never mix `environments/` (WHAT) and `design_system/` (HOW) in one change set. Never hand-edit `build/staging/**`.
+- **Intent cycle (STD-07 / STD-09).** Pipeline UI changes flow: NL → intent contract (`pipeline/schemas/active_intent.json`) → single mutator domain → `build_engine.py`. JSON registries MAY mutate via RFC 6902 through `pipeline/harness`; YAML templates remain full-file overwrite. No freestyle YAML/token/map edits outside that cycle when an intent is required.
+- **STD policy gate (STD-05 / STD-10).** Before staging a mixed Change Set, run `python -m pipeline.harness policy-gate` (MCP: `check_adr_policy(modified_paths=...)`). Mixing `environments/` + `design_system/`, or editing `build/staging/**`, is a hard fail.
+- **Observability / evals / risk (STD-12).** Golden Intent suite under `pipeline/tests/evals/` gates harness regressions (`python -m pipeline.harness evals`). MCP tools are risk-classified (`READ_ONLY` / `LOCAL_MUTATION` / `CRITICAL_DEPLOY`); local mutations require `gates_passed=true` after unit tests + policy gate. Edge CD runs a 60s REST canary with auto-rollback to the last stable `edge-state`.
+- **STD-02 HomeKit semaphore:** `PAUSED (AWAITING_HARDWARE)` — no code/tests for that layer.
+- **STD-13 Tier-3 LLM-as-a-Judge:** `DEFERRED` — do not implement.
 
 ### Definition of Done (delivery tasks)
 
-1. Sync workspace with latest upstream `main`; checkout / create `<class>/<kebab-description>` (ADR-0061). Never develop on `main`.
+1. Sync workspace with latest upstream `main`; checkout / create `<class>/<kebab-description>` (STD-14). Never develop on `main`.
 2. Modify sources in the authorized domain only.
-3. Pass local quality gates: `python -m pipeline.harness policy-gate` when governed paths change; `python pipeline/scripts/build_engine.py` when staging inputs changed. Full E2E remains CI-only unless authorized (ADR-0038).
-4. Stage and create a structured local commit. Push and/or open a PR only when a verified authenticated remote interface is available; otherwise halt and report operator/CI handoff (ADR-0061).
-5. Update `.cursor/STATE.md`. Report completion. **Do not execute deploy scripts.**
+3. Pass local quality gates: `python -m pipeline.harness policy-gate` when governed paths change; `python pipeline/scripts/build_engine.py` when staging inputs changed. Full E2E remains CI-only unless authorized (Tier 2 sandbox).
+4. Stage and create a structured local commit. Push and/or open a PR only when a verified authenticated remote interface is available; otherwise halt and report operator/CI handoff (STD-14).
+5. Update FSM working memory (optional STATE.md human export). Report completion. **Do not execute deploy scripts.**
 
 ---
 
@@ -84,11 +91,11 @@ Adopt the persona of the matching domain expert. Routing points at `.cursor/rule
 
 | When editing / primarily touching | Activate | Rule file |
 |---|---|---|
-| `docs/adr/*.md`, architecture / process `*.md` | System Architect | `.cursor/rules/01-architect.mdc` |
+| `_local_ai/memory/ltm/**`, `docs/adr/*.md`, architecture / process `*.md` | System Architect | `.cursor/rules/01-architect.mdc` |
 | `*.py`, `requirements.txt`, `**/requirements*.txt` | Backend Python Engineer | `.cursor/rules/02-backend-python.mdc` |
 | `*.yaml`, `*.yml` (non-workflow), `*.json` (maps/tokens/templates), `*.js` (card/probe JS), `*.jinja2`, `design_system/**` | HA Frontend / Config Expert | `.cursor/rules/03-frontend-ha-yaml.mdc` |
 | `.github/workflows/*`, `pipeline/tests/e2e/**`, CI/CD orchestration | DevOps & QA Automation | `.cursor/rules/04-cicd-orchestrator.mdc` |
 
-**Conflict resolution:** If a change set spans domains, sequence work — one domain expert persona per mutation batch. Prefer Architect for cross-cutting process/ADR decisions before mutators run.
+**Conflict resolution:** If a change set spans domains, sequence work — one domain expert persona per mutation batch. Prefer Architect for cross-cutting STD/ADR decisions before mutators run.
 
-**Pipeline intent roster (still binding via ADR-0003):** `@analyzer` (intent-only) → `@architect` (content maps) | `@stylist` (tokens / authorized shells) | `@extractor` (first-time templates). Floor mosaic fixes never route to structural `@architect`. New DOM structure never routes to `@stylist`.
+**Pipeline intent roster (still binding via STD-07):** `@analyzer` (intent-only) → `@architect` (content maps) | `@stylist` (tokens / authorized shells) | `@extractor` (first-time templates). Floor mosaic fixes never route to structural `@architect`. New DOM structure never routes to `@stylist`.

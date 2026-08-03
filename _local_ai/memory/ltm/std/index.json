@@ -1,0 +1,69 @@
+{
+  "schema_version": 2,
+  "sot": "std",
+  "layout": "bounded_context",
+  "title": "Shadow Technical Decisions — Lightweight Index",
+  "authorized_by": "ADR-0065",
+  "legacy_archive": "docs/adr/",
+  "domains": {
+    "core": {
+      "path": "core.json",
+      "always": true,
+      "description": "Global mandatory rules (Evergreen, GitOps, Zero Warnings, domain isolation)"
+    },
+    "backend": {
+      "path": "domains/backend.json",
+      "always": false,
+      "path_prefixes": [
+        "pipeline/",
+        ".github/",
+        "environments/",
+        "requirements",
+        "pipeline/scripts/requirements"
+      ],
+      "path_globs_exclude": [
+        "environments/*/dashboards/",
+        "design_system/"
+      ],
+      "description": "Backend, packages, harness, CI, RFC 6902"
+    },
+    "frontend": {
+      "path": "domains/frontend.json",
+      "always": false,
+      "path_prefixes": [
+        "design_system/",
+        "environments/"
+      ],
+      "description": "UI / Lovelace / design_system / dashboard maps"
+    },
+    "integrations": {
+      "path": "domains/integrations.json",
+      "always": false,
+      "path_prefixes": [
+        "integrations/",
+        "homekit",
+        "home_pod",
+        "homepod"
+      ],
+      "description": "External integrations (HomeKit semaphores, etc.)"
+    }
+  },
+  "entries": [
+    {"id": "STD-01", "domain": "backend", "status": "ACTIVE", "title": "Package-Driven Architecture"},
+    {"id": "STD-02", "domain": "integrations", "status": "PAUSED", "status_detail": "AWAITING_HARDWARE", "title": "Virtual Semaphore Integration (HomeKit)"},
+    {"id": "STD-03", "domain": "core", "status": "ACTIVE", "title": "Evergreen Dependency Model"},
+    {"id": "STD-04", "domain": "backend", "status": "ACTIVE", "title": "Path-Based Differential Deployment"},
+    {"id": "STD-05", "domain": "core", "status": "ACTIVE", "title": "Domain Isolation (WHAT ⟂ HOW)"},
+    {"id": "STD-06", "domain": "core", "status": "ACTIVE", "title": "Evidence Gate / Zero Hallucination"},
+    {"id": "STD-07", "domain": "frontend", "status": "ACTIVE", "title": "Intent-Only Pipeline Cycle"},
+    {"id": "STD-08", "domain": "core", "status": "ACTIVE", "title": "GitOps Agent Boundary"},
+    {"id": "STD-09", "domain": "backend", "status": "ACTIVE", "title": "RFC 6902 Delta Mutations"},
+    {"id": "STD-10", "domain": "core", "status": "ACTIVE", "title": "MCP Control Plane Execution Harness"},
+    {"id": "STD-11", "domain": "backend", "status": "ACTIVE", "title": "Swarm Map-Reduce Context Partitioning"},
+    {"id": "STD-12", "domain": "core", "status": "ACTIVE", "title": "Observability, Golden Evals & Risk Gates"},
+    {"id": "STD-13", "domain": "core", "status": "DEFERRED", "status_detail": "DEFERRED_PER_ADR_0059_0060", "title": "Tier-3 Visual LLM-as-a-Judge Eval Harness"},
+    {"id": "STD-14", "domain": "core", "status": "ACTIVE", "title": "VCS & Execution Governance"},
+    {"id": "STD-15", "domain": "core", "status": "ACTIVE", "title": "Experience Memory Bank"},
+    {"id": "STD-16", "domain": "core", "status": "ACTIVE", "title": "Thin Instructions; Bounded STD SoT"}
+  ]
+}

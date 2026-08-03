@@ -1,0 +1,26 @@
+{
+  "domain": "vcs",
+  "title": "VCS / GitHub Experience Nodes",
+  "experience_nodes": [
+    {
+      "id": "EXP-001",
+      "title": "Authenticated GitHub CLI may be absent",
+      "intents": ["create_pr", "push_pr", "github_pr", "gh", "open_pr"],
+      "symptom": "gh_cli_absent",
+      "hard_constraint": "DO_NOT_EXECUTE_GH_CLI",
+      "deterministic_action": "EMIT_COMPARE_URL_DIRECTLY",
+      "compare_template": "https://github.com/{owner}/{repo}/compare/main...{branch}?expand=1",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "EXP-004",
+      "title": "Apple Git rejects injected --trailer on commit",
+      "intents": ["git_commit", "commit", "create_commit"],
+      "symptom": "apple_git_rejects_trailer",
+      "hard_constraint": "DO_NOT_USE_GIT_TRAILER_FLAG",
+      "deterministic_action": "COMMIT_VIA_MSGFILE",
+      "commit_command": "/usr/bin/git commit -F <msgfile>",
+      "status": "ACTIVE"
+    }
+  ]
+}

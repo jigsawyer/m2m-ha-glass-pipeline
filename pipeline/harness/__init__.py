@@ -1,4 +1,4 @@
-"""Execution Harness — deltas, policy, MCP, swarm, evals (ADR-0059/0060/0064)."""
+"""Execution Harness — deltas, STD policy, MCP, swarm, evals (ADR-0065)."""
 
 from pipeline.harness.adr_policy import PolicyResult, evaluate_paths
 from pipeline.harness.evals import EvalSuiteResult, run_eval_suite

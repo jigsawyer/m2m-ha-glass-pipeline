@@ -1,0 +1,14 @@
+{
+  "domain": "frontend",
+  "description": "UI / Lovelace / design_system Shadow Technical Decisions",
+  "decisions": [
+    {
+      "id": "STD-07",
+      "title": "Intent-Only Pipeline Cycle",
+      "status": "ACTIVE",
+      "rule": "Pipeline UI changes flow NL → active_intent.json → single mutator domain → build_engine.py. No freestyle YAML/token/map edits outside that cycle when an intent is required.",
+      "enforcement": ["agent-guardrail", "evals"],
+      "legacy_adr": ["ADR-0001", "ADR-0003"]
+    }
+  ]
+}

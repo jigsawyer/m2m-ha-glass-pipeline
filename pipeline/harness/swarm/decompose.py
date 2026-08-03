@@ -25,7 +25,7 @@ def _environment_dir(environment: str) -> Path:
     if not path.is_dir():
         raise SwarmError(
             f"Unknown environment {environment!r}",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
     return path
 
@@ -37,17 +37,17 @@ def load_spatial_topology(environment: str = DEFAULT_ENVIRONMENT) -> dict[str, A
     except FileNotFoundError as exc:
         raise SwarmError(
             f"Missing spatial topology: {path}",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         ) from exc
     except json.JSONDecodeError as exc:
         raise SwarmError(
             f"Invalid spatial topology JSON: {exc}",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         ) from exc
     if not isinstance(data, dict):
         raise SwarmError(
             "spatial topology root must be an object",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
     return data
 
@@ -59,17 +59,17 @@ def load_hardware_map(environment: str = DEFAULT_ENVIRONMENT) -> dict[str, Any]:
     except FileNotFoundError as exc:
         raise SwarmError(
             f"Missing hardware map: {path}",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         ) from exc
     except json.JSONDecodeError as exc:
         raise SwarmError(
             f"Invalid hardware map JSON: {exc}",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         ) from exc
     if not isinstance(data, dict):
         raise SwarmError(
             "hardware map root must be an object",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
     return data
 
@@ -189,7 +189,7 @@ def decompose_swarm_task(
     if axis not in {"topology", "device_type"}:
         raise SwarmError(
             f"Unsupported swarm axis {axis!r}; allowed: topology, device_type",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
 
     topology = load_spatial_topology(environment)
@@ -241,7 +241,7 @@ def decompose_swarm_task(
     if not subtasks:
         raise SwarmError(
             "Decomposition produced zero sub-tasks",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
 
     return SwarmPlan(
@@ -269,7 +269,7 @@ def get_subtask_context(
     else:
         raise SwarmError(
             f"Invalid subtask_id {subtask_id!r}; expected topo:* or device:*",
-            citations=["ADR-0060"],
+            citations=["STD-11"],
         )
 
     plan = decompose_swarm_task(
@@ -293,7 +293,7 @@ def get_subtask_context(
         if not topology_slice:
             raise SwarmError(
                 f"Unknown topology zone {zone_id!r}",
-                citations=["ADR-0060"],
+                citations=["STD-11"],
             )
     else:
         topology_slice = {"kind": "device_type", "domain": zone_id}

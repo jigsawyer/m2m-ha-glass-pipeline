@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "sot": "experience",
+  "layout": "bounded_context",
+  "title": "Machine-Native Experience Memory — Lightweight Index",
+  "authorized_by": ["ADR-0062", "ADR-0066", "STD-15"],
+  "legacy_markdown": ".agent/lessons.md",
+  "domains": {
+    "vcs": {
+      "path": "domains/vcs.json",
+      "description": "Git / GitHub / Apple Git commit constraints"
+    },
+    "harness": {
+      "path": "domains/harness.json",
+      "description": "Execution Harness MCP / venv runtime"
+    },
+    "environment": {
+      "path": "domains/environment.json",
+      "description": "Sandbox / DNS / host environment limits"
+    }
+  },
+  "entries": [
+    {
+      "id": "EXP-001",
+      "domain": "vcs",
+      "status": "ACTIVE",
+      "title": "Authenticated GitHub CLI may be absent",
+      "symptom": "gh_cli_absent",
+      "intents": ["create_pr", "push_pr", "github_pr", "gh", "open_pr"]
+    },
+    {
+      "id": "EXP-002",
+      "domain": "harness",
+      "status": "ACTIVE",
+      "title": "Harness MCP stdio needs project venv",
+      "symptom": "mcp_venv_missing",
+      "intents": ["start_mcp", "run_harness", "mcp_stdio", "harness_stdio"]
+    },
+    {
+      "id": "EXP-003",
+      "domain": "environment",
+      "status": "ACTIVE",
+      "title": "Sandbox DNS can block git fetch / GitHub",
+      "symptom": "sandbox_dns_blocks_github",
+      "intents": ["git_fetch", "git_push", "git_remote", "ssh_github"]
+    },
+    {
+      "id": "EXP-004",
+      "domain": "vcs",
+      "status": "ACTIVE",
+      "title": "Apple Git rejects injected --trailer on commit",
+      "symptom": "apple_git_rejects_trailer",
+      "intents": ["git_commit", "commit", "create_commit"]
+    }
+  ]
+}
