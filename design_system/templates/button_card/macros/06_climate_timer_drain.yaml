@@ -204,6 +204,51 @@
             }
             const drainW = Math.max(el.clientWidth || hostW, needBox);
             const viewHalf = drainW / 2;
+            // #region agent log
+            try {
+              const prevInner = String(el.style.getPropertyValue('--lg_timer_conic_inner_pct') || '').trim();
+              const prevOuter = String(el.style.getPropertyValue('--lg_timer_conic_outer_pct') || '').trim();
+              const prevW = String(el.style.getPropertyValue('--lg_timer_bezel_weight_px') || '').trim();
+              const seq = (host.__lgDebugBezelSeq = (host.__lgDebugBezelSeq || 0) + 1);
+              const nextInner = viewHalf > 0 ? __lgR4(Math.max(0, Math.min(100, (rBezelInner / viewHalf) * 100))) : 0;
+              const nextOuter = viewHalf > 0 ? __lgR4(Math.max(0, Math.min(100, (rBezelOuter / viewHalf) * 100))) : 0;
+              const payload = {
+                sessionId: '9ef8ed',
+                runId: 'pre-fix',
+                hypothesisId: !prevInner ? 'H1' : (prevW && Math.abs(parseFloat(prevW) - wBezel) > 0.25 ? 'H2' : 'H3'),
+                location: '06_climate_timer_drain.yaml:__lgLayoutDrain',
+                message: 'bezel layout pass',
+                data: {
+                  seq,
+                  hostW,
+                  measuredHalf: __lgR4(measuredHalf),
+                  parsedRoomHalf: __lgR4(parsedRoomHalf),
+                  roomHalfPx: __lgR4(roomHalfPx),
+                  bandTotal: __lgR4(bandTotal),
+                  wBezel: __lgR4(wBezel),
+                  padPx: __lgR4(padPx),
+                  strokeGlassPx: __lgR4(strokeGlassPx),
+                  drainW: __lgR4(drainW),
+                  viewHalf: __lgR4(viewHalf),
+                  prevInner,
+                  prevOuter,
+                  prevW,
+                  nextInner,
+                  nextOuter,
+                  cssFallbackBand: !prevInner,
+                  usedMeasured: measuredHalf > hostHalf + 0.5,
+                  inlineBoxOverride: needBox > hostW + 0.5,
+                },
+                timestamp: Date.now(),
+              };
+              fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify(payload)}).catch(()=>{});
+              try {
+                window.__LG_DEBUG_BEZEL = window.__LG_DEBUG_BEZEL || [];
+                window.__LG_DEBUG_BEZEL.push(payload);
+                if (window.__LG_DEBUG_BEZEL.length > 40) window.__LG_DEBUG_BEZEL.shift();
+              } catch (eBuf) {}
+            } catch (eLog) {}
+            // #endregion
             if (viewHalf > 0) {
               const pct = (px) => __lgR4(Math.max(0, Math.min(100, (px / viewHalf) * 100)));
               el.style.setProperty('--lg_timer_conic_inner_pct', `${pct(rBezelInner)}%`);
@@ -224,20 +269,51 @@
           const once = () => {
             const el = host.shadowRoot && host.shadowRoot.querySelector('#timer_drain');
             if (!el) return false;
-            try {
-              el.style.setProperty('display', show ? 'block' : 'none', 'important');
-              el.style.setProperty('opacity', show ? '1' : '0', 'important');
-              el.style.setProperty('visibility', show ? 'visible' : 'hidden', 'important');
-            } catch (e) {}
-            if (show) {
-              void el.offsetWidth;
-              const layout = __lgLayoutDrain(host);
-              const r = layout.r || 48.5;
-              const ri = layout.ri || Math.max(0, r - 2);
-              host.__lgTimerDrainR = r;
-              host.__lgTimerDrainRi = ri;
-              __lgApplyDrainTicks(host, t, r, ri, layout.drainW || el.clientWidth || host.clientWidth || 0);
+            if (!show) {
+              try {
+                host.removeAttribute('data-lg-drain-ready');
+                el.style.setProperty('display', 'none', 'important');
+                el.style.setProperty('opacity', '0', 'important');
+                el.style.setProperty('visibility', 'hidden', 'important');
+              } catch (e) {}
+              // #region agent log
+              try {
+                fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix',hypothesisId:'H1',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel hidden',data:{ready:false,timerActive:!!host.classList.contains('lg-wheel-timer-active')},timestamp:Date.now()})}).catch(()=>{});
+              } catch (eLog) {}
+              // #endregion
+              return true;
             }
+            /* Layout while invisible — avoid thick CSS-fallback first paint.
+               Two passes: first may set needBox px; second settles measuredHalf
+               so reveal uses final W_bezel (no post-visible shrink). */
+            try {
+              el.style.setProperty('display', 'block', 'important');
+              el.style.setProperty('opacity', '0', 'important');
+              el.style.setProperty('visibility', 'hidden', 'important');
+            } catch (e) {}
+            void el.offsetWidth;
+            const layout1 = __lgLayoutDrain(host);
+            void el.offsetWidth;
+            const layout = __lgLayoutDrain(host);
+            const r = layout.r || 48.5;
+            const ri = layout.ri || Math.max(0, r - 2);
+            host.__lgTimerDrainR = r;
+            host.__lgTimerDrainRi = ri;
+            __lgApplyDrainTicks(host, t, r, ri, layout.drainW || el.clientWidth || host.clientWidth || 0);
+            try {
+              host.setAttribute('data-lg-drain-ready', '1');
+              el.style.setProperty('opacity', '1', 'important');
+              el.style.setProperty('visibility', 'visible', 'important');
+            } catch (e) {}
+            // #region agent log
+            try {
+              const wPx = String(el.style.getPropertyValue('--lg_timer_bezel_weight_px') || '').trim();
+              const inner = String(el.style.getPropertyValue('--lg_timer_conic_inner_pct') || '').trim();
+              const outer = String(el.style.getPropertyValue('--lg_timer_conic_outer_pct') || '').trim();
+              const w1 = layout1 && layout1.drainW;
+              fetch('http://127.0.0.1:7644/ingest/16462fd4-9ac2-4967-8fcd-6cfaf04bb0d6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9ef8ed'},body:JSON.stringify({sessionId:'9ef8ed',runId:'post-fix',hypothesisId:'H1',location:'06_climate_timer_drain.yaml:__lgSyncDrain',message:'bezel revealed after settled layout',data:{ready:true,wPx,inner,outer,r,ri,drainW:layout.drainW||0,drainW1:w1||0,hostW:host.clientWidth||0},timestamp:Date.now()})}).catch(()=>{});
+            } catch (eLog) {}
+            // #endregion
             return true;
           };
           if (once()) return;
@@ -276,16 +352,18 @@
           `var(--lg_color_climate_timer_conic_fill_${__lgDrainHue})`);
         this.style.setProperty('--lg_color_climate_timer_conic_active_glow',
           `var(--lg_color_climate_timer_conic_glow_${__lgDrainHue})`);
-        /* Dormant Watch Bezel ticks always on powered main layer (ADR 0055 IDLE).
-           Progress arc stays opacity 0 until armed/running (t > 0). */
+        /* Bezel visible only while timer armed/running (lg-wheel-timer-active).
+           No IDLE dormant tick ring — operator contract supersedes ADR-0055 IDLE. */
         const __lgDrainShow = !!(__lgDrainPowered
+          && this.classList.contains('lg-wheel-timer-active')
           && this.classList.contains('lg-wheel-layer-main')
           && !this.classList.contains('lg-wheel-layer-mode')
           && !this.classList.contains('lg-wheel-layer-fan')
           && !(__lgWantManage || __lgWantRadial)
           && !(this.classList.contains('lg-wheel-temp-open') || this.classList.contains('lg-wheel-temp-arming')));
-        if (!__lgDrainPowered) {
+        if (!__lgDrainPowered || !this.classList.contains('lg-wheel-timer-active')) {
           this.classList.remove('lg-timer-threshold-warn', 'lg-timer-completion');
+          try { this.removeAttribute('data-lg-drain-ready'); } catch (e) {}
         }
         __lgSyncDrain(this, __lgDrainT, __lgDrainShow);
         if (this.__lgTimerDrainTick) {
@@ -298,6 +376,7 @@
           || (h.getAttribute && h.getAttribute('data-lg-timer-radial') === '1')
           || h.classList.contains('lg-power-idle-off')
           || h.classList.contains('lg-power-unavailable')
+          || !h.classList.contains('lg-wheel-timer-active')
           || !h.classList.contains('lg-wheel-layer-main')
           || h.classList.contains('lg-wheel-layer-mode')
           || h.classList.contains('lg-wheel-layer-fan')

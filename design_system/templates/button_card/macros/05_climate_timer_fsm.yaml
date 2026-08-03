@@ -213,14 +213,11 @@
           height: var(--lg_size_climate_timer_drain_box_phone) !important;
         }
       }
-      /* IDLE dormant tick ring on powered main layer (progress fill opacity 0).
-         Explicit :not(submenu) so cut rules are not lost to specificity. */
-      :host(.lg-wheel-layer-main):not(.lg-power-idle-off):not(.lg-power-unavailable):not(.lg-timer-radial-open):not([data-lg-timer-radial="1"]):not(.lg-timer-manage-open):not([data-lg-timer-manage="1"]):not(.lg-wheel-layer-mode):not(.lg-wheel-layer-fan):not(.lg-wheel-temp-open):not(.lg-wheel-temp-arming) #timer_drain {
-        display: block !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-      }
-      :host(.lg-wheel-timer-active):not(.lg-timer-radial-open):not([data-lg-timer-radial="1"]):not(.lg-timer-manage-open):not([data-lg-timer-manage="1"]):not(.lg-wheel-layer-mode):not(.lg-wheel-layer-fan):not(.lg-wheel-temp-open):not(.lg-wheel-temp-arming) #timer_drain {
+      /* Watch Bezel only while timer is active AND geometry is laid out.
+         Gate on data-lg-drain-ready prevents reload flash: CSS fallback
+         mask (94%→100%) must never paint before __lgLayoutDrain (ADR-0063).
+         No IDLE dormant ring — bezel is timer-active only. */
+      :host(.lg-wheel-timer-active)[data-lg-drain-ready="1"]:not(.lg-timer-radial-open):not([data-lg-timer-radial="1"]):not(.lg-timer-manage-open):not([data-lg-timer-manage="1"]):not(.lg-wheel-layer-mode):not(.lg-wheel-layer-fan):not(.lg-wheel-temp-open):not(.lg-wheel-temp-arming) #timer_drain {
         display: block !important;
         opacity: 1 !important;
         visibility: visible !important;

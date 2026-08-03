@@ -4,7 +4,7 @@
   "target_agent": "@extractor",
   "source_spec": "specs/timer-change.md",
   "payload": {
-    "action_summary": "Klimat Watch Bezel timer: equidistant D_bezel_gap=G_radial geometry, Major/Medium/Minor ticks, dormant IDLE ring, hvac_action hue with entity.state fallback, WARNING=mode hue+breath only (ADR-0055)",
+    "action_summary": "Klimat Watch Bezel: timer-active only (no IDLE dormant ring), data-lg-drain-ready gate vs reload thickness flash, equidistant ADR-0063 geometry, hvac_action hue, WARNING=mode hue+breath",
     "requested_entities": [
       "climate_timer_radial_panel",
       "climate_timer_drain",
