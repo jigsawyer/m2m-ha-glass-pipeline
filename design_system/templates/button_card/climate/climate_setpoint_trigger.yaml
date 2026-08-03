@@ -213,11 +213,8 @@
         const mode = entity ? entity.state : 'off';
         const __lgHubActive = mode === 'cool' || mode === 'heat';
         const __lgHubDisabled = !entity || mode === 'unavailable' || mode === 'unknown';
-        const color = mode === 'cool'
-          ? 'var(--lg_color_climate_cool)'
-          : mode === 'heat'
-            ? 'var(--lg_color_climate_heat)'
-            : 'var(--lg_color_text)';
+        /* Target/mode text use Specular White tokens (aic-text-spec §2);
+           hub chrome still uses mode glow below. */
         const glow = mode === 'cool'
           ? 'var(--lg_glow_climate_cool)'
           : mode === 'heat'
@@ -337,53 +334,79 @@
            horseshoe strokes re-enable pointer-events for drag only. */
         pointer-events: none !important;
       }
-      /* Merged central status: ambient (small) / target setpoint (huge,
-         mode-colored) / mode name (small, mode-colored) — everything that
-         used to live in climate_thermostat's now-retired external #caption
-         row lives INSIDE the circle instead (user directive: "merge
-         everything into the circle"). All 3 lines wrap instead of clipping
-         (global no-crop rule) — the circle is sized generously enough
-         (lg_size_climate_setpoint_trigger_w, ~2.3-2.5x the old trigger) that
-         wrapping is a rare fallback, not the common case. */
+      /* Three-Layer Text (aic-text-spec §2–§3 + §5): L1 ambient / L2 focal
+         inline target+mode Micro-Pill / L3 conditional schedule. Zero wrap
+         or ellipsis inside the 80% safe box. Glass tint §4 is out of scope. */
       .lg-setpoint-stack {
         position: relative;
         z-index: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
+        box-sizing: border-box;
         gap: var(--lg_space_climate_setpoint_stack_gap);
         width: var(--lg_size_climate_setpoint_text_w);
         max-width: var(--lg_size_climate_setpoint_text_w);
+        height: var(--lg_size_climate_setpoint_text_w);
+        max-height: var(--lg_size_climate_setpoint_text_w);
+        padding-block: var(--lg_space_climate_setpoint_safe_pad_y);
         text-align: center;
         font-family: var(--lg_font_label_family);
         line-height: 1.15;
         filter: var(--lg_filter_climate_setpoint_readout);
+        overflow: hidden;
+      }
+      .lg-setpoint-stack:not(.lg-setpoint-stack--timer):not(.lg-setpoint-stack--idle):not(.lg-setpoint-stack--wait):not(.lg-setpoint-stack--error):not(.lg-setpoint-stack--optimistic-on) {
+        justify-content: center;
+        gap: calc(var(--lg_space_climate_setpoint_stack_gap) * 2);
       }
       @media (max-width: 48rem) {
         .lg-setpoint-stack {
           gap: var(--lg_space_climate_setpoint_stack_gap_phone);
           width: var(--lg_size_climate_setpoint_text_w_phone);
           max-width: var(--lg_size_climate_setpoint_text_w_phone);
+          height: var(--lg_size_climate_setpoint_text_w_phone);
+          max-height: var(--lg_size_climate_setpoint_text_w_phone);
         }
       }
       .lg-setpoint-stack__ambient {
+        flex: 0 0 auto;
         color: var(--lg_color_text);
-        opacity: 0.88;
+        opacity: var(--lg_opacity_climate_setpoint_ambient);
         font-size: var(--lg_font_climate_setpoint_ambient_size);
         font-weight: var(--lg_font_label_weight);
-        white-space: normal;
-        overflow-wrap: anywhere;
+        white-space: nowrap;
+        max-width: 100%;
+      }
+      .lg-setpoint-stack--idle {
+        justify-content: center;
+        gap: calc(var(--lg_space_climate_setpoint_stack_gap) * 2);
       }
       .lg-setpoint-stack--idle .lg-setpoint-stack__ambient {
         margin-bottom: var(--lg_space_climate_setpoint_stack_gap);
       }
+      .lg-setpoint-stack--idle .lg-setpoint-stack__mode {
+        color: var(--lg_color_text) !important;
+        opacity: 1;
+        font-size: var(--lg_font_climate_setpoint_target_size);
+        font-weight: var(--lg_font_title_weight);
+        background: transparent;
+        border: none;
+        padding: 0;
+        border-radius: 0;
+        white-space: nowrap;
+      }
       .lg-setpoint-stack--wait {
+        justify-content: center;
         gap: 0.15em;
         padding: var(--lg_space_climate_power_wait_pad);
+        height: auto;
+        max-height: none;
         box-sizing: border-box;
       }
       .lg-setpoint-stack--optimistic-on {
+        justify-content: center;
         animation: lg_power_wait_pulse var(--lg_duration_climate_power_wait_pulse) ease-in-out infinite;
       }
       /* Optimistic target prints inline text, so the ::after var readout that
@@ -391,6 +414,7 @@
       .lg-setpoint-stack__target--opt {
         font-size: var(--lg_font_climate_setpoint_target_size) !important;
         opacity: var(--lg_opacity_climate_power_optimistic_target);
+        color: var(--lg_color_text) !important;
       }
       .lg-setpoint-stack__target--opt::after {
         content: none !important;
@@ -398,6 +422,9 @@
       @media (max-width: 48rem) {
         .lg-setpoint-stack__target--opt {
           font-size: var(--lg_font_climate_setpoint_target_size_phone) !important;
+        }
+        .lg-setpoint-stack--idle .lg-setpoint-stack__mode {
+          font-size: var(--lg_font_climate_setpoint_target_size_phone);
         }
       }
       .lg-setpoint-stack--optimistic-off {
@@ -426,18 +453,38 @@
         0%, 100% { opacity: var(--lg_opacity_climate_power_wait_hi); }
         50% { opacity: var(--lg_opacity_climate_power_wait_lo); }
       }
+      @keyframes lg_setpoint_focal_pulse {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.22); }
+      }
       @media (max-width: 48rem) {
         .lg-setpoint-stack__wait,
         .lg-setpoint-stack__toast {
           font-size: var(--lg_font_climate_power_wait_size_phone);
         }
       }
+      .lg-setpoint-stack__focal {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: baseline;
+        justify-content: center;
+        gap: var(--lg_space_climate_setpoint_focal_gap);
+        max-width: 100%;
+        white-space: nowrap;
+      }
+      :host(.lg-ring-dragging) .lg-setpoint-stack__focal,
+      :host(.lg-ring-trigger-expanded) .lg-setpoint-stack__focal {
+        animation: lg_setpoint_focal_pulse var(--lg_duration_climate_setpoint_focal_pulse) ease-in-out infinite;
+      }
       .lg-setpoint-stack__target {
-        color: ${color} !important;
+        color: var(--lg_color_text) !important;
         font-weight: var(--lg_font_title_weight);
         white-space: nowrap;
         /* Live pending: ring drag writes --lg_climate_mid_target on this host. */
         font-size: 0 !important;
+        text-shadow: var(--lg_shadow_climate_setpoint_target);
       }
       .lg-setpoint-stack__target::after {
         content: var(--lg_climate_mid_target, '--\u00b0');
@@ -445,51 +492,82 @@
         font-weight: var(--lg_font_title_weight);
         color: inherit;
         white-space: nowrap;
+        text-shadow: inherit;
       }
       .lg-setpoint-stack__mode {
-        color: ${color} !important;
-        opacity: 0.88;
+        color: var(--lg_color_text) !important;
+        opacity: 1;
         font-size: var(--lg_font_climate_setpoint_mode_size);
-        font-weight: var(--lg_font_title_weight);
-        white-space: normal;
-        overflow-wrap: anywhere;
+        font-weight: var(--lg_font_body_weight, 500);
+        white-space: nowrap;
+        max-width: 100%;
       }
-      /* ADR 0032 (item 10) — TIMER_ACTIVE bottom line: clock + "Вимкнеться о
-         HH:MM" in the current mode color (spec §4.1 Timer Layer). Only
-         rendered by status_stack when the wheel is timer-active and neither
-         TIMER_CONFIG nor TIMER_MANAGE owns the center (those hide #trigger
-         entirely). */
-      .lg-setpoint-stack__timer {
+      .lg-setpoint-stack__mode--pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--lg_space_climate_setpoint_mode_pill_pad_y) var(--lg_space_climate_setpoint_mode_pill_pad_x);
+        border-radius: var(--lg_space_climate_setpoint_mode_pill_radius);
+        background: var(--lg_color_climate_setpoint_mode_pill_fill);
+        border: var(--lg_stroke_climate_setpoint_mode_pill) solid var(--lg_color_climate_setpoint_mode_pill_border);
+        line-height: 1.1;
+        flex: 0 0 auto;
+      }
+      .lg-setpoint-stack__mode--long {
+        font-size: var(--lg_font_climate_setpoint_mode_size_compact);
+        letter-spacing: -0.02em;
+      }
+      .lg-setpoint-stack__schedule {
+        flex: 0 0 auto;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: var(--lg_space_climate_setpoint_stack_gap);
-        color: ${color} !important;
-        opacity: 0.92;
+        max-width: 100%;
+        color: var(--lg_color_climate_setpoint_schedule) !important;
+        opacity: var(--lg_opacity_climate_setpoint_schedule);
+      }
+      /* ADR 0032 (item 10) — TIMER_ACTIVE L3: Row 3A countdown + clock icon;
+         Row 3B off-at sentence. Only when wheel is timer-active and neither
+         TIMER_CONFIG nor TIMER_MANAGE owns the center. */
+      .lg-setpoint-stack__timer {
+        display: block;
+        color: inherit !important;
         font-family: var(--lg_font_label_family);
         font-size: var(--lg_font_climate_timer_off_at_size);
         font-weight: var(--lg_font_body_weight, 400);
         white-space: nowrap;
         font-variant-numeric: tabular-nums;
         font-feature-settings: "tnum" 1;
+        max-width: 100%;
+      }
+      .lg-setpoint-stack__timer-emph {
+        font-weight: var(--lg_font_title_weight);
       }
       .lg-setpoint-stack__countdown {
-        display: block;
-        color: ${color} !important;
-        opacity: 0.78;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        gap: var(--lg_space_climate_setpoint_stack_gap);
+        color: inherit !important;
         font-family: var(--lg_font_label_family);
         font-size: var(--lg_font_climate_timer_off_at_size);
-        font-weight: var(--lg_font_body_weight, 400);
+        font-weight: var(--lg_font_body_weight, 500);
         font-variant-numeric: tabular-nums;
         font-feature-settings: "tnum" 1;
         letter-spacing: 0.04em;
         white-space: nowrap;
+        max-width: 100%;
       }
       .lg-setpoint-stack__timer-icon {
         --mdc-icon-size: var(--lg_font_climate_timer_off_at_size);
         width: var(--lg_font_climate_timer_off_at_size);
         height: var(--lg_font_climate_timer_off_at_size);
         color: inherit !important;
+        flex: 0 0 auto;
       }
       .lg-setpoint-stack__error-icon {
         --mdc-icon-size: var(--lg_font_climate_setpoint_target_size);
@@ -502,6 +580,7 @@
         .lg-setpoint-stack__ambient { font-size: var(--lg_font_climate_setpoint_ambient_size_phone); }
         .lg-setpoint-stack__target::after { font-size: var(--lg_font_climate_setpoint_target_size_phone); }
         .lg-setpoint-stack__mode { font-size: var(--lg_font_climate_setpoint_mode_size_phone); }
+        .lg-setpoint-stack__mode--long { font-size: var(--lg_font_climate_setpoint_mode_size_compact_phone); }
       }
       /* Ring overlay — absolutely centered on the trigger via the SAME
          --lg_size_climate_ring_w token the ring panel sizes itself with (no
@@ -563,10 +642,13 @@
           const ambient = (cur === 0 || cur) ? `${cur}° зараз` : '—';
           const targetLabel = (target === 0 || target) ? `${target}°` : '--°';
           const modeLabel = modeLabels[mode] || mode;
+          const modePillClass = String(modeLabel).length > 10
+            ? 'lg-setpoint-stack__mode lg-setpoint-stack__mode--pill lg-setpoint-stack__mode--long'
+            : 'lg-setpoint-stack__mode lg-setpoint-stack__mode--pill';
           if (mode === 'unavailable' || mode === 'unknown' || !entity) {
             return `<div class="lg-setpoint-stack lg-setpoint-stack--error"><div class="lg-setpoint-stack__mode">Офлайн</div></div>`;
           }
-          /* ADR 0032 (item 10) — TIMER_ACTIVE bottom line. Only shown when the
+          /* ADR 0032 (item 10) — TIMER_ACTIVE L3 schedule. Only shown when the
              ancestor wheel is timer-active and neither TIMER_CONFIG nor
              TIMER_MANAGE is open (both hide #trigger already; this is a
              belt-and-suspenders guard against a stale render in between). */
@@ -608,7 +690,7 @@
           if (__lgOptimisticOff) {
             return `<div class="lg-setpoint-stack lg-setpoint-stack--idle lg-setpoint-stack--optimistic-off"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__mode">${modeLabels.off}</div></div>`;
           }
-          /* ADR 0035 IDLE_OFF: ambient + Вимк only (hide target). */
+          /* ADR 0035 IDLE_OFF: ambient + Вимк only (hide target / L3). */
           if (mode === 'off') {
             return `<div class="lg-setpoint-stack lg-setpoint-stack--idle"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__mode">${modeLabels.off}</div></div>`;
           }
@@ -619,7 +701,7 @@
             || (__lgWheel.getAttribute && __lgWheel.getAttribute('data-lg-timer-manage') === '1')
           ));
           const __lgShowTimerLine = __lgTimerActive && !__lgTimerConfigOpen && !__lgTimerManageOpen;
-          let __lgTimerLine = '';
+          let __lgSchedule = '';
           if (__lgShowTimerLine) {
             const __lgParseDur = (raw) => {
               const parts = String(raw || '').split(':').map((p) => parseInt(p, 10) || 0);
@@ -632,7 +714,7 @@
               if (!Number.isFinite(d.getTime())) return '';
               const hh = String(d.getHours()).padStart(2, '0');
               const mm = String(d.getMinutes()).padStart(2, '0');
-              return `Вимкнеться о ${hh}:${mm}`;
+              return `Вимкнеться о <span class="lg-setpoint-stack__timer-emph">${hh}:${mm}</span>`;
             };
             const timerId = (variables && variables.timer_entity_id) || '';
             const armedId = (variables && variables.armed_entity_id) || '';
@@ -665,18 +747,21 @@
               const parts = String(states[clockId].state).split(':');
               const hh = String(parseInt(parts[0], 10) || 0).padStart(2, '0');
               const mm = String(parseInt(parts[1], 10) || 0).padStart(2, '0');
-              __lgOffLabel = `Вимкнеться о ${hh}:${mm}`;
+              __lgOffLabel = `Вимкнеться о <span class="lg-setpoint-stack__timer-emph">${hh}:${mm}</span>`;
               const now = new Date();
-              const target = new Date(now);
-              target.setHours(parseInt(hh, 10) || 0, parseInt(mm, 10) || 0, 0, 0);
-              if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
-              __lgCountdown = __lgFmtHms((target.getTime() - now.getTime()) / 1000);
+              const targetClock = new Date(now);
+              targetClock.setHours(parseInt(hh, 10) || 0, parseInt(mm, 10) || 0, 0, 0);
+              if (targetClock.getTime() <= now.getTime()) targetClock.setDate(targetClock.getDate() + 1);
+              __lgCountdown = __lgFmtHms((targetClock.getTime() - now.getTime()) / 1000);
             }
             if (__lgCountdown || __lgOffLabel) {
-              __lgTimerLine = `${__lgCountdown ? `<div class="lg-setpoint-stack__countdown">${__lgCountdown}</div>` : ''}${__lgOffLabel ? `<div class="lg-setpoint-stack__timer"><ha-icon class="lg-setpoint-stack__timer-icon" icon="mdi:clock-outline"></ha-icon><span>${__lgOffLabel}</span></div>` : ''}`;
+              __lgSchedule = `<div class="lg-setpoint-stack__schedule">${__lgCountdown ? `<div class="lg-setpoint-stack__countdown"><ha-icon class="lg-setpoint-stack__timer-icon" icon="mdi:clock-outline"></ha-icon><span>${__lgCountdown}</span></div>` : ''}${__lgOffLabel ? `<div class="lg-setpoint-stack__timer">${__lgOffLabel}</div>` : ''}</div>`;
             }
           }
-          return `<div class="lg-setpoint-stack"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__target">${targetLabel}</div><div class="lg-setpoint-stack__mode">${modeLabel}</div>${__lgTimerLine}</div>`;
+          const __lgStackClass = __lgSchedule
+            ? 'lg-setpoint-stack lg-setpoint-stack--timer'
+            : 'lg-setpoint-stack';
+          return `<div class="${__lgStackClass}"><div class="lg-setpoint-stack__ambient">${ambient}</div><div class="lg-setpoint-stack__focal"><div class="lg-setpoint-stack__target">${targetLabel}</div><span class="${modePillClass}">${modeLabel}</span></div>${__lgSchedule}</div>`;
         ]]]
       ring_overlay:
         card:

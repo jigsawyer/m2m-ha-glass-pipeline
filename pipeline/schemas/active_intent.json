@@ -1,37 +1,33 @@
 {
   "target_dashboard": "klimat",
-  "intent_class": "EXTRACTIVE",
-  "target_agent": "@extractor",
-  "source_spec": "specs/timer-change.md",
+  "intent_class": "STYLIST",
+  "target_agent": "@stylist",
+  "source_spec": "specs/aic-text-spec.md",
   "payload": {
-    "action_summary": "Klimat Watch Bezel: timer-active only (no IDLE dormant ring), data-lg-drain-ready gate vs reload thickness flash, equidistant ADR-0063 geometry, hvac_action hue, WARNING=mode hue+breath",
+    "action_summary": "Klimat central circle Three-Layer Text (§2–§3 + §5): ambient top, inline target+mode Micro-Pill, conditional timer schedule; 80% safe area; no wrap/clip; white target; ambient 65%; clock-outline on countdown Row 3A. Glass tint/rim §4 deferred.",
     "requested_entities": [
-      "climate_timer_radial_panel",
-      "climate_timer_drain",
-      "climate_power_fsm",
       "climate_setpoint_trigger",
-      "climate_room_off_button",
-      "climate_global_wheel"
+      "liquid_glass_v1.0"
     ],
     "preserve_behavior": [
+      "sticky TEMP commit / deferred set_temperature (ADR 0017)",
       "sticky TIMER_CONFIG/TIMER_MANAGE window maps (ADR 0033)",
-      "deferred timer commit — no on-drag HA write",
-      "frost-free Cancel morph Power↔X",
-      "TIMER_MANAGE Edit/Stop/Pause annular sectors",
-      "dual-surface Main Power Hub ON / Corner OFF hit targets",
-      "segment __lgSegPending optimistic retained for non-power segments",
       "mutex .lg-timer-radial-open ⟂ .lg-wheel-temp-open",
-      "picker mechanism frozen (ADR 0045)",
-      "no leading-edge satellite; no warn-hue override (ADR 0046/0055)"
+      "--lg_climate_mid_target pending readout path",
+      "power FSM IDLE_OFF / optimistic / degraded branches",
+      "timer entity parsing (running/armed/clock) for L3",
+      "UA modeLabels (Вимк/Холод/Тепло/Сухе/Вентилятор/Авто)",
+      "outer ring / bezel geometry unchanged",
+      "no #liquid_clip mode-driven glass tint (§4 follow-up)"
     ]
   },
   "flags": {
     "allow_template_layout_edit": true,
-    "allow_climate_timer_radial_control": true,
-    "tokens_and_button_card_templates_only": false
+    "allow_climate_timer_radial_control": false,
+    "tokens_and_button_card_templates_only": true
   },
   "constraints": {
-    "adr": ["0006", "0007", "0014", "0025", "0032", "0033", "0037", "0044", "0045", "0046", "0048", "0051", "0055", "0056", "0057"],
+    "adr": ["0006", "0007", "0017", "0032", "0035"],
     "deploy": ["build_engine.py", "git_push_ci_edge_state"]
   }
 }
