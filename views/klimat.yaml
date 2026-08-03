@@ -1,0 +1,274 @@
+# m2m-generated: 2026-08-03 17:41:41
+title: "Клімат"
+path: klimat
+type: panel
+theme: liquid_glass_v1.0
+background: "center / cover no-repeat url('/local/liquid_glass/ios_dark_waves.jpg') fixed"
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "1fr"
+      justify-content: center
+      justify-items: stretch
+      width: 100%
+      max-width: "var(--lg_size_shell_w)"
+      margin: 0 auto
+      padding: clamp(0.5rem, 1.25vw, 1rem) clamp(1rem, 2.5vw, 2.5rem)
+      box-sizing: border-box
+    cards:
+      - type: vertical-stack
+        view_layout:
+          grid-column: 1
+        cards:
+          - type: custom:button-card
+            template: climate_floor_container
+            show_name: false
+            custom_fields:
+              content:
+                card:
+                  type: custom:layout-card
+                  layout_type: custom:grid-layout
+                  layout:
+                    grid-template-columns: "1fr"
+                    grid-gap: "var(--lg_space_gap_header_mosaic)"
+                    place-content: start stretch
+                    margin: "0"
+                    padding: "0"
+                  cards:
+                    - type: custom:layout-card
+                      layout_type: custom:grid-layout
+                      layout:
+                        grid-template-columns: "1fr"
+                        place-items: center
+                        margin: "0"
+                        padding: "0"
+                      cards:
+                        - type: custom:layout-card
+                          layout_type: custom:grid-layout
+                          layout:
+                            grid-template-columns: "auto auto"
+                            grid-template-rows: "auto"
+                            grid-gap: "var(--lg_space_tab_side_gap)"
+                            place-content: center
+                            width: 100%
+                            place-items: center
+                            margin: "0"
+                            padding: "0"
+                          cards:
+                            - type: custom:button-card
+                              template: floor_voice_placeholder
+                            - type: custom:button-card
+                              template: climate_house_off_button
+                              show_name: false
+                              variables:
+                                ha_entity_ids: ["climate.kabinet_konditsioner_kabinet", "climate.spalnia_konditsioner_spalnia"]
+                    
+                    - type: conditional
+                      conditions:
+                        - condition: screen
+                          media_query: "(max-width: 48rem)"
+                      card:
+                        type: custom:layout-card
+                        layout_type: custom:masonry-layout
+                        layout:
+                          # lg_masonry_climate_col_width_phone / _max_width_phone / _max_cols_phone
+                          # Probe: 400 overflowed 393vw / ~365 floor content (midX+18).
+                          # 360 fits content with headroom over room+card_margin.
+                          # Edge-to-edge (analyzer.mdc STYLISTIC intent, Klimat radial wheel
+                          # hyper-glass refresh): card_margin uses a climate+phone-scoped
+                          # token (lg_masonry_climate_card_margin_phone, ~0.5rem) instead of
+                          # the shared lg_masonry_card_margin (~1.5625rem) used by every
+                          # other dashboard (svitlo/home) — shrinks the outside-the-card
+                          # breathing room so the room card/wheel can grow to fill the
+                          # track width, WITHOUT mutating the shared token (dashboard
+                          # isolation, global.mdc). Desktop block below is untouched.
+                          width: 360
+                          max_width: 360
+                          max_cols: 1
+                          min_height: 1
+                          card_margin: "var(--lg_masonry_climate_card_margin_phone)"
+                          margin: "0"
+                          padding: "0"
+                        cards:
+                          - type: custom:button-card
+                            template: climate_room_container
+                            name: Кабінет
+                            custom_fields:
+                              content:
+                                card:
+                                  type: custom:layout-card
+                                  layout_type: custom:grid-layout
+                                  layout:
+                                    grid-template-columns: "1fr"
+                                    place-items: center
+                                    grid-gap: "var(--lg_space_gap_sm)"
+                                    margin: "0"
+                                    padding: "0"
+                                  cards:
+                                    - type: custom:button-card
+                                      template: climate_thermostat
+                                      entity: climate.kabinet_konditsioner_kabinet
+                                      name: Кондиціонер
+                                      variables:
+                                        timer_entity_id: "timer.kabinet_ac_sleep"
+                                        clock_entity_id: "input_datetime.kabinet_ac_off_at"
+                                        armed_entity_id: "input_boolean.kabinet_ac_off_armed"
+                                        popup_hash: "#klimat-timer-kabinet"
+                                        mode_entity_id: "input_select.kabinet_ac_timer_mode"
+                                        hours_entity_id: "input_number.kabinet_ac_timer_hours"
+                                        minutes_entity_id: "input_number.kabinet_ac_timer_minutes"
+                                        clock_hour_entity_id: "input_number.kabinet_ac_off_hour"
+                                        clock_minute_entity_id: "input_number.kabinet_ac_off_minute"
+                                        remove_script_id: "script.kabinet_ac_timer_remove"
+                                        save_duration_script_id: "script.kabinet_ac_timer_save_duration"
+                                        pause_clock_script_id: "script.kabinet_ac_timer_pause_clock"
+                                        turbo_entity_id: "switch.kabinet_konditsioner_kabinet_fast_heating_cooling"
+                                        quiet_entity_id: "switch.kabinet_konditsioner_kabinet_quiet_mode"
+                              corner:
+                                card:
+                                  type: custom:button-card
+                                  template: climate_room_off_button
+                                  name: Вимкнути кондиціонер
+                                  variables:
+                                    ha_entity_ids: ["climate.kabinet_konditsioner_kabinet"]
+                          - type: custom:button-card
+                            template: climate_room_container
+                            name: Спальня
+                            custom_fields:
+                              content:
+                                card:
+                                  type: custom:layout-card
+                                  layout_type: custom:grid-layout
+                                  layout:
+                                    grid-template-columns: "1fr"
+                                    place-items: center
+                                    grid-gap: "var(--lg_space_gap_sm)"
+                                    margin: "0"
+                                    padding: "0"
+                                  cards:
+                                    - type: custom:button-card
+                                      template: climate_thermostat
+                                      entity: climate.spalnia_konditsioner_spalnia
+                                      name: Кондиціонер
+                                      variables:
+                                        timer_entity_id: "timer.spalnia_ac_sleep"
+                                        clock_entity_id: "input_datetime.spalnia_ac_off_at"
+                                        armed_entity_id: "input_boolean.spalnia_ac_off_armed"
+                                        popup_hash: "#klimat-timer-spalnia"
+                                        mode_entity_id: "input_select.spalnia_ac_timer_mode"
+                                        hours_entity_id: "input_number.spalnia_ac_timer_hours"
+                                        minutes_entity_id: "input_number.spalnia_ac_timer_minutes"
+                                        clock_hour_entity_id: "input_number.spalnia_ac_off_hour"
+                                        clock_minute_entity_id: "input_number.spalnia_ac_off_minute"
+                                        remove_script_id: "script.spalnia_ac_timer_remove"
+                                        save_duration_script_id: "script.spalnia_ac_timer_save_duration"
+                                        pause_clock_script_id: "script.spalnia_ac_timer_pause_clock"
+                                        turbo_entity_id: "switch.spalnia_konditsioner_spalnia_fast_heating_cooling"
+                                        quiet_entity_id: "switch.spalnia_konditsioner_spalnia_quiet_mode"
+                              corner:
+                                card:
+                                  type: custom:button-card
+                                  template: climate_room_off_button
+                                  name: Вимкнути кондиціонер
+                                  variables:
+                                    ha_entity_ids: ["climate.spalnia_konditsioner_spalnia"]
+                    - type: conditional
+                      conditions:
+                        - condition: screen
+                          media_query: "(min-width: 48.0625rem)"
+                      card:
+                        type: custom:layout-card
+                        layout_type: custom:masonry-layout
+                        layout:
+                          # lg_masonry_climate_col_width_desktop / _max_width_desktop / _max_cols_desktop
+                          width: 460
+                          max_width: 460
+                          max_cols: 6
+                          min_height: 1
+                          card_margin: "var(--lg_masonry_card_margin)"
+                          margin: "0"
+                          padding: "0"
+                        cards:
+                          - type: custom:button-card
+                            template: climate_room_container
+                            name: Кабінет
+                            custom_fields:
+                              content:
+                                card:
+                                  type: custom:layout-card
+                                  layout_type: custom:grid-layout
+                                  layout:
+                                    grid-template-columns: "1fr"
+                                    place-items: center
+                                    grid-gap: "var(--lg_space_gap_sm)"
+                                    margin: "0"
+                                    padding: "0"
+                                  cards:
+                                    - type: custom:button-card
+                                      template: climate_thermostat
+                                      entity: climate.kabinet_konditsioner_kabinet
+                                      name: Кондиціонер
+                                      variables:
+                                        timer_entity_id: "timer.kabinet_ac_sleep"
+                                        clock_entity_id: "input_datetime.kabinet_ac_off_at"
+                                        armed_entity_id: "input_boolean.kabinet_ac_off_armed"
+                                        popup_hash: "#klimat-timer-kabinet"
+                                        mode_entity_id: "input_select.kabinet_ac_timer_mode"
+                                        hours_entity_id: "input_number.kabinet_ac_timer_hours"
+                                        minutes_entity_id: "input_number.kabinet_ac_timer_minutes"
+                                        clock_hour_entity_id: "input_number.kabinet_ac_off_hour"
+                                        clock_minute_entity_id: "input_number.kabinet_ac_off_minute"
+                                        remove_script_id: "script.kabinet_ac_timer_remove"
+                                        save_duration_script_id: "script.kabinet_ac_timer_save_duration"
+                                        pause_clock_script_id: "script.kabinet_ac_timer_pause_clock"
+                                        turbo_entity_id: "switch.kabinet_konditsioner_kabinet_fast_heating_cooling"
+                                        quiet_entity_id: "switch.kabinet_konditsioner_kabinet_quiet_mode"
+                              corner:
+                                card:
+                                  type: custom:button-card
+                                  template: climate_room_off_button
+                                  name: Вимкнути кондиціонер
+                                  variables:
+                                    ha_entity_ids: ["climate.kabinet_konditsioner_kabinet"]
+                          - type: custom:button-card
+                            template: climate_room_container
+                            name: Спальня
+                            custom_fields:
+                              content:
+                                card:
+                                  type: custom:layout-card
+                                  layout_type: custom:grid-layout
+                                  layout:
+                                    grid-template-columns: "1fr"
+                                    place-items: center
+                                    grid-gap: "var(--lg_space_gap_sm)"
+                                    margin: "0"
+                                    padding: "0"
+                                  cards:
+                                    - type: custom:button-card
+                                      template: climate_thermostat
+                                      entity: climate.spalnia_konditsioner_spalnia
+                                      name: Кондиціонер
+                                      variables:
+                                        timer_entity_id: "timer.spalnia_ac_sleep"
+                                        clock_entity_id: "input_datetime.spalnia_ac_off_at"
+                                        armed_entity_id: "input_boolean.spalnia_ac_off_armed"
+                                        popup_hash: "#klimat-timer-spalnia"
+                                        mode_entity_id: "input_select.spalnia_ac_timer_mode"
+                                        hours_entity_id: "input_number.spalnia_ac_timer_hours"
+                                        minutes_entity_id: "input_number.spalnia_ac_timer_minutes"
+                                        clock_hour_entity_id: "input_number.spalnia_ac_off_hour"
+                                        clock_minute_entity_id: "input_number.spalnia_ac_off_minute"
+                                        remove_script_id: "script.spalnia_ac_timer_remove"
+                                        save_duration_script_id: "script.spalnia_ac_timer_save_duration"
+                                        pause_clock_script_id: "script.spalnia_ac_timer_pause_clock"
+                                        turbo_entity_id: "switch.spalnia_konditsioner_spalnia_fast_heating_cooling"
+                                        quiet_entity_id: "switch.spalnia_konditsioner_spalnia_quiet_mode"
+                              corner:
+                                card:
+                                  type: custom:button-card
+                                  template: climate_room_off_button
+                                  name: Вимкнути кондиціонер
+                                  variables:
+                                    ha_entity_ids: ["climate.spalnia_konditsioner_spalnia"]
