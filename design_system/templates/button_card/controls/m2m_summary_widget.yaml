@@ -1,0 +1,63 @@
+  m2m_summary_widget:
+    # Header pill: live count of "active" entities from a caller-supplied
+    # entity_id list (variables.ha_entity_ids) + an "active state" predicate
+    # (variables.active_state, e.g. "on" for switch/light or hvac_mode != off
+    # for climate). Counting runs client-side via button-card [[[ ]]] JS
+    # templates against the live hass.states object — genuinely dynamic,
+    # not a build-time snapshot (STD-08: registry SoT feeds entity IDs only,
+    # never a fabricated count).
+    show_icon: true
+    show_name: true
+    show_state: true
+    show_label: false
+    color_type: icon
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+    state_display: |
+      [[[
+        const ids = variables.ha_entity_ids || [];
+        const activeState = variables.active_state || 'on';
+        const total = ids.length;
+        const active = ids.filter((id) => {
+          const st = hass && hass.states && hass.states[id];
+          if (!st) return false;
+          if (activeState === 'climate_active') {
+            return st.state && st.state !== 'off';
+          }
+          return st.state === activeState;
+        }).length;
+        return `${active} / ${total}`;
+      ]]]
+    extra_styles: |
+      :host {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      ha-card {
+        border-radius: var(--lg_radius_container);
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        box-shadow: var(--lg_shadow_container);
+        padding: var(--lg_space_pad_y) var(--lg_space_pad_x);
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+      #name {
+        color: var(--lg_color_text);
+        font-weight: 600;
+        opacity: 0.85;
+      }
+      #state {
+        color: var(--lg_color_switch_on_icon);
+        text-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.001);
+        filter: drop-shadow(0 0 0.35rem var(--lg_color_switch_on_frost));
+        font-weight: 700;
+      }
+      ha-icon {
+        color: var(--lg_color_climate_cool);
+        filter: var(--lg_filter_climate_cool);
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}

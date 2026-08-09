@@ -1,0 +1,10 @@
+{# Header widget: live count of light/switch entities currently "on" (EXTRACTIVE new composite) #}
+{%- set props = custom_props | default({}) %}
+{%- set entity_ids = props.get('ha_entity_ids') %}
+type: custom:button-card
+template: m2m_summary_widget
+name: "{{ label | default('Світло активне') }}"
+icon: mdi:lightbulb-group
+variables:
+  ha_entity_ids: {{ (entity_ids if entity_ids is sequence and entity_ids is not string else []) | tojson }}
+  active_state: "on"

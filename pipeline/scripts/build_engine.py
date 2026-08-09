@@ -1,749 +1,54 @@
-import json
-import re
-import shutil
-from datetime import datetime
+"""Build Engine orchestrator (ADR-0005 deterministic build + build stamp).
+
+2026-08-09 code review: this file used to be one ~950-line module mixing
+view compilation, button-card assembly, HA theme staging, asset staging, and
+CLI orchestration (flagged as an ADR-0000-spirit god object — see
+docs/adr/0000-strict-component-decoupling.md, which already forbids this
+shape for design_system/templates/** sources). Split into
+pipeline/scripts/build_stages/*.py, one stage per file; this module now only
+loads dashboard config/content and orchestrates the stages in order. No
+behavior change — verified by diffing build/staging/ output before/after the
+split for both `svitlo` and `m2m_nextgen`.
+
+CLI: `python pipeline/scripts/build_engine.py [dashboard_id]`
+(defaults to "svitlo" — unchanged from before this file accepted an arg).
+"""
+
+import sys
 from pathlib import Path
 
 import yaml
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from jinja2 import Environment, FileSystemLoader
 
-# --- CONFIGURATION (PATHS) ---
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-ENV_DIR = PROJECT_ROOT / "environments" / "prd_main_house"
-TEMPLATE_DIR = PROJECT_ROOT / "design_system" / "templates"
-BUTTON_CARD_DIR = TEMPLATE_DIR / "button_card"
-LEGACY_BUTTON_CARD_MONOLITH = TEMPLATE_DIR / "button_card_templates.yaml"
-TOKENS_DIR = PROJECT_ROOT / "design_system" / "tokens"
-ASSETS_DIR = PROJECT_ROOT / "design_system" / "assets" / "liquid_glass"
-PACKAGES_SRC_DIR = ENV_DIR / "ha_operator"
-STAGING_DIR = PROJECT_ROOT / "build" / "staging"
-DEFAULT_BACKGROUND = "/local/liquid_glass/ipad_dark_mesh.jpg"
-# Soft limit for atomic design-system sources (ADR 0000 — no god objects).
-MAX_ATOMIC_SOURCE_LINES = 800
+# Direct `python pipeline/scripts/build_engine.py` invocation (this is how
+# CI and every documented workflow run it) puts pipeline/scripts/ on
+# sys.path[0], not the project root, so the internal `pipeline.*` package
+# imports below would fail with ModuleNotFoundError without this — same
+# pattern already used by pipeline/scripts/agentic_repair.py.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
-INLINE_STYLE_RE = re.compile(r"""style\s*=\s*['"]""", re.IGNORECASE)
-# Drop prior stamps so rebuilds replace, not stack.
-BUILD_STAMP_RE = re.compile(
-    r"^#\s*m2m-generated:\s*.+\n?", re.MULTILINE
+from pipeline.scripts.build_stages.asset_stage import stage_packages, stage_www_assets
+from pipeline.scripts.build_stages.button_card_stage import stage_button_card_templates
+from pipeline.scripts.build_stages.common import (
+    DEFAULT_BACKGROUND,
+    ENV_DIR,
+    STAGING_DIR,
+    TEMPLATE_DIR,
+    build_stamp_line,
+    index_topology,
+    load_json,
+    with_build_stamp,
+    yaml_card_list,
 )
-
-
-def build_stamp_line():
-    """YAML comment with local date+time — forces HA Lovelace layout refresh."""
-    stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    return f"# m2m-generated: {stamp}"
-
-
-def with_build_stamp(text):
-    """Prepend (or replace) the build stamp on generated staging YAML."""
-    body = BUILD_STAMP_RE.sub("", text.lstrip("\ufeff")).lstrip("\n")
-    return f"{build_stamp_line()}\n{body}"
-
-
-def resolve_template(env, template_ref):
-    """
-    Load an instance shell by bare template_ref (ADR 0008 taxonomy).
-
-    Search order: layout/ → primitives/ → composites/ → templates root.
-    Prefer taxonomy paths so root duplicates are not required.
-    """
-    candidates = [
-        f"layout/{template_ref}.yaml",
-        f"primitives/{template_ref}.yaml",
-        f"composites/{template_ref}.yaml",
-        f"{template_ref}.yaml",
-    ]
-    for rel in candidates:
-        try:
-            return env.get_template(rel)
-        except TemplateNotFound:
-            continue
-    print(
-        "FATAL_EXCEPTION: template not found for "
-        f"'{template_ref}' (tried: {', '.join(candidates)})"
-    )
-    exit(1)
-
-
-def assert_no_inline_styles(text, source_label):
-    """Reject button-card HTML that embeds inline style attributes."""
-    if INLINE_STYLE_RE.search(text):
-        print(
-            f"FATAL_EXCEPTION: {source_label} contains forbidden inline "
-            "style attributes. Use extra_styles with CSS classes + theme tokens."
-        )
-        exit(1)
-
-
-def assert_no_styles_object(text, source_label):
-    """Option 1: ban button-card styles: objects (they emit inline style=\"\")."""
-    styles_blocks = len(re.findall(r"(?m)^\s{2,}styles:\s*$", text))
-    if styles_blocks:
-        print(
-            f"FATAL_EXCEPTION: {source_label} contains {styles_blocks} "
-            "styles: block(s). Option 1 requires extra_styles + theme tokens only."
-        )
-        exit(1)
-
-
-def load_json(filepath):
-    """Load JSON strictly or halt."""
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print(f"FATAL_EXCEPTION: Missing critical contract {filepath}")
-        exit(1)
-
-
-def yaml_card_list(cards, indent=2):
-    """Format card YAML blocks as a YAML list at the given indent."""
-    pad = " " * indent
-    lines_out = []
-    for block in cards:
-        block = (block or "").strip()
-        if not block:
-            continue
-        block_lines = block.split("\n")
-        lines_out.append(f"{pad}- {block_lines[0]}")
-        for line in block_lines[1:]:
-            lines_out.append(f"{pad}  {line}")
-    return "\n".join(lines_out)
-
-
-def index_topology(topology):
-    """Build floor_id/room_id -> display name maps from spatial topology."""
-    floor_names = {}
-    room_names = {}
-    for floor in topology.get("floors", []):
-        floor_id = floor.get("floor_id")
-        if floor_id:
-            floor_names[floor_id] = floor.get("name", floor_id)
-        for room in floor.get("rooms", []):
-            room_id = room.get("room_id")
-            if room_id:
-                room_names[room_id] = room.get("name", room_id)
-    return floor_names, room_names
-
-
-def render_component(env, hardware_map, comp):
-    """
-    Render one component block (no leading list dash).
-
-    Supports:
-      - hardware-bound: logical_id + template_ref (+ label)
-      - layout-bound: template_ref + custom_props (+ optional logical_id / entity_id)
-    """
-    template_ref = comp.get("template_ref")
-    if not template_ref:
-        print(f"FATAL_EXCEPTION: component missing template_ref: {comp}")
-        exit(1)
-
-    logical_id = comp.get("logical_id")
-    label = comp.get("label", "Unknown")
-    custom_props = dict(comp.get("custom_props") or {})
-
-    entity_id = custom_props.pop("entity_id", None)
-    domain = None
-
-    if logical_id:
-        hardware_entity = hardware_map.get(logical_id)
-        if not hardware_entity:
-            print(
-                f"FATAL_EXCEPTION: logical_id '{logical_id}' "
-                "not found in global_hardware_map.json"
-            )
-            exit(1)
-        entity_id = hardware_entity["entity_id"]
-        domain = hardware_entity["domain"]
-
-    # Layout template with custom_props may omit hardware binding
-    if logical_id is None and "custom_props" in comp:
-        try:
-            template = resolve_template(env, template_ref)
-            return template.render(
-                entity_id=entity_id or "",
-                domain=domain or "",
-                name=label,
-                custom_props=custom_props,
-            ).strip()
-        except SystemExit:
-            raise
-        except Exception as e:
-            print(f"FATAL_EXCEPTION: Template {template_ref}.yaml failed to render: {e}")
-            exit(1)
-
-    if not logical_id:
-        print(
-            f"FATAL_EXCEPTION: component for '{template_ref}' "
-            "requires logical_id or custom_props"
-        )
-        exit(1)
-
-    try:
-        template = resolve_template(env, template_ref)
-        return template.render(
-            entity_id=entity_id,
-            domain=domain,
-            name=label,
-            custom_props=custom_props,
-        ).strip()
-    except SystemExit:
-        raise
-    except Exception as e:
-        print(f"FATAL_EXCEPTION: Template {template_ref}.yaml failed to render: {e}")
-        exit(1)
-
-
-def wrap_conditional(card_yaml, entity_id, state):
-    """Hide a floor block unless the floor-switch entity matches state.
-
-    Home Assistant's built-in conditional card requires singular `card:` (a map),
-    not `cards:` (a list). Using `cards:` yields Lovelace "Configuration error".
-    """
-    block = (card_yaml or "").strip()
-    if not block:
-        return ""
-    lines = block.split("\n")
-    nested = "\n".join(f"  {line}" for line in lines)
-    return (
-        "type: conditional\n"
-        "conditions:\n"
-        "  - condition: state\n"
-        f"    entity: {entity_id}\n"
-        f'    state: "{state}"\n'
-        "card:\n"
-        f"{nested}"
-    )
-
-
-def render_wrapper(env, wrapper_name, name, cards, header_cards=None, corner_card=None):
-    """Render a floor/room structural wrapper around nested card YAML blocks.
-
-    header_cards: optional full-width row above the mosaic (e.g. floor_disable).
-    corner_card: optional single card YAML block, absolutely positioned in the
-      room_container's top-right corner (e.g. climate_room_off_button). Only
-      climate_room_container's Jinja template consumes it; other wrappers
-      (room_container, floor_container, climate_floor_container) simply
-      ignore the unused template var.
-    """
-    try:
-        template = resolve_template(env, wrapper_name)
-        return template.render(
-            name=name,
-            cards=cards,
-            header_cards=header_cards or [],
-            corner_card=corner_card or "",
-        ).strip()
-    except SystemExit:
-        raise
-    except Exception as e:
-        print(f"FATAL_EXCEPTION: Failed to render {wrapper_name}.yaml: {e}")
-        exit(1)
-
-
-def wrap_floor_tab_row(tab_yaml=None, left_yaml=None, right_yaml=None):
-    """Wrap optional floor tab + flankers in a same-line grid-layout row.
-
-    - 3 cards (left + tab + right): tab stretches; sides stay auto.
-    - Flankers only (no tab, 2 cards): auto auto + place-content center
-      (grid-layout ignores justify-content; see lovelace-layout-card grid.ts).
-    - Other flanker counts: centered auto columns.
-    """
-    cards = []
-    if left_yaml:
-        cards.append(left_yaml)
-    if tab_yaml:
-        cards.append(tab_yaml)
-    if right_yaml:
-        cards.append(right_yaml)
-    if not cards:
-        return ""
-
-    nested = yaml_card_list(cards, indent=2)
-    flanked = bool(left_yaml or right_yaml)
-    has_tab = bool(tab_yaml)
-    flankers_only_pair = flanked and not has_tab and len(cards) == 2
-    if has_tab and len(cards) == 3:
-        # Side circles stay auto; tab absorbs free shell width (iPhone H-fit).
-        cols = "auto minmax(0, 1fr) auto"
-        place_content = "start stretch"
-        width_line = "  width: 100%\n"
-        margin = '0 0 var(--lg_space_gap_sm) 0'
-    elif flankers_only_pair:
-        # Centered pair (mic + disable) — not pinned to screen halves.
-        cols = "auto auto"
-        place_content = "center"
-        width_line = "  width: 100%\n"
-        margin = "0"
-    else:
-        cols = " ".join(["auto"] * len(cards))
-        place_content = "center"
-        width_line = "  width: 100%\n" if flanked and not has_tab else ""
-        margin = '0 0 var(--lg_space_gap_sm) 0'
-    gap = "var(--lg_space_tab_side_gap)" if flanked else "0"
-    return (
-        "type: custom:layout-card\n"
-        "layout_type: custom:grid-layout\n"
-        "layout:\n"
-        f'  grid-template-columns: "{cols}"\n'
-        '  grid-template-rows: "auto"\n'
-        f'  grid-gap: "{gap}"\n'
-        f"  place-content: {place_content}\n"
-        f"{width_line}"
-        "  place-items: center\n"
-        f'  margin: "{margin}"\n'
-        '  padding: "0"\n'
-        "cards:\n"
-        f"{nested}"
-    )
-
-
-def _resolve_view_flankers(view_def, layout):
-    """Per-view floor_tab_flankers override, else layout_containers default."""
-    if "floor_tab_flankers" in view_def:
-        return view_def.get("floor_tab_flankers") or {}
-    return layout.get("floor_tab_flankers") or {}
-
-
-def _render_flanker_pair(env, hardware_map, flankers):
-    left_def = flankers.get("left")
-    right_def = flankers.get("right")
-    left_yaml = render_component(env, hardware_map, left_def) if left_def else None
-    right_yaml = render_component(env, hardware_map, right_def) if right_def else None
-    return left_yaml, right_yaml
-
-
-def _render_room_cards_for_floor(
-    env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id,
-    room_corner_actions_map=None,
-):
-    """Build room_container YAML blocks for a floor's room id list."""
-    floor_cards = []
-    for room_id in rooms:
-        components = room_content.get(room_id)
-        if components is None:
-            print(
-                f"WARNING: Room '{room_id}' mapped in '{floor_id}' "
-                "but missing in room_content"
-            )
-            continue
-        room_cards = [
-            render_component(env, hardware_map, comp) for comp in components
-        ]
-        room_name = room_names.get(room_id, room_id.replace("_", " ").title())
-        corner_defs = (room_corner_actions_map or {}).get(room_id) or []
-        corner_card = (
-            render_component(env, hardware_map, corner_defs[0])
-            if corner_defs
-            else None
-        )
-        floor_cards.append(
-            render_wrapper(env, room_wrapper, room_name, room_cards, corner_card=corner_card)
-        )
-    return floor_cards
-
-
-def compile_hierarchical_view(
-    env,
-    hardware_map,
-    content_map,
-    view_def,
-    room_content,
-    names,
-    floor_actions_map=None,
-    room_corner_actions_map=None,
-):
-    """Compile optional floor_tab_switch + per-floor or flat room trees.
-
-    Per-view overrides on view_def:
-      - floor_switch: false → no tab, no conditionals (default: use layout floor_switch)
-      - floor_presentation: "flat" | "sections" (default "sections")
-        flat → one mosaic of all rooms; skip per-floor headers / floor_actions
-      - floor_tab_flankers: replace layout_containers.floor_tab_flankers
-      - floor_wrapper / room_wrapper: replace layout_containers wrappers
-    floor_actions_map defaults to content_map["floor_actions"].
-    room_corner_actions_map: optional {room_id: [component]} — single card
-      absolutely positioned in that room_container's top-right corner (e.g.
-      climate_room_off_button). Defaults to content_map["room_corner_actions"].
-    """
-    floor_names, room_names = names
-    floors = view_def["include_floors"]
-    layout = content_map.get("layout_containers", {})
-    if floor_actions_map is None:
-        floor_actions_map = content_map.get("floor_actions", {})
-    if room_corner_actions_map is None:
-        room_corner_actions_map = content_map.get("room_corner_actions", {})
-
-    floor_wrapper = view_def.get(
-        "floor_wrapper", layout.get("floor_wrapper", "floor_container")
-    )
-    room_wrapper = view_def.get(
-        "room_wrapper", layout.get("room_wrapper", "room_container")
-    )
-    presentation = view_def.get("floor_presentation", "sections")
-    use_floor_switch = view_def.get("floor_switch", True)
-
-    card_blocks = []
-    switch_entity_id = None
-    switch_def = layout.get("floor_switch") if use_floor_switch else None
-    flankers = _resolve_view_flankers(view_def, layout)
-    flat_flanker_header = None
-
-    if switch_def:
-        logical_id = switch_def.get("logical_id")
-        custom_props = switch_def.get("custom_props") or {}
-        if logical_id and logical_id in hardware_map:
-            switch_entity_id = hardware_map[logical_id]["entity_id"]
-        elif custom_props.get("entity_id"):
-            switch_entity_id = custom_props["entity_id"]
-        else:
-            print(
-                "WARNING: floor_switch has no logical_id/entity_id — "
-                "both floors will render; tab state will not drive visibility"
-            )
-        tab_yaml = render_component(env, hardware_map, switch_def)
-        left_yaml, right_yaml = _render_flanker_pair(env, hardware_map, flankers)
-        card_blocks.append(wrap_floor_tab_row(tab_yaml, left_yaml, right_yaml))
-    elif flankers:
-        left_yaml, right_yaml = _render_flanker_pair(env, hardware_map, flankers)
-        row = wrap_floor_tab_row(None, left_yaml, right_yaml)
-        if row and presentation == "flat":
-            # Inside floor glass (header_cards) — closer to room labels.
-            flat_flanker_header = row
-        elif row:
-            card_blocks.append(row)
-
-    if presentation == "flat":
-        all_rooms = []
-        for floor_id, rooms in floors.items():
-            all_rooms.extend(
-                _render_room_cards_for_floor(
-                    env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id,
-                    room_corner_actions_map=room_corner_actions_map,
-                )
-            )
-        if all_rooms:
-            # One anonymous floor mosaic (title hidden when name is empty).
-            headers = [flat_flanker_header] if flat_flanker_header else []
-            card_blocks.append(
-                render_wrapper(
-                    env, floor_wrapper, "", all_rooms, header_cards=headers
-                )
-            )
-        return card_blocks
-
-    for floor_id, rooms in floors.items():
-        header_cards = []
-        for action_comp in floor_actions_map.get(floor_id, []):
-            header_cards.append(render_component(env, hardware_map, action_comp))
-
-        floor_cards = _render_room_cards_for_floor(
-            env, hardware_map, room_wrapper, room_names, rooms, room_content, floor_id,
-            room_corner_actions_map=room_corner_actions_map,
-        )
-
-        floor_name = floor_names.get(floor_id, floor_id)
-        floor_block = render_wrapper(
-            env, floor_wrapper, floor_name, floor_cards, header_cards=header_cards
-        )
-
-        option_key = f"option_{floor_id}"
-        option_state = floor_id
-        if switch_def:
-            option_state = (switch_def.get("custom_props") or {}).get(
-                option_key, floor_id
-            )
-
-        if switch_entity_id:
-            floor_block = wrap_conditional(floor_block, switch_entity_id, option_state)
-
-        card_blocks.append(floor_block)
-
-    return card_blocks
-
-
-def compile_flat_view(env, hardware_map, view_def, room_content):
-    """Legacy flat room_content → card list."""
-    # Missing key = all rooms; explicit [] = empty view (do not use falsy `or`).
-    if "include_rooms" in view_def:
-        include_rooms = view_def["include_rooms"]
-    else:
-        include_rooms = list(room_content.keys())
-    card_blocks = []
-    for room_id in include_rooms:
-        components = room_content.get(room_id)
-        if components is None:
-            print(f"FATAL_EXCEPTION: room '{room_id}' missing from room_content")
-            exit(1)
-        for comp in components:
-            card_blocks.append(render_component(env, hardware_map, comp))
-    return card_blocks
-
-
-def write_legacy_room_view(views_dir, room_id, room_yaml_blocks):
-    room_file = views_dir / f"{room_id}.yaml"
-    chunks = [
-        f'title: "{room_id.replace("_", " ").title()}"\n',
-        f"path: {room_id}\n",
-    ]
-    if room_yaml_blocks:
-        chunks.append("cards:\n")
-        chunks.append(yaml_card_list(room_yaml_blocks, indent=2))
-        chunks.append("\n")
-    else:
-        chunks.append("cards: []\n")
-    room_file.write_text(with_build_stamp("".join(chunks)), encoding="utf-8")
-
-
-def collect_button_card_sources():
-    """
-    Atomic BCT sources under design_system/templates/button_card/ (ADR 0000).
-
-    macros/*.yaml first (Jinja macros), then domain entry YAMLs (one key each).
-    Instance shells in layout/primitives/composites are NOT included.
-    """
-    if not BUTTON_CARD_DIR.is_dir():
-        print(
-            "FATAL_EXCEPTION: missing button_card source tree at "
-            f"{BUTTON_CARD_DIR} (ADR 0000)"
-        )
-        exit(1)
-
-    macros_dir = BUTTON_CARD_DIR / "macros"
-    macro_files = sorted(macros_dir.glob("*.yaml")) if macros_dir.is_dir() else []
-    entry_files = sorted(
-        p
-        for p in BUTTON_CARD_DIR.rglob("*.yaml")
-        if "macros" not in p.relative_to(BUTTON_CARD_DIR).parts
-    )
-    if not entry_files:
-        print(
-            "FATAL_EXCEPTION: no button_card entry YAML files under "
-            f"{BUTTON_CARD_DIR}"
-        )
-        exit(1)
-    return macro_files, entry_files
-
-
-def assemble_button_card_source(macro_files, entry_files):
-    """Concatenate macros + wrapper + indented dictionary entries (exact text)."""
-    parts = []
-    for path in macro_files:
-        text = path.read_text(encoding="utf-8")
-        if text and not text.endswith("\n"):
-            text += "\n"
-        parts.append(text)
-    parts.append("button_card_templates:\n")
-    for path in entry_files:
-        text = path.read_text(encoding="utf-8")
-        if text and not text.endswith("\n"):
-            text += "\n"
-        parts.append(text)
-    return "".join(parts)
-
-
-def assert_no_god_object_sources():
-    """Reject legacy monolith and oversized atomic sources (ADR 0000)."""
-    if LEGACY_BUTTON_CARD_MONOLITH.exists():
-        print(
-            "FATAL_EXCEPTION: legacy god object still present: "
-            f"{LEGACY_BUTTON_CARD_MONOLITH}. Edit atomic files under "
-            f"{BUTTON_CARD_DIR}/ instead (ADR 0000)."
-        )
-        exit(1)
-
-    # Scan design_system/templates for oversized YAML (exclude compiled staging).
-    offenders = []
-    for path in TEMPLATE_DIR.rglob("*.yaml"):
-        # Skip nothing under templates — all are sources. button_card entries
-        # must stay atomic; instance shells too.
-        try:
-            n = sum(1 for _ in path.open(encoding="utf-8"))
-        except OSError as e:
-            print(f"FATAL_EXCEPTION: cannot read {path}: {e}")
-            exit(1)
-        if n > MAX_ATOMIC_SOURCE_LINES:
-            offenders.append(f"{path.relative_to(PROJECT_ROOT)} ({n} lines)")
-    if offenders:
-        print(
-            "FATAL_EXCEPTION: god-object source file(s) exceed "
-            f"{MAX_ATOMIC_SOURCE_LINES} lines (ADR 0000 / SOLID):"
-        )
-        for item in offenders:
-            print(f"  - {item}")
-        exit(1)
-
-
-def stage_button_card_templates(env):
-    """
-    Emit HA-ready button_card_templates for dashboard !include.
-
-    Sources are atomic YAML under design_system/templates/button_card/;
-    the staged include is the inner mapping only (no wrapper key, no Jinja).
-    """
-    assert_no_god_object_sources()
-    macro_files, entry_files = collect_button_card_sources()
-    source = assemble_button_card_source(macro_files, entry_files)
-    try:
-        rendered = env.from_string(source).render().strip()
-    except Exception as e:
-        print(f"FATAL_EXCEPTION: button_card sources failed to render: {e}")
-        exit(1)
-
-    assert_no_inline_styles(rendered, "button_card (rendered)")
-    assert_no_styles_object(rendered, "button_card (rendered)")
-
-    lines = rendered.splitlines()
-    if not lines or lines[0].strip() != "button_card_templates:":
-        print(
-            "FATAL_EXCEPTION: assembled button_card sources must render with "
-            "leading 'button_card_templates:'"
-        )
-        exit(1)
-
-    body = []
-    for line in lines[1:]:
-        if line.startswith("  "):
-            body.append(line[2:])
-        else:
-            body.append(line)
-
-    out = STAGING_DIR / "button_card_templates.yaml"
-    body_text = "\n".join(body).rstrip() + "\n"
-    # Validate mapping body without the stamp comment.
-    try:
-        yaml.safe_load(body_text)
-    except yaml.YAMLError as e:
-        print(
-            "FATAL_EXCEPTION: staged button_card_templates.yaml is invalid YAML "
-            f"(check extra_styles macro indentation): {e}"
-        )
-        exit(1)
-    out.write_text(with_build_stamp(body_text), encoding="utf-8")
-    print(
-        f"  -> Staged button_card_templates.yaml ({len(body)} lines) "
-        f"from {len(macro_files)} macros + {len(entry_files)} entries"
-    )
-
-
-def _yaml_quote(value):
-    """Quote a CSS/token value for HA theme YAML."""
-    text = str(value)
-    escaped = text.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
-
-
-def stage_ha_theme(theme_reference):
-    """
-    Emit HA frontend theme YAML from design_system/tokens/{theme}.json.
-
-    Target shape for `frontend.themes: !include_dir_merge_named themes`:
-      themes/{theme_reference}.yaml
-        {theme_reference}:
-          modes:
-            dark:
-              primary-background-color / lg_*: "..."
-
-    WHY modes.dark (HA frontend themes-mixin + apply_themes_on_element):
-      - Without `modes.dark`, HA forces darkMode=false even when the user
-        selected Dark for the theme → light semantic form surfaces
-        (--ha-color-form-background ≈ #f3f3f3) + our white primary-text.
-      - Dark-only themes declare only `modes.dark` (no `modes.light`) so HA
-        keeps darkMode=true and injects darkColorVariables /
-        darkSemanticVariables (ha-picker-field reads --ha-color-form-background).
-
-    IMPORTANT: HA processTheme() always prefixes keys with '--'. Token keys must
-    be unprefixed (lg_size_switch_w), never --lg_*, or the browser gets ----lg_*.
-    """
-    token_path = TOKENS_DIR / f"{theme_reference}.json"
-    tokens = load_json(token_path)
-    primitive = tokens.get("primitive")
-    if not isinstance(primitive, dict) or not primitive:
-        print(
-            f"FATAL_EXCEPTION: {token_path} missing non-empty 'primitive' map"
-        )
-        exit(1)
-
-    # Dark-only liquid glass: all primitives live under modes.dark (HA gate).
-    lines = [
-        f"# Auto-generated from design_system/tokens/{theme_reference}.json",
-        f"# Dark-only: modes.dark present, no modes.light → HA darkMode=true",
-        f"{theme_reference}:",
-        "  modes:",
-        "    dark:",
-    ]
-    for key, value in primitive.items():
-        # HA always does `--${key}`; strip accidental leading dashes from tokens.
-        theme_key = key[2:] if key.startswith("--") else key
-        lines.append(f"      {theme_key}: {_yaml_quote(value)}")
-
-    themes_dir = STAGING_DIR / "themes"
-    themes_dir.mkdir(parents=True, exist_ok=True)
-    out = themes_dir / f"{theme_reference}.yaml"
-    out.write_text(with_build_stamp("\n".join(lines) + "\n"), encoding="utf-8")
-    print(
-        f"  -> Staged themes/{theme_reference}.yaml "
-        f"({len(primitive)} vars under modes.dark)"
-    )
-    return out
-
-
-def stage_www_assets():
-    """
-    Copy design_system/assets/liquid_glass/* into staging for /local/liquid_glass/.
-    """
-    if not ASSETS_DIR.is_dir():
-        print(f"FATAL_EXCEPTION: Missing wallpaper assets at {ASSETS_DIR}")
-        exit(1)
-
-    assets = sorted(
-        p for p in ASSETS_DIR.iterdir() if p.is_file() and not p.name.startswith(".")
-    )
-    if not assets:
-        print(f"FATAL_EXCEPTION: No wallpaper files in {ASSETS_DIR}")
-        exit(1)
-
-    out_dir = STAGING_DIR / "www" / "liquid_glass"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    for src in assets:
-        shutil.copy2(src, out_dir / src.name)
-    print(f"  -> Staged www/liquid_glass/ ({len(assets)} files)")
-    return out_dir
-
-
-def stage_packages():
-    """
-    Copy Git-managed HA packages into staging/packages/ (ADR-0051).
-
-    Source of truth: environments/.../ha_operator/*.yaml → /config/packages/
-    on Edge via whitelist CD. Leaves default automations.yaml free for HAOS UI
-    edits (avoids State Collision with Git-owned advanced automations).
-    """
-    out_dir = STAGING_DIR / "packages"
-    if out_dir.exists():
-        shutil.rmtree(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    if not PACKAGES_SRC_DIR.is_dir():
-        print(
-            f"  -> No packages source at {PACKAGES_SRC_DIR.relative_to(PROJECT_ROOT)} "
-            "(packages/ staged empty)"
-        )
-        return out_dir
-
-    packages = sorted(
-        p
-        for p in PACKAGES_SRC_DIR.iterdir()
-        if p.is_file() and p.suffix in {".yaml", ".yml"} and not p.name.startswith(".")
-    )
-    for src in packages:
-        shutil.copy2(src, out_dir / src.name)
-    print(
-        f"  -> Staged packages/ ({len(packages)} files) from "
-        f"{PACKAGES_SRC_DIR.relative_to(PROJECT_ROOT)}"
-    )
-    return out_dir
+from pipeline.scripts.build_stages.theme_stage import stage_ha_theme
+from pipeline.scripts.build_stages.view_compiler import (
+    compile_flat_view,
+    compile_hierarchical_view,
+    render_component,
+    write_legacy_room_view,
+)
 
 
 def load_dashboard_config(dashboard_id):
@@ -861,8 +166,13 @@ def build_dashboard(dashboard_id):
             for extra in view_def.get("extra_cards", []) or []:
                 extra_card_blocks.append(render_component(env, hardware_map, extra))
 
+            # Optional per-view shell override (default preserves every existing
+            # dashboard byte-for-byte — ADR-0014 isolation: a dashboard that wants
+            # different SPA-shell behavior forks a NEW layout/*.yaml instead of
+            # editing the shared home_view.yaml that other dashboards depend on).
+            layout_template_ref = view_def.get("layout_template", "layout/home_view.yaml")
             try:
-                home_template = env.get_template("layout/home_view.yaml")
+                home_template = env.get_template(layout_template_ref)
                 rendered_view = home_template.render(
                     title=view_title,
                     path=view_path,
@@ -871,7 +181,7 @@ def build_dashboard(dashboard_id):
                     background_image=background_image,
                 )
             except Exception as e:
-                print(f"FATAL_EXCEPTION: layout/home_view.yaml failed to render: {e}")
+                print(f"FATAL_EXCEPTION: {layout_template_ref} failed to render: {e}")
                 exit(1)
 
             view_file = views_dir / f"{view_path}.yaml"
@@ -931,4 +241,10 @@ def build_dashboard(dashboard_id):
 
 
 if __name__ == "__main__":
-    build_dashboard("svitlo")
+    # Backward-compatible: no arg still builds "svitlo" exactly as before.
+    # New: `python pipeline/scripts/build_engine.py <dashboard_id>` builds any
+    # dashboard under environments/prd_main_house/dashboards/ (previously the
+    # target was hardcoded, so a second dashboard could not be built without
+    # editing this file — flagged in the pipeline code review).
+    target = sys.argv[1] if len(sys.argv) > 1 else "svitlo"
+    build_dashboard(target)
