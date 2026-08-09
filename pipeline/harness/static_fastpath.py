@@ -23,10 +23,28 @@ class FastPathError(HarnessError):
 
 
 def _resolve(path: str | Path) -> Path:
+    """
+    Resolve a caller-supplied path, confined to PROJECT_ROOT.
+
+    SECURITY (found in code review 2026-08-09): `fastpath_analyze` is
+    registered READ_ONLY in risk.py (always allowed, no gate). Before this
+    fix, an absolute or `../`-escaping path was resolved verbatim and read
+    from disk — an arbitrary-file-read oracle for anything readable by the
+    harness process (e.g. `/etc/passwd`, `~/.ssh/id_rsa`), reachable from a
+    tool advertised as safe-to-always-allow. Containment turns that into a
+    rejected FastPathError instead.
+    """
     candidate = Path(path)
     if not candidate.is_absolute():
         candidate = PROJECT_ROOT / candidate
-    return candidate.resolve()
+    resolved = candidate.resolve()
+    root = PROJECT_ROOT.resolve()
+    if resolved != root and root not in resolved.parents:
+        raise FastPathError(
+            f"path escapes project root: {path!r} resolved to {resolved} "
+            f"(must stay under {root}) — STD-12 sandbox containment"
+        )
+    return resolved
 
 
 def _diag_python(path: Path, text: str) -> list[str]:

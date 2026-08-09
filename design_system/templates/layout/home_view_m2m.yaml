@@ -1,0 +1,52 @@
+{#- m2m_nextgen SPA shell (ISOLATED FORK of layout/home_view.yaml — ADR-0014).
+   Two differences from the shared shell, both scoped to this dashboard only:
+   1. No `type: panel` — HA renders the native view tab-strip, which gives
+      free swipe-between-tabs on iOS/Android companion + mobile Safari
+      (mandatory rule ENABLE_SWIPE_BETWEEN_TABS) without adopting an
+      unlisted HACS plugin (ADR-0010 forbids undeployed plugins).
+   2. extra_card_blocks (header summary widgets) render BEFORE card_blocks,
+      not after — so active-climate/active-lighting summaries sit at the
+      top of the page. svitlo's home_view.yaml is untouched. -#}
+title: "{{ title }}"
+path: {{ path }}
+theme: m2m_glass_carbon_neon
+background: "center / cover no-repeat url('{{ background_image | default('/local/liquid_glass/ios_dark_waves.jpg') }}') fixed"
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "1fr"
+      justify-content: center
+      justify-items: stretch
+      width: 100%
+      max-width: "var(--lg_size_shell_w)"
+      margin: 0 auto
+      padding: clamp(0.5rem, 1.25vw, 1rem) clamp(1rem, 2.5vw, 2.5rem)
+      box-sizing: border-box
+{%- if card_blocks or extra_card_blocks %}
+    cards:
+{%- for block in extra_card_blocks | default([]) %}
+{%- set lines = block.strip().split('\n') %}
+      - {{ lines[0] }}
+{%- for line in lines[1:] %}
+        {{ line }}
+{%- endfor %}
+
+{%- endfor %}
+{%- if card_blocks %}
+      - type: vertical-stack
+        view_layout:
+          grid-column: 1
+        cards:
+{%- for block in card_blocks %}
+{%- set lines = block.strip().split('\n') %}
+          - {{ lines[0] }}
+{%- for line in lines[1:] %}
+            {{ line }}
+{%- endfor %}
+
+{%- endfor %}
+{%- endif %}
+{%- else %}
+    cards: []
+{%- endif %}

@@ -1,0 +1,10 @@
+{# Header widget: live count of climate entities not in 'off' (EXTRACTIVE new composite) #}
+{%- set props = custom_props | default({}) %}
+{%- set entity_ids = props.get('ha_entity_ids') %}
+type: custom:button-card
+template: m2m_summary_widget
+name: "{{ label | default('Клімат активний') }}"
+icon: mdi:snowflake-thermometer
+variables:
+  ha_entity_ids: {{ (entity_ids if entity_ids is sequence and entity_ids is not string else []) | tojson }}
+  active_state: climate_active

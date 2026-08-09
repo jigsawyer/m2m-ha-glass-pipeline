@@ -26,10 +26,29 @@ class TddHooksError(HarnessError):
 
 
 def _resolve(path: str | Path) -> Path:
+    """
+    Resolve a caller-supplied path, confined to PROJECT_ROOT.
+
+    SECURITY (found in code review 2026-08-09): `tdd_gate_check` is
+    registered READ_ONLY in risk.py, so authorize_tool() lets every call
+    through unconditionally. Before this fix, an absolute or `../`-escaping
+    `test_path`/`paths` entry was resolved verbatim and, with
+    phase="green", run_pytest=true, was handed straight to
+    `subprocess.run([interpreter, "-m", "pytest", target, ...])` —
+    arbitrary-file execution from a tool advertised as safe-to-always-allow.
+    Containment turns that into a rejected TddHooksError instead.
+    """
     candidate = Path(path)
     if not candidate.is_absolute():
         candidate = PROJECT_ROOT / candidate
-    return candidate.resolve()
+    resolved = candidate.resolve()
+    root = PROJECT_ROOT.resolve()
+    if resolved != root and root not in resolved.parents:
+        raise TddHooksError(
+            f"path escapes project root: {path!r} resolved to {resolved} "
+            f"(must stay under {root}) — STD-12 sandbox containment"
+        )
+    return resolved
 
 
 def infer_unit_test_path(source: Path) -> Path | None:
