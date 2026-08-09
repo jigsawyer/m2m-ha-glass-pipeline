@@ -14,6 +14,7 @@ CLI: `python pipeline/scripts/build_engine.py [dashboard_id]`
 (defaults to "svitlo" — unchanged from before this file accepted an arg).
 """
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -59,8 +60,28 @@ def load_dashboard_config(dashboard_id):
     return load_json(path)
 
 
-def build_dashboard(dashboard_id):
-    print(f"[1/4] Starting Build Engine for target: {dashboard_id}")
+def build_dashboard(dashboard_id, *, nested=False):
+    """Compile one dashboard into staging.
+
+    nested=False (default): classic layout — dashboard.yaml + views/ at the
+    STAGING_DIR root. This is the primary dashboard slot (svitlo) that
+    edge-state / publish_edge.sh and the Docker e2e sandbox all assume.
+    Byte-for-byte unchanged behavior.
+
+    nested=True (2026-08-09, multi-dashboard publish): the dashboard's own
+    tree (dashboard.yaml + views/ + a copy of button_card_templates.yaml for
+    the relative !include) is written under
+    STAGING_DIR/dashboards/<dashboard_id>/ instead, WITHOUT touching the root
+    dashboard.yaml/views. Shared stages (themes/, www/, packages/) still land
+    in their usual shared staging locations, so a nested dashboard's theme
+    deploys to /config/themes/ alongside the primary one. publish_edge.sh
+    commits the whole staging tree, so the nested subtree reaches
+    /config/edge-state/dashboards/<id>/ — registered in HA via a manual
+    lovelace.dashboards entry pointing at
+    edge-state/dashboards/<id>/dashboard.yaml.
+    """
+    mode = "nested" if nested else "root"
+    print(f"[1/4] Starting Build Engine for target: {dashboard_id} ({mode})")
 
     hardware_map = load_json(ENV_DIR / "global_hardware_map.json")
     content_map = load_json(
@@ -73,8 +94,11 @@ def build_dashboard(dashboard_id):
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), trim_blocks=False)
     env.filters["yaml_cards"] = yaml_card_list
 
-    STAGING_DIR.mkdir(parents=True, exist_ok=True)
-    views_dir = STAGING_DIR / "views"
+    out_root = (
+        STAGING_DIR / "dashboards" / dashboard_id if nested else STAGING_DIR
+    )
+    out_root.mkdir(parents=True, exist_ok=True)
+    views_dir = out_root / "views"
     if views_dir.exists():
         for stale in views_dir.glob("*.yaml"):
             stale.unlink()
@@ -82,6 +106,14 @@ def build_dashboard(dashboard_id):
 
     print("[1b/4] Staging button_card_templates...")
     stage_button_card_templates(env)
+    if nested:
+        # dashboard.yaml uses a relative `!include button_card_templates.yaml`
+        # (HA resolves !include relative to the including file), so the nested
+        # tree needs its own copy of the shared bundle next to it.
+        shutil.copyfile(
+            STAGING_DIR / "button_card_templates.yaml",
+            out_root / "button_card_templates.yaml",
+        )
 
     theme_reference = (
         dash_config.get("theme_reference")
@@ -221,7 +253,7 @@ def build_dashboard(dashboard_id):
         print(f"FATAL_EXCEPTION: layout/dashboard.yaml failed to render: {e}")
         exit(1)
 
-    root_yaml = STAGING_DIR / "dashboard.yaml"
+    root_yaml = out_root / "dashboard.yaml"
     root_yaml.write_text(with_build_stamp(root_content), encoding="utf-8")
 
     missing_views = [
@@ -236,15 +268,18 @@ def build_dashboard(dashboard_id):
         )
         exit(1)
 
-    print(f"[4/4] BUILD COMPLETE. Artifacts ready in {STAGING_DIR}")
+    print(f"[4/4] BUILD COMPLETE. Artifacts ready in {out_root}")
     print(f"  -> Build stamp: {build_stamp_line()}")
 
 
 if __name__ == "__main__":
     # Backward-compatible: no arg still builds "svitlo" exactly as before.
-    # New: `python pipeline/scripts/build_engine.py <dashboard_id>` builds any
-    # dashboard under environments/prd_main_house/dashboards/ (previously the
-    # target was hardcoded, so a second dashboard could not be built without
-    # editing this file — flagged in the pipeline code review).
-    target = sys.argv[1] if len(sys.argv) > 1 else "svitlo"
-    build_dashboard(target)
+    # `python pipeline/scripts/build_engine.py <dashboard_id>` builds any
+    # dashboard under environments/prd_main_house/dashboards/.
+    # `--nested` writes the dashboard tree under staging dashboards/<id>/
+    # instead of the staging root (multi-dashboard publish, 2026-08-09) —
+    # used by CI to ship m2m_nextgen alongside the primary svitlo build.
+    args = [a for a in sys.argv[1:] if a != "--nested"]
+    nested_flag = "--nested" in sys.argv[1:]
+    target = args[0] if args else "svitlo"
+    build_dashboard(target, nested=nested_flag)
