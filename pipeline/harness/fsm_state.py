@@ -30,7 +30,9 @@ DEFAULT_FSM: dict[str, Any] = {
     "current_fsm_state": "IDLE",
     "active_branch": "",
     "step_matrix": [],
-    "human_summary_export": ".cursor/STATE.md",
+    # 2026-08-09: moved off .cursor/STATE.md — Cursor IDE configs retired
+    # repo-wide in favor of the M2M MCP Server. Mirrors paths.STATE_MD_PATH.
+    "human_summary_export": "_local_ai/memory/stm/STATE.md",
 }
 
 
@@ -183,7 +185,8 @@ def export_fsm_human_summary(
             "",
             "## LATEST_ARCHITECTURAL_DECISION",
             "",
-            "See STD index + ADR-0066 (machine-native bounded graph).",
+            "See STD index (docs/adr/ retired 2026-08-09; full history in git "
+            "tag archive/pre-cursor-adr-retirement).",
             "",
             "## NEXT_STEPS",
             "",
