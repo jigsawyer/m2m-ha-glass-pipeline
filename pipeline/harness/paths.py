@@ -7,9 +7,6 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 ACTIVE_INTENT_PATH = PROJECT_ROOT / "pipeline" / "schemas" / "active_intent.json"
-STATE_MD_PATH = PROJECT_ROOT / ".cursor" / "STATE.md"
-ADR_DIR = PROJECT_ROOT / "docs" / "adr"
-ADR_INDEX_PATH = ADR_DIR / "README.md"
 STD_DIR = PROJECT_ROOT / "_local_ai" / "memory" / "ltm"
 STD_ROOT = STD_DIR / "std"
 STD_INDEX_PATH = STD_ROOT / "index.json"
@@ -31,6 +28,11 @@ LESSONS_PATH = EXPERIENCE_INDEX_PATH
 STM_DIR = PROJECT_ROOT / "_local_ai" / "memory" / "stm"
 FSM_STATE_PATH = STM_DIR / "state.json"
 FSM_STATE_TEMPLATE_PATH = STM_DIR / "state.template.json"
+# Human-readable FSM export (2026-08-09: moved off .cursor/ — Cursor IDE
+# configs retired repo-wide in favor of the M2M MCP Server; docs/adr/ was
+# retired the same day, superseding ADR-0065's "archive stays" clause. Full
+# ADR history remains recoverable via git tag archive/pre-cursor-adr-retirement.)
+STATE_MD_PATH = STM_DIR / "STATE.md"
 A2A_RPC_SCHEMA_PATH = (
     PROJECT_ROOT / "pipeline" / "schemas" / "a2a_rpc.schema.json"
 )
