@@ -6,11 +6,15 @@
       unlisted HACS plugin (ADR-0010 forbids undeployed plugins).
    2. extra_card_blocks (header summary widgets) render BEFORE card_blocks,
       not after — so active-climate/active-lighting summaries sit at the
-      top of the page. svitlo's home_view.yaml is untouched. -#}
+      top of the page. svitlo's home_view.yaml is untouched.
+   Plus (STYLISTIC, 2026-08-09): two fixed neon radial-gradient ambience
+   layers (violet top-left / matrix-green bottom-right) composited over the
+   m2m_neon_splatter.jpg wallpaper — Arcane/Jinx graffiti energy in the
+   backdrop only; card glass keeps reading over the calm carbon center. -#}
 title: "{{ title }}"
 path: {{ path }}
 theme: m2m_glass_carbon_neon
-background: "center / cover no-repeat url('{{ background_image | default('/local/liquid_glass/ios_dark_waves.jpg') }}') fixed"
+background: "radial-gradient(52% 38% at 12% 6%, rgba(138, 48, 255, 0.14), transparent 65%) fixed, radial-gradient(46% 34% at 90% 94%, rgba(0, 255, 102, 0.10), transparent 65%) fixed, center / cover no-repeat url('{{ background_image | default('/local/liquid_glass/m2m_neon_splatter.jpg') }}') fixed"
 cards:
   - type: custom:layout-card
     layout_type: custom:grid-layout
