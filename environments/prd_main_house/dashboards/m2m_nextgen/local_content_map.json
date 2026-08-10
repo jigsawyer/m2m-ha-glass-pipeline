@@ -15,8 +15,21 @@
     "runtime_ui": "home header hosts m2m_top_rooms_shelf — three live rank chips (room label, weekly count, active/total lights) that reorder client-side as the rank sensors change",
     "static_seed": "this content map's include_floors order is the deterministic seed: tracked-switch count per room (descending), ties broken by global_spatial_topology.json order",
     "seed_ranking": {
-      "floor_1": ["kukhnia", "zal", "vitalnia", "dushova", "skhody_i_korydor", "kabinet"],
-      "floor_2": ["ditiacha", "spalnia", "vanna", "tualet", "pralnia"]
+      "floor_1": [
+        "kukhnia",
+        "zal",
+        "vitalnia",
+        "dushova",
+        "skhody_i_korydor",
+        "kabinet"
+      ],
+      "floor_2": [
+        "ditiacha",
+        "spalnia",
+        "vanna",
+        "tualet",
+        "pralnia"
+      ]
     }
   },
   "routing": {
@@ -238,6 +251,21 @@
               "cycle_duration_entity_id": "input_number.dryer_cycle_duration_minutes",
               "delay_mode_entity_id": "input_select.dryer_delay_mode",
               "schedule_script_id": "script.dryer_delay_schedule"
+            }
+          }
+        ]
+      },
+      {
+        "path": "settings",
+        "title": "Налаштування",
+        "layout_template": "layout/m2m_home_shell.yaml",
+        "include_rooms": [],
+        "render_preferences": true,
+        "extra_cards": [
+          {
+            "template_ref": "m2m_settings_panel",
+            "custom_props": {
+              "label": "Поточні налаштування панелі"
             }
           }
         ]

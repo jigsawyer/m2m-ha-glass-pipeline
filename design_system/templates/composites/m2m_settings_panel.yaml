@@ -1,0 +1,28 @@
+{# Admin/Settings panel: read-only reflection of
+   environments/prd_main_house/dashboards/m2m_nextgen/preferences.json
+   (EXTRACTIVE/STRUCTURAL new composite, 2026-08-10). Build-time-toggle
+   model per operator directive: editing preferences.json + re-running the
+   pipeline is the mechanism — this card is a status display, not a live
+   control surface (no new HA input_helpers / runtime writes). #}
+{%- set props = custom_props | default({}) %}
+{%- set density = props.get('layout_density', 'comfortable') %}
+{%- set accent = props.get('theme_accent', 'violet_green') %}
+{%- set room_order_mode = props.get('room_order_mode', 'static') %}
+{%- set visibility = props.get('widget_visibility', {}) %}
+type: custom:button-card
+template: m2m_settings_panel
+name: "{{ label | default('Налаштування панелі') }}"
+icon: mdi:tune-variant
+variables:
+  density: "{{ density }}"
+  accent: "{{ accent }}"
+  room_order_mode: "{{ room_order_mode }}"
+label: |
+  Щільність: {{ density }}
+  Акцент теми: {{ accent }}
+  Порядок кімнат: {{ room_order_mode }}
+{%- for key, val in visibility.items() %}
+  {{ key }}: {{ 'увімкнено' if val else 'вимкнено' }}
+{%- endfor %}
+  ---
+  Змінюється через preferences.json → build → deploy
