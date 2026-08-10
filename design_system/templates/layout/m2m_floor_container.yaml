@@ -1,0 +1,48 @@
+{# ADR-0068 nextgen floor shell (V9 freedom namespace — m2m_nextgen only).
+   One CSS grid, zero masonry literals: `repeat(auto-fill, minmax(...))`
+   collapses to a single column on iPhone and fans out to as many columns
+   as the widescreen desktop can fit — no dual instances, no screen
+   conditionals, no shared-token geometry coupling. Legacy floor_container
+   (svitlo + every other dashboard) is untouched. #}
+type: custom:button-card
+template: m2m_floor_container
+{% if name -%}
+name: {{ name }}
+show_name: true
+{% else -%}
+show_name: false
+{% endif -%}
+custom_fields:
+  content:
+    card:
+      type: custom:layout-card
+      layout_type: custom:grid-layout
+      layout:
+        grid-template-columns: "1fr"
+        grid-gap: "var(--lg_space_gap_header_mosaic)"
+        place-content: start stretch
+        margin: "0"
+        padding: "0"
+      cards:
+{%- if header_cards %}
+        - type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: "1fr"
+            place-items: center
+            margin: "0"
+            padding: "0"
+          cards:
+{{ header_cards | yaml_cards(12) }}
+{%- endif %}
+        - type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: "repeat(auto-fill, minmax(min(17rem, 100%), 1fr))"
+            grid-gap: "var(--lg_space_gap_sm)"
+            place-content: start stretch
+            place-items: start stretch
+            margin: "0"
+            padding: "0"
+          cards:
+{{ cards | yaml_cards(12) }}

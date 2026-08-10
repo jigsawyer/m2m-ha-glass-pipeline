@@ -1,0 +1,84 @@
+  m2m_room_container:
+    # ADR-0068 nextgen-scoped room card (V9 freedom namespace).
+    # Fluid: fills its grid track (desktop multi-column auto-fill) instead of
+    # the legacy fixed lg_size_container_w cap; mobile gets the full column
+    # width for bigger touch surfaces. Legacy room_container untouched.
+    show_icon: false
+    show_name: true
+    show_state: false
+    show_ripple: false
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+    extra_styles: |
+      :host {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+        box-sizing: border-box;
+        align-self: start;
+        height: auto;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        --ha-card-border-radius: 0 !important;
+      }
+      ha-card {
+        position: relative;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        overflow: visible !important;
+        display: block !important;
+        padding: var(--lg_space_pad_y) var(--lg_space_pad_x) !important;
+        border-radius: var(--lg_radius_container);
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        box-shadow: var(--lg_shadow_container);
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+      {{ lg_name_label_extra_styles('--lg_font_room_label_size', '--lg_font_title_weight', '--lg_font_room_tracking', '--lg_line_height_room') }}
+      /* Title + corner action share the header axis; panel spans below. */
+      #container {
+        display: grid !important;
+        grid-template-areas:
+          "room_title room_corner"
+          "room_panel room_panel" !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        grid-template-rows: min-content min-content !important;
+        gap: var(--lg_space_gap_sm);
+        align-items: center !important;
+      }
+      #name {
+        grid-area: room_title;
+        color: var(--lg_color_text);
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0.88;
+      }
+      #content {
+        grid-area: room_panel;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        display: block !important;
+      }
+      #content > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+        display: block !important;
+      }
+      #corner {
+        grid-area: room_corner;
+        justify-self: end;
+      }
+    custom_fields:
+      glass_layers: >
+        {{ lg_glass_stack_html() }}

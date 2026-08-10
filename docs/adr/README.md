@@ -74,3 +74,4 @@ ADRs are **append-only**. To change a decision, create a new ADR and set the old
 | [0065](0065-canonical-std-layer-transition.md) | Canonical STD Layer Transition — Machine-First Development SoT | 2026-08-03 | Accepted (bounded-context `std/` layout; path-scoped `check_adr_policy`) |
 | [0066](0066-machine-native-bounded-graph.md) | Machine-Native Bounded Knowledge Graph — Experience LTM, FSM STM, A2A | 2026-08-03 | Accepted (hard cutover; hybrid runtime isolation) |
 | [0067](0067-reflection-engine-section6-innovations.md) | Reflection Engine & Section 6 Harness Innovations | 2026-08-03 | Accepted (amends STD-12 / STD-15) |
+| [0068](0068-dual-scope-rule-isolation.md) | Dual-Scope Rule Isolation — Legacy Preserved / NextGen Unconstrained | 2026-08-10 | Accepted (scoped STD-05 waiver for m2m_* namespace) |

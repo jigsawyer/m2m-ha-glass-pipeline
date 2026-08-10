@@ -3,13 +3,16 @@
   "theme_reference": "m2m_glass_carbon_neon",
   "background_image": "/local/liquid_glass/ipad_dark_mesh.jpg",
   "rebuild_meta": {
-    "intent_id": "INTENT-HA-DASHBOARD-PURE-BUSINESS-LOGIC-V7",
+    "intent_id": "INTENT-HA-DASHBOARD-DUAL-SCOPE-ISOLATION-V9",
+    "supersedes": "INTENT-HA-DASHBOARD-PURE-BUSINESS-LOGIC-V7",
+    "scope": "ADR-0068 dual-scope isolation: home view runs on the m2m_* freedom namespace (m2m_home_shell / m2m_floor_container / m2m_room_container / m2m_top_rooms_shelf); legacy shared templates untouched",
     "rebuild": "zero-base WHAT-layer rebuild; entity grounding audited against environments/prd_main_house/global_hardware_map.json, dashboards/svitlo/local_content_map.json (reference-only) and ha_operator packages (STD-06 — no invented entities)",
     "adaptive_delivery": "desktop and mobile render as two independent masonry instances selected by HA native screen conditions inside floor_container/climate_floor_container (HOW-layer contract, unchanged here)"
   },
   "ordering_policy": {
     "rule": "rooms inside each floor are ordered most-used-first by switch turn-on frequency",
     "runtime_engine": "ha_operator/room_usage_ranking.yaml — input_number.m2m_room_usage_* rolling 7-day counters + sensor.m2m_room_usage_order / sensor.m2m_room_usage_rank_1..3 live ranking sensors",
+    "runtime_ui": "home header hosts m2m_top_rooms_shelf — three live rank chips (room label, weekly count, active/total lights) that reorder client-side as the rank sensors change",
     "static_seed": "this content map's include_floors order is the deterministic seed: tracked-switch count per room (descending), ties broken by global_spatial_topology.json order",
     "seed_ranking": {
       "floor_1": ["kukhnia", "zal", "vitalnia", "dushova", "skhody_i_korydor", "kabinet"],
@@ -22,8 +25,12 @@
       {
         "path": "home",
         "title": "Огляд",
-        "layout_template": "layout/home_view_m2m.yaml",
+        "layout_template": "layout/m2m_home_shell.yaml",
         "room_corner_actions_key": "light_room_corner_actions",
+        "floor_switch": false,
+        "floor_wrapper": "m2m_floor_container",
+        "room_wrapper": "m2m_room_container",
+        "floor_tab_flankers": {},
         "include_floors": {
           "floor_1": [
             "kukhnia",
@@ -85,6 +92,69 @@
                 "switch.pralnia_switch"
               ]
             }
+          },
+          {
+            "template_ref": "m2m_top_rooms_shelf",
+            "custom_props": {
+              "slots": 3,
+              "order_sensor_id": "sensor.m2m_room_usage_order",
+              "rank_sensor_prefix": "sensor.m2m_room_usage_rank_",
+              "usage_counter_prefix": "input_number.m2m_room_usage_",
+              "room_entity_map": {
+                "kukhnia": [
+                  "switch.pidsvitka_switch",
+                  "switch.svitlo_switch_3",
+                  "switch.svitlo_switch_4",
+                  "switch.svitlo_3"
+                ],
+                "zal": [
+                  "switch.zal_switch_2",
+                  "switch.zal_switch",
+                  "switch.svitlo_4"
+                ],
+                "vitalnia": [
+                  "switch.vitalnia_svitlo_switch",
+                  "switch.vitalnia_svitlo_switch_2"
+                ],
+                "dushova": [
+                  "switch.vimikach_switch_2",
+                  "switch.vimikach_switch"
+                ],
+                "skhody_i_korydor": [
+                  "switch.svitlo_switch",
+                  "switch.svitlo_switch_2"
+                ],
+                "kabinet": [
+                  "switch.kabinet_vimikach_kabinet"
+                ],
+                "ditiacha": [
+                  "switch.pidsvitka",
+                  "switch.ditiacha_svitlo_switch",
+                  "switch.ditiacha_svitlo_switch_2",
+                  "switch.ditiacha_pidsvitka_terasi",
+                  "switch.svitlo_2"
+                ],
+                "spalnia": [
+                  "switch.vimikach_bilia_vkhodu_switch_2",
+                  "switch.vimikach_bilia_vkhodu_switch",
+                  "switch.balkon_spalnia_svitlo_switch"
+                ],
+                "vanna": [
+                  "switch.lumi_lumi_ctrl_ln1_aq1",
+                  "switch.vitiazhka"
+                ],
+                "tualet": [
+                  "switch.svitlo"
+                ],
+                "pralnia": [
+                  "switch.pralnia_switch"
+                ]
+              }
+            }
+          },
+          {
+            "template_ref": "house_disable_button",
+            "custom_props": {}
           }
         ]
       },
@@ -175,28 +245,8 @@
     ]
   },
   "layout_containers": {
-    "floor_wrapper": "floor_container",
-    "room_wrapper": "room_container",
-    "floor_switch": {
-      "logical_id": "svitlo_floor_tab",
-      "template_ref": "floor_tab_switch",
-      "custom_props": {
-        "label_floor_1": "Перший поверх",
-        "label_floor_2": "Другий поверх",
-        "option_floor_1": "floor_1",
-        "option_floor_2": "floor_2"
-      }
-    },
-    "floor_tab_flankers": {
-      "left": {
-        "template_ref": "floor_voice_placeholder",
-        "custom_props": {}
-      },
-      "right": {
-        "template_ref": "house_disable_button",
-        "custom_props": {}
-      }
-    }
+    "floor_wrapper": "m2m_floor_container",
+    "room_wrapper": "m2m_room_container"
   },
   "floor_actions": {
     "floor_1": [

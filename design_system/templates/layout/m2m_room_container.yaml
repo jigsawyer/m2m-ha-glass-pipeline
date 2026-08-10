@@ -1,0 +1,26 @@
+{# ADR-0068 nextgen room shell (V9 freedom namespace — m2m_nextgen only).
+   Fluid glass card that fills its floor-grid track; switches lay out in
+   their own auto-fill grid with comfortable touch targets on iPhone.
+   Optional corner: room-off on the title axis (build_engine corner_card). #}
+type: custom:button-card
+template: m2m_room_container
+name: {{ name }}
+custom_fields:
+  content:
+    card:
+      type: custom:layout-card
+      layout_type: custom:grid-layout
+      layout:
+        grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+        grid-gap: "var(--lg_space_gap_sm)"
+        place-content: start stretch
+        place-items: start center
+        margin: "0"
+        padding: "0"
+      cards:
+{{ cards | yaml_cards(8) }}
+{%- if corner_card %}
+  corner:
+    card:
+{{ corner_card | indent(6, first=True) }}
+{%- endif %}

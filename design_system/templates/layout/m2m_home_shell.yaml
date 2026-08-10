@@ -1,0 +1,71 @@
+{#- ADR-0068 nextgen SPA home shell (V9 freedom namespace — m2m_nextgen only).
+   Widescreen-first dual-adaptive layout with zero legacy literals:
+   - header zone: summary widgets + live top-rooms rank shelf + house-off,
+     packed by auto-fit grid (side-by-side on desktop, stacked on iPhone);
+   - body zone: floor sections side-by-side on widescreen desktop
+     (auto-fit minmax), single gesture-friendly scroll column on iPhone —
+     no floor tabs, no dual masonry instances, no screen conditionals.
+   Native HA view tab-strip keeps free swipe-between-views on mobile
+   (ENABLE_SWIPE_BETWEEN_TABS; ADR-0010 — no unlisted HACS plugins). -#}
+title: "{{ title }}"
+path: {{ path }}
+theme: m2m_glass_carbon_neon
+background: "center / cover no-repeat url('{{ background_image | default('/local/liquid_glass/ipad_dark_mesh.jpg') }}') fixed"
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "1fr"
+      grid-gap: "var(--lg_space_gap_header_mosaic)"
+      justify-content: center
+      justify-items: stretch
+      width: 100%
+      max-width: min(100%, 110rem)
+      margin: 0 auto
+      padding: clamp(0.5rem, 1.25vw, 1rem) clamp(1rem, 2.5vw, 2.5rem)
+      box-sizing: border-box
+{%- if card_blocks or extra_card_blocks %}
+    cards:
+{%- if extra_card_blocks %}
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: "repeat(auto-fit, minmax(min(14rem, 100%), 1fr))"
+          grid-gap: "var(--lg_space_gap_sm)"
+          place-content: start stretch
+          place-items: stretch
+          margin: "0"
+          padding: "0"
+        cards:
+{%- for block in extra_card_blocks %}
+{%- set lines = block.strip().split('\n') %}
+          - {{ lines[0] }}
+{%- for line in lines[1:] %}
+            {{ line }}
+{%- endfor %}
+
+{%- endfor %}
+{%- endif %}
+{%- if card_blocks %}
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: "repeat(auto-fit, minmax(min(34rem, 100%), 1fr))"
+          grid-gap: "var(--lg_space_gap_header_mosaic)"
+          place-content: start stretch
+          place-items: start stretch
+          margin: "0"
+          padding: "0"
+        cards:
+{%- for block in card_blocks %}
+{%- set lines = block.strip().split('\n') %}
+          - {{ lines[0] }}
+{%- for line in lines[1:] %}
+            {{ line }}
+{%- endfor %}
+
+{%- endfor %}
+{%- endif %}
+{%- else %}
+    cards: []
+{%- endif %}

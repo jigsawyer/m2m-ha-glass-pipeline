@@ -16,6 +16,19 @@ FORBIDDEN_WRITE_PREFIXES = (
     ".github/workflows/",
 )
 
+# ADR-0068 dual-scope rule isolation (INTENT-HA-DASHBOARD-DUAL-SCOPE-ISOLATION-V9):
+# the STD-05 WHAT⟂HOW mixing rule stays fully enforced for the legacy scope
+# (svitlo + every shared design_system primitive/token), but is waived for a
+# Change Set whose design_system paths ALL belong to the m2m-nextgen namespace.
+# Scope predicate is deliberately narrow and name-based: a design_system file
+# is nextgen-scoped iff its basename starts with "m2m_" or it is the already
+# ADR-0014-isolated nextgen SPA shell fork listed in the allowlist below.
+# Any legacy design_system path in the mix re-arms the full STD-05 violation.
+NEXTGEN_DS_BASENAME_PREFIX = "m2m_"
+NEXTGEN_DS_ALLOWLIST = (
+    "design_system/templates/layout/home_view_m2m.yaml",
+)
+
 DOMAIN_PREFIXES: dict[str, tuple[str, ...]] = {
     "pipeline": ("pipeline/",),
     "design_system": ("design_system/",),
@@ -59,6 +72,21 @@ def normalize_repo_path(path: str) -> str:
     return rel
 
 
+def is_nextgen_design_system_path(path: str) -> bool:
+    """True iff a design_system path is inside the m2m-nextgen namespace.
+
+    Legacy design_system paths (svitlo shells, shared primitives, shared
+    tokens) never match, so STD-05 mixing enforcement for the legacy scope
+    is untouched (ADR-0068 dual-scope isolation).
+    """
+    rel = normalize_repo_path(path)
+    if not rel.startswith("design_system/"):
+        return False
+    if rel in NEXTGEN_DS_ALLOWLIST:
+        return True
+    return PurePosixPath(rel).name.startswith(NEXTGEN_DS_BASENAME_PREFIX)
+
+
 def classify_domain(path: str) -> str:
     rel = normalize_repo_path(path)
     if rel == ".cursorrules" or rel.startswith(".cursor/"):
@@ -90,10 +118,12 @@ def evaluate_paths(
     domains = frozenset(classify_domain(p) for p in normalized)
 
     if "environments" in domains and "design_system" in domains:
-        violations.append(
-            "Change Set mixes environments/ (WHAT) and design_system/ (HOW)"
-        )
-        citations.append("STD-05")
+        ds_paths = [p for p in normalized if classify_domain(p) == "design_system"]
+        if not all(is_nextgen_design_system_path(p) for p in ds_paths):
+            violations.append(
+                "Change Set mixes environments/ (WHAT) and design_system/ (HOW)"
+            )
+            citations.append("STD-05")
 
     for rel in normalized:
         if rel == "build/staging" or rel.startswith("build/staging/"):
