@@ -1,0 +1,563 @@
+# m2m-generated: 2026-08-10 22:55:08
+title: "Огляд"
+path: home
+theme: m2m_glass_carbon_neon
+background: "center / cover no-repeat url('/local/liquid_glass/m2m_neon_splatter.jpg') fixed"
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "1fr"
+      grid-gap: "var(--lg_space_gap_header_mosaic)"
+      justify-content: center
+      justify-items: stretch
+      width: 100%
+      max-width: min(100%, 110rem)
+      margin: 0 auto
+      padding: clamp(0.5rem, 1.25vw, 1rem) clamp(1rem, 2.5vw, 2.5rem)
+      box-sizing: border-box
+    cards:
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: "repeat(auto-fit, minmax(min(14rem, 100%), 1fr))"
+          grid-gap: "var(--lg_space_gap_sm)"
+          place-content: start stretch
+          place-items: stretch
+          margin: "0"
+          padding: "0"
+        cards:
+          - type: custom:button-card
+            template: m2m_summary_widget
+            name: "Клімат активний"
+            icon: mdi:snowflake-thermometer
+            variables:
+              ha_entity_ids: ["climate.kabinet_konditsioner_kabinet", "climate.spalnia_konditsioner_spalnia"]
+              active_state: climate_active
+          - type: custom:button-card
+            template: m2m_summary_widget
+            name: "Світло активне"
+            icon: mdi:lightbulb-group
+            variables:
+              ha_entity_ids: ["switch.pidsvitka_switch", "switch.svitlo_switch_3", "switch.svitlo_switch_4", "switch.svitlo_3", "switch.zal_switch_2", "switch.zal_switch", "switch.svitlo_4", "switch.vitalnia_svitlo_switch", "switch.vitalnia_svitlo_switch_2", "switch.vimikach_switch_2", "switch.vimikach_switch", "switch.svitlo_switch", "switch.svitlo_switch_2", "switch.kabinet_vimikach_kabinet", "switch.pidsvitka", "switch.ditiacha_svitlo_switch", "switch.ditiacha_svitlo_switch_2", "switch.ditiacha_pidsvitka_terasi", "switch.svitlo_2", "switch.vimikach_bilia_vkhodu_switch_2", "switch.vimikach_bilia_vkhodu_switch", "switch.balkon_spalnia_svitlo_switch", "switch.lumi_lumi_ctrl_ln1_aq1", "switch.vitiazhka", "switch.svitlo", "switch.pralnia_switch"]
+              active_state: "on"
+          - type: custom:layout-card
+            layout_type: custom:grid-layout
+            layout:
+              grid-template-columns: "repeat(auto-fit, minmax(min(11rem, 100%), 1fr))"
+              grid-gap: "var(--lg_space_gap_sm)"
+              place-content: start stretch
+              place-items: stretch
+              margin: "0"
+              padding: "0"
+            cards:
+              - type: custom:button-card
+                template: m2m_rank_chip
+                variables:
+                  m2m_rank_index: 1
+                  m2m_rank_sensor: sensor.m2m_room_usage_rank_1
+                  m2m_order_sensor: sensor.m2m_room_usage_order
+                  m2m_usage_counter_prefix: input_number.m2m_room_usage_
+                  m2m_room_entity_map: {"ditiacha": ["switch.pidsvitka", "switch.ditiacha_svitlo_switch", "switch.ditiacha_svitlo_switch_2", "switch.ditiacha_pidsvitka_terasi", "switch.svitlo_2"], "dushova": ["switch.vimikach_switch_2", "switch.vimikach_switch"], "kabinet": ["switch.kabinet_vimikach_kabinet"], "kukhnia": ["switch.pidsvitka_switch", "switch.svitlo_switch_3", "switch.svitlo_switch_4", "switch.svitlo_3"], "pralnia": ["switch.pralnia_switch"], "skhody_i_korydor": ["switch.svitlo_switch", "switch.svitlo_switch_2"], "spalnia": ["switch.vimikach_bilia_vkhodu_switch_2", "switch.vimikach_bilia_vkhodu_switch", "switch.balkon_spalnia_svitlo_switch"], "tualet": ["switch.svitlo"], "vanna": ["switch.lumi_lumi_ctrl_ln1_aq1", "switch.vitiazhka"], "vitalnia": ["switch.vitalnia_svitlo_switch", "switch.vitalnia_svitlo_switch_2"], "zal": ["switch.zal_switch_2", "switch.zal_switch", "switch.svitlo_4"]}
+              - type: custom:button-card
+                template: m2m_rank_chip
+                variables:
+                  m2m_rank_index: 2
+                  m2m_rank_sensor: sensor.m2m_room_usage_rank_2
+                  m2m_order_sensor: sensor.m2m_room_usage_order
+                  m2m_usage_counter_prefix: input_number.m2m_room_usage_
+                  m2m_room_entity_map: {"ditiacha": ["switch.pidsvitka", "switch.ditiacha_svitlo_switch", "switch.ditiacha_svitlo_switch_2", "switch.ditiacha_pidsvitka_terasi", "switch.svitlo_2"], "dushova": ["switch.vimikach_switch_2", "switch.vimikach_switch"], "kabinet": ["switch.kabinet_vimikach_kabinet"], "kukhnia": ["switch.pidsvitka_switch", "switch.svitlo_switch_3", "switch.svitlo_switch_4", "switch.svitlo_3"], "pralnia": ["switch.pralnia_switch"], "skhody_i_korydor": ["switch.svitlo_switch", "switch.svitlo_switch_2"], "spalnia": ["switch.vimikach_bilia_vkhodu_switch_2", "switch.vimikach_bilia_vkhodu_switch", "switch.balkon_spalnia_svitlo_switch"], "tualet": ["switch.svitlo"], "vanna": ["switch.lumi_lumi_ctrl_ln1_aq1", "switch.vitiazhka"], "vitalnia": ["switch.vitalnia_svitlo_switch", "switch.vitalnia_svitlo_switch_2"], "zal": ["switch.zal_switch_2", "switch.zal_switch", "switch.svitlo_4"]}
+              - type: custom:button-card
+                template: m2m_rank_chip
+                variables:
+                  m2m_rank_index: 3
+                  m2m_rank_sensor: sensor.m2m_room_usage_rank_3
+                  m2m_order_sensor: sensor.m2m_room_usage_order
+                  m2m_usage_counter_prefix: input_number.m2m_room_usage_
+                  m2m_room_entity_map: {"ditiacha": ["switch.pidsvitka", "switch.ditiacha_svitlo_switch", "switch.ditiacha_svitlo_switch_2", "switch.ditiacha_pidsvitka_terasi", "switch.svitlo_2"], "dushova": ["switch.vimikach_switch_2", "switch.vimikach_switch"], "kabinet": ["switch.kabinet_vimikach_kabinet"], "kukhnia": ["switch.pidsvitka_switch", "switch.svitlo_switch_3", "switch.svitlo_switch_4", "switch.svitlo_3"], "pralnia": ["switch.pralnia_switch"], "skhody_i_korydor": ["switch.svitlo_switch", "switch.svitlo_switch_2"], "spalnia": ["switch.vimikach_bilia_vkhodu_switch_2", "switch.vimikach_bilia_vkhodu_switch", "switch.balkon_spalnia_svitlo_switch"], "tualet": ["switch.svitlo"], "vanna": ["switch.lumi_lumi_ctrl_ln1_aq1", "switch.vitiazhka"], "vitalnia": ["switch.vitalnia_svitlo_switch", "switch.vitalnia_svitlo_switch_2"], "zal": ["switch.zal_switch_2", "switch.zal_switch", "switch.svitlo_4"]}
+          - type: custom:button-card
+            template: house_disable_button
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: "repeat(auto-fit, minmax(min(34rem, 100%), 1fr))"
+          grid-gap: "var(--lg_space_gap_header_mosaic)"
+          place-content: start stretch
+          place-items: start stretch
+          margin: "0"
+          padding: "0"
+        cards:
+          - type: custom:button-card
+            template: m2m_floor_container
+            name: Перший поверх
+            show_name: true
+            custom_fields:
+              content:
+                card:
+                  type: custom:layout-card
+                  layout_type: custom:grid-layout
+                  layout:
+                    grid-template-columns: "1fr"
+                    grid-gap: "var(--lg_space_gap_header_mosaic)"
+                    place-content: start stretch
+                    margin: "0"
+                    padding: "0"
+                  cards:
+                    - type: custom:layout-card
+                      layout_type: custom:grid-layout
+                      layout:
+                        grid-template-columns: "1fr"
+                        place-items: center
+                        margin: "0"
+                        padding: "0"
+                      cards:
+                        - type: custom:button-card
+                          template: floor_disable_button
+                          name: Вимкнути весь поверх
+                          variables:
+                            ha_floor_id: ""
+                            ha_entity_ids: ["switch.prikhozha_svitlo", "switch.vitalnia_svitlo_switch", "switch.vitalnia_svitlo_switch_2", "switch.vimikach_switch", "switch.vimikach_switch_2", "switch.pidsvitka_switch", "switch.pidsvitka_switch_2", "switch.pidsvitka_switch_3", "switch.kukhnia_tsentralnii_tranzit_switch", "switch.kukhnia_tsentralnii_tranzit_switch_2", "switch.pravii_tranzit_switch", "switch.pravii_tranzit_switch_2", "switch.svitlo_switch_3", "switch.svitlo_switch_4", "switch.svitlo_3", "switch.zal_switch", "switch.zal_switch_2", "switch.svitlo_4", "switch.kabinet_vimikach_kabinet", "switch.svitlo_switch", "switch.svitlo_switch_2"]
+                    - type: custom:layout-card
+                      layout_type: custom:grid-layout
+                      layout:
+                        grid-template-columns: "repeat(auto-fill, minmax(min(17rem, 100%), 1fr))"
+                        grid-gap: "var(--lg_space_gap_sm)"
+                        place-content: start stretch
+                        place-items: start stretch
+                        margin: "0"
+                        padding: "0"
+                      cards:
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Кухня
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.pidsvitka_switch
+                                    name: Підсвітка
+                                    icon: mdi:led-strip-variant
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.svitlo_switch_3
+                                    name: Праві точки
+                                    icon: mdi:lightbulb-group
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.svitlo_switch_4
+                                    name: Ліві точки
+                                    icon: mdi:lightbulb-group-outline
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.svitlo_3
+                                    name: Балкон
+                                    icon: mdi:balcony
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: ""
+                                  ha_entity_ids: ["switch.pidsvitka_switch", "switch.pidsvitka_switch_2", "switch.pidsvitka_switch_3", "switch.kukhnia_tsentralnii_tranzit_switch", "switch.kukhnia_tsentralnii_tranzit_switch_2", "switch.pravii_tranzit_switch", "switch.pravii_tranzit_switch_2", "switch.svitlo_switch_3", "switch.svitlo_switch_4", "switch.svitlo_3"]
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Зал
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.zal_switch_2
+                                    name: Підсвітка
+                                    icon: mdi:led-strip-variant
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.zal_switch
+                                    name: Точки
+                                    icon: mdi:lightbulb-group
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.svitlo_4
+                                    name: Балкон
+                                    icon: mdi:balcony
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: "living_room"
+                                  ha_entity_ids: []
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Вітальня
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.vitalnia_svitlo_switch
+                                    name: Вітальня
+                                    icon: mdi:sofa
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.vitalnia_svitlo_switch_2
+                                    name: Закуток біля роутеру
+                                    icon: mdi:router-wireless
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: "prikhozha"
+                                  ha_entity_ids: []
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Душова
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.vimikach_switch_2
+                                    name: Світло
+                                    icon: mdi:lightbulb
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.vimikach_switch
+                                    name: Витяжка
+                                    icon: mdi:fan
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: "dushova"
+                                  ha_entity_ids: []
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Сходи і коридор
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.svitlo_switch
+                                    name: Сходи
+                                    icon: mdi:stairs
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.svitlo_switch_2
+                                    name: Коридор біля спальні
+                                    icon: mdi:door
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: "skhodi"
+                                  ha_entity_ids: []
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Кабінет
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.kabinet_vimikach_kabinet
+                                    name: Світло
+                                    icon: mdi:lightbulb
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: ""
+                                  ha_entity_ids: ["switch.kabinet_vimikach_kabinet"]
+          - type: custom:button-card
+            template: m2m_floor_container
+            name: Другий поверх
+            show_name: true
+            custom_fields:
+              content:
+                card:
+                  type: custom:layout-card
+                  layout_type: custom:grid-layout
+                  layout:
+                    grid-template-columns: "1fr"
+                    grid-gap: "var(--lg_space_gap_header_mosaic)"
+                    place-content: start stretch
+                    margin: "0"
+                    padding: "0"
+                  cards:
+                    - type: custom:layout-card
+                      layout_type: custom:grid-layout
+                      layout:
+                        grid-template-columns: "1fr"
+                        place-items: center
+                        margin: "0"
+                        padding: "0"
+                      cards:
+                        - type: custom:button-card
+                          template: floor_disable_button
+                          name: Вимкнути весь поверх
+                          variables:
+                            ha_floor_id: "2nd_floor"
+                            ha_entity_ids: []
+                    - type: custom:layout-card
+                      layout_type: custom:grid-layout
+                      layout:
+                        grid-template-columns: "repeat(auto-fill, minmax(min(17rem, 100%), 1fr))"
+                        grid-gap: "var(--lg_space_gap_sm)"
+                        place-content: start stretch
+                        place-items: start stretch
+                        margin: "0"
+                        padding: "0"
+                      cards:
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Дитяча
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.pidsvitka
+                                    name: Підсвітка
+                                    icon: mdi:led-strip-variant
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.ditiacha_svitlo_switch
+                                    name: Ліві точки
+                                    icon: mdi:lightbulb-group-outline
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.ditiacha_svitlo_switch_2
+                                    name: Праві точки
+                                    icon: mdi:lightbulb-group
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.ditiacha_pidsvitka_terasi
+                                    name: Тераса
+                                    icon: mdi:patio-heater
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.svitlo_2
+                                    name: Балкон
+                                    icon: mdi:balcony
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: "ditiacha"
+                                  ha_entity_ids: []
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Спальня
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.vimikach_bilia_vkhodu_switch_2
+                                    name: Підсвітка
+                                    icon: mdi:led-strip-variant
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.vimikach_bilia_vkhodu_switch
+                                    name: Точки
+                                    icon: mdi:lightbulb-group
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.balkon_spalnia_svitlo_switch
+                                    name: Балкон
+                                    icon: mdi:balcony
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: "bedroom"
+                                  ha_entity_ids: []
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Ванна
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.lumi_lumi_ctrl_ln1_aq1
+                                    name: Світло
+                                    icon: mdi:lightbulb
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.vitiazhka
+                                    name: Витяжка
+                                    icon: mdi:fan
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: "vanna"
+                                  ha_entity_ids: []
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Туалет
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.svitlo
+                                    name: Світло
+                                    icon: mdi:lightbulb
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: ""
+                                  ha_entity_ids: ["switch.svitlo"]
+                        - type: custom:button-card
+                          template: m2m_room_container
+                          name: Пральня
+                          custom_fields:
+                            content:
+                              card:
+                                type: custom:layout-card
+                                layout_type: custom:grid-layout
+                                layout:
+                                  grid-template-columns: "repeat(auto-fill, minmax(min(9rem, 100%), 1fr))"
+                                  grid-gap: "var(--lg_space_gap_sm)"
+                                  place-content: start stretch
+                                  place-items: start center
+                                  margin: "0"
+                                  padding: "0"
+                                cards:
+                                  - type: custom:button-card
+                                    template: switch_button
+                                    entity: switch.pralnia_switch
+                                    name: Світло
+                                    icon: mdi:lightbulb
+                            corner:
+                              card:
+                                type: custom:button-card
+                                template: disable_room_button
+                                name: Вимкнути всю кімнату
+                                variables:
+                                  ha_area_id: ""
+                                  ha_entity_ids: ["switch.pralnia_switch"]

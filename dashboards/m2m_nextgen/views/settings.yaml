@@ -1,0 +1,46 @@
+# m2m-generated: 2026-08-10 22:55:08
+title: "Налаштування"
+path: settings
+theme: m2m_glass_carbon_neon
+background: "center / cover no-repeat url('/local/liquid_glass/m2m_neon_splatter.jpg') fixed"
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "1fr"
+      grid-gap: "var(--lg_space_gap_header_mosaic)"
+      justify-content: center
+      justify-items: stretch
+      width: 100%
+      max-width: min(100%, 110rem)
+      margin: 0 auto
+      padding: clamp(0.5rem, 1.25vw, 1rem) clamp(1rem, 2.5vw, 2.5rem)
+      box-sizing: border-box
+    cards:
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: "repeat(auto-fit, minmax(min(14rem, 100%), 1fr))"
+          grid-gap: "var(--lg_space_gap_sm)"
+          place-content: start stretch
+          place-items: stretch
+          margin: "0"
+          padding: "0"
+        cards:
+          - type: custom:button-card
+            template: m2m_settings_panel
+            name: "Налаштування панелі"
+            icon: mdi:tune-variant
+            variables:
+              density: "comfortable"
+              accent: "violet_green"
+              room_order_mode: "static"
+            label: |
+              Щільність: comfortable
+              Акцент теми: violet_green
+              Порядок кімнат: static
+              active_climate_summary: увімкнено
+              active_lighting_summary: увімкнено
+              m2m_top_rooms_shelf: увімкнено
+              ---
+              Змінюється через preferences.json → build → deploy

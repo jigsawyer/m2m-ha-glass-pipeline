@@ -1,0 +1,316 @@
+# m2m-generated: 2026-08-10 22:55:07
+title: "Пральня"
+path: pralnia-dash
+type: panel
+theme: liquid_glass_v1.0
+background: "center / cover no-repeat url('/local/liquid_glass/ios_dark_waves.jpg') fixed"
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "1fr"
+      justify-content: center
+      justify-items: stretch
+      width: 100%
+      max-width: "var(--lg_size_shell_w)"
+      margin: 0 auto
+      padding: clamp(0.5rem, 1.25vw, 1rem) clamp(1rem, 2.5vw, 2.5rem)
+      box-sizing: border-box
+    cards:
+      - type: vertical-stack
+        view_layout:
+          grid-column: 1
+        cards:
+          - type: custom:button-card
+            template: floor_container
+            show_name: false
+            custom_fields:
+              content:
+                card:
+                  type: custom:layout-card
+                  layout_type: custom:grid-layout
+                  layout:
+                    grid-template-columns: "1fr"
+                    grid-gap: "var(--lg_space_gap_header_mosaic)"
+                    place-content: start stretch
+                    margin: "0"
+                    padding: "0"
+                  cards:
+                    - type: custom:layout-card
+                      layout_type: custom:grid-layout
+                      layout:
+                        grid-template-columns: "1fr"
+                        place-items: center
+                        margin: "0"
+                        padding: "0"
+                      cards:
+                        - type: custom:layout-card
+                          layout_type: custom:grid-layout
+                          layout:
+                            grid-template-columns: "auto auto"
+                            grid-template-rows: "auto"
+                            grid-gap: "var(--lg_space_tab_side_gap)"
+                            place-content: center
+                            width: 100%
+                            place-items: center
+                            margin: "0"
+                            padding: "0"
+                          cards:
+                            - type: custom:button-card
+                              template: floor_voice_placeholder
+                            - type: custom:button-card
+                              template: floor_voice_placeholder
+                    - type: conditional
+                      conditions:
+                        - condition: screen
+                          media_query: "(max-width: 48rem)"
+                      card:
+                        type: custom:layout-card
+                        layout_type: custom:masonry-layout
+                        layout:
+                          # lg_masonry_col_width_phone / _max_width_phone / _max_cols_phone
+                          width: 282
+                          max_width: 282
+                          max_cols: 1
+                          min_height: 1
+                          card_margin: "var(--lg_masonry_card_margin)"
+                          margin: "0"
+                          padding: "0"
+                        cards:
+                          - type: custom:button-card
+                            template: laundry_room_container
+                            name: Пральня
+                            custom_fields:
+                              content:
+                                card:
+                                  type: custom:layout-card
+                                  layout_type: custom:grid-layout
+                                  layout:
+                                    grid-template-columns: "1fr"
+                                    place-items: stretch stretch
+                                    grid-gap: "var(--lg_space_laundry_col_gap)"
+                                    margin: "0"
+                                    padding: "0"
+                                    mediaquery:
+                                      "(min-width: 48.0625rem)":
+                                        grid-template-columns: "1fr 1fr"
+                                  cards:
+                                    - type: custom:button-card
+                                      template: laundry_machine
+                                      entity: select.pralnia_pralna_mashina
+                                      name: Пральна машина
+                                      variables:
+                                        machine_state_entity_id: "sensor.pralnia_pralna_mashina_machine_state"
+                                        job_state_entity_id: "sensor.pralnia_pralna_mashina_job_state"
+                                        completion_entity_id: "sensor.pralnia_pralna_mashina_completion_time"
+                                        remote_entity_id: "binary_sensor.pralnia_pralna_mashina_remote_control"
+                                        power_entity_id: "binary_sensor.pralnia_pralna_mashina_power"
+                                        armed_entity_id: "input_boolean.washer_delay_armed"
+                                        cycle_duration_entity_id: "input_number.washer_cycle_duration_minutes"
+                                        delay_mode_entity_id: "input_select.washer_delay_mode"
+                                        delay_timer_entity_id: "timer.washer_delay"
+                                        schedule_script_id: "script.washer_delay_schedule"
+                                        cancel_script_id: "script.washer_delay_cancel"
+                                        popup_hash: "#laundry-delay-washer"
+                                        option_spin_entity_id: "select.pralnia_pralna_mashina_spin_level"
+                                        option_water_entity_id: "select.pralnia_pralna_mashina_water_temperature"
+                                        option_rinse_entity_id: "number.pralnia_pralna_mashina_rinse_cycles"
+                                        option_wrinkle_entity_id: ""
+                                        option_bubble_entity_id: "switch.pralnia_pralna_mashina_bubble_soak"
+                                        machine_kind: "washer"
+                                    - type: custom:button-card
+                                      template: laundry_machine
+                                      entity: select.pralnia_sushilna_mashina
+                                      name: Сушильна машина
+                                      variables:
+                                        machine_state_entity_id: "sensor.pralnia_sushilna_mashina_machine_state"
+                                        job_state_entity_id: "sensor.pralnia_sushilna_mashina_job_state"
+                                        completion_entity_id: "sensor.pralnia_sushilna_mashina_completion_time"
+                                        remote_entity_id: "binary_sensor.pralnia_sushilna_mashina_remote_control"
+                                        power_entity_id: "binary_sensor.pralnia_sushilna_mashina_power"
+                                        armed_entity_id: "input_boolean.dryer_delay_armed"
+                                        cycle_duration_entity_id: "input_number.dryer_cycle_duration_minutes"
+                                        delay_mode_entity_id: "input_select.dryer_delay_mode"
+                                        delay_timer_entity_id: "timer.dryer_delay"
+                                        schedule_script_id: "script.dryer_delay_schedule"
+                                        cancel_script_id: "script.dryer_delay_cancel"
+                                        popup_hash: "#laundry-delay-dryer"
+                                        option_spin_entity_id: ""
+                                        option_water_entity_id: ""
+                                        option_rinse_entity_id: ""
+                                        option_wrinkle_entity_id: "switch.pralnia_sushilna_mashina_wrinkle_prevent"
+                                        option_bubble_entity_id: ""
+                                        machine_kind: "dryer"
+                    - type: conditional
+                      conditions:
+                        - condition: screen
+                          media_query: "(min-width: 48.0625rem)"
+                      card:
+                        type: custom:layout-card
+                        layout_type: custom:masonry-layout
+                        layout:
+                          # lg_masonry_col_width_desktop / _max_width_desktop / _max_cols_desktop
+                          width: 282
+                          max_width: 282
+                          max_cols: 6
+                          min_height: 1
+                          card_margin: "var(--lg_masonry_card_margin)"
+                          margin: "0"
+                          padding: "0"
+                        cards:
+                          - type: custom:button-card
+                            template: laundry_room_container
+                            name: Пральня
+                            custom_fields:
+                              content:
+                                card:
+                                  type: custom:layout-card
+                                  layout_type: custom:grid-layout
+                                  layout:
+                                    grid-template-columns: "1fr"
+                                    place-items: stretch stretch
+                                    grid-gap: "var(--lg_space_laundry_col_gap)"
+                                    margin: "0"
+                                    padding: "0"
+                                    mediaquery:
+                                      "(min-width: 48.0625rem)":
+                                        grid-template-columns: "1fr 1fr"
+                                  cards:
+                                    - type: custom:button-card
+                                      template: laundry_machine
+                                      entity: select.pralnia_pralna_mashina
+                                      name: Пральна машина
+                                      variables:
+                                        machine_state_entity_id: "sensor.pralnia_pralna_mashina_machine_state"
+                                        job_state_entity_id: "sensor.pralnia_pralna_mashina_job_state"
+                                        completion_entity_id: "sensor.pralnia_pralna_mashina_completion_time"
+                                        remote_entity_id: "binary_sensor.pralnia_pralna_mashina_remote_control"
+                                        power_entity_id: "binary_sensor.pralnia_pralna_mashina_power"
+                                        armed_entity_id: "input_boolean.washer_delay_armed"
+                                        cycle_duration_entity_id: "input_number.washer_cycle_duration_minutes"
+                                        delay_mode_entity_id: "input_select.washer_delay_mode"
+                                        delay_timer_entity_id: "timer.washer_delay"
+                                        schedule_script_id: "script.washer_delay_schedule"
+                                        cancel_script_id: "script.washer_delay_cancel"
+                                        popup_hash: "#laundry-delay-washer"
+                                        option_spin_entity_id: "select.pralnia_pralna_mashina_spin_level"
+                                        option_water_entity_id: "select.pralnia_pralna_mashina_water_temperature"
+                                        option_rinse_entity_id: "number.pralnia_pralna_mashina_rinse_cycles"
+                                        option_wrinkle_entity_id: ""
+                                        option_bubble_entity_id: "switch.pralnia_pralna_mashina_bubble_soak"
+                                        machine_kind: "washer"
+                                    - type: custom:button-card
+                                      template: laundry_machine
+                                      entity: select.pralnia_sushilna_mashina
+                                      name: Сушильна машина
+                                      variables:
+                                        machine_state_entity_id: "sensor.pralnia_sushilna_mashina_machine_state"
+                                        job_state_entity_id: "sensor.pralnia_sushilna_mashina_job_state"
+                                        completion_entity_id: "sensor.pralnia_sushilna_mashina_completion_time"
+                                        remote_entity_id: "binary_sensor.pralnia_sushilna_mashina_remote_control"
+                                        power_entity_id: "binary_sensor.pralnia_sushilna_mashina_power"
+                                        armed_entity_id: "input_boolean.dryer_delay_armed"
+                                        cycle_duration_entity_id: "input_number.dryer_cycle_duration_minutes"
+                                        delay_mode_entity_id: "input_select.dryer_delay_mode"
+                                        delay_timer_entity_id: "timer.dryer_delay"
+                                        schedule_script_id: "script.dryer_delay_schedule"
+                                        cancel_script_id: "script.dryer_delay_cancel"
+                                        popup_hash: "#laundry-delay-dryer"
+                                        option_spin_entity_id: ""
+                                        option_water_entity_id: ""
+                                        option_rinse_entity_id: ""
+                                        option_wrinkle_entity_id: "switch.pralnia_sushilna_mashina_wrinkle_prevent"
+                                        option_bubble_entity_id: ""
+                                        machine_kind: "dryer"
+      - type: custom:bubble-card
+        card_type: pop-up
+        hash: "#laundry-delay-washer"
+        name: Відкладений старт
+        icon: mdi:timer-outline
+        show_header: true
+        show_close_button: true
+        popup_mode: centered
+        width_desktop: var(--lg_size_laundry_popup_w)
+        bg_color: rgb(255, 255, 255)
+        bg_opacity: 28
+        bg_blur: 48
+        shadow_opacity: 30
+        close_by_clicking_outside: true
+        styles: |
+          :host {
+            --bubble-pop-up-background-color: var(--lg_color_glass_fill);
+            --bubble-pop-up-main-background-color: var(--lg_color_glass_fill);
+            --bubble-pop-up-border-radius: var(--lg_radius_laundry);
+            --bubble-backdrop-background-color: var(--lg_color_focus_viewport_fill);
+            --paper-item-icon-color: var(--lg_color_text);
+            --icon-primary-color: var(--lg_color_text);
+            --primary-color: var(--lg_color_text);
+          }
+          .bubble-backdrop {
+            background-color: var(--lg_color_focus_viewport_fill) !important;
+            backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport)) !important;
+            -webkit-backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport)) !important;
+            transition: none !important;
+          }
+          @media (max-width: 48rem) {
+            .bubble-pop-up.popup-mode-centered:not(.editor) {
+              width: var(--lg_size_laundry_popup_w_phone) !important;
+              max-width: var(--lg_size_laundry_popup_w_phone) !important;
+            }
+          }
+        cards:
+          - type: custom:button-card
+            template: laundry_delay_scheduler
+            entity: "input_boolean.washer_delay_armed"
+            name: "Пральна машина"
+            variables:
+              cycle_duration_entity_id: "input_number.washer_cycle_duration_minutes"
+              delay_mode_entity_id: "input_select.washer_delay_mode"
+              schedule_script_id: "script.washer_delay_schedule"
+              popup_hash: "#laundry-delay-washer"
+      - type: custom:bubble-card
+        card_type: pop-up
+        hash: "#laundry-delay-dryer"
+        name: Відкладений старт
+        icon: mdi:timer-outline
+        show_header: true
+        show_close_button: true
+        popup_mode: centered
+        width_desktop: var(--lg_size_laundry_popup_w)
+        bg_color: rgb(255, 255, 255)
+        bg_opacity: 28
+        bg_blur: 48
+        shadow_opacity: 30
+        close_by_clicking_outside: true
+        styles: |
+          :host {
+            --bubble-pop-up-background-color: var(--lg_color_glass_fill);
+            --bubble-pop-up-main-background-color: var(--lg_color_glass_fill);
+            --bubble-pop-up-border-radius: var(--lg_radius_laundry);
+            --bubble-backdrop-background-color: var(--lg_color_focus_viewport_fill);
+            --paper-item-icon-color: var(--lg_color_text);
+            --icon-primary-color: var(--lg_color_text);
+            --primary-color: var(--lg_color_text);
+          }
+          .bubble-backdrop {
+            background-color: var(--lg_color_focus_viewport_fill) !important;
+            backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport)) !important;
+            -webkit-backdrop-filter: blur(var(--lg_blur_focus_viewport)) saturate(var(--lg_saturate_focus_viewport)) !important;
+            transition: none !important;
+          }
+          @media (max-width: 48rem) {
+            .bubble-pop-up.popup-mode-centered:not(.editor) {
+              width: var(--lg_size_laundry_popup_w_phone) !important;
+              max-width: var(--lg_size_laundry_popup_w_phone) !important;
+            }
+          }
+        cards:
+          - type: custom:button-card
+            template: laundry_delay_scheduler
+            entity: "input_boolean.dryer_delay_armed"
+            name: "Сушильна машина"
+            variables:
+              cycle_duration_entity_id: "input_number.dryer_cycle_duration_minutes"
+              delay_mode_entity_id: "input_select.dryer_delay_mode"
+              schedule_script_id: "script.dryer_delay_schedule"
+              popup_hash: "#laundry-delay-dryer"

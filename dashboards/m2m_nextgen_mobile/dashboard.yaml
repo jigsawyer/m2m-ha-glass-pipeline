@@ -1,0 +1,9 @@
+# m2m-generated: 2026-08-10 22:55:09
+# Auto-generated Dashboard: m2m_nextgen_mobile
+button_card_templates: !include button_card_templates.yaml
+theme: m2m_glass_carbon_neon
+views:
+  - !include views/home.yaml
+  - !include views/klimat.yaml
+  - !include views/pralnia-dash.yaml
+  - !include views/settings.yaml

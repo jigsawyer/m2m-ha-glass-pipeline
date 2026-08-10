@@ -1,0 +1,322 @@
+# M2M Nextgen — Room Usage Frequency Engine (STRUCTURAL, ADR-0003 @architect)
+# V7 pure-business-logic rebuild (INTENT-HA-DASHBOARD-PURE-BUSINESS-LOGIC-V7).
+# Feeds design_system-agnostic room ranking for the m2m_nextgen dashboard's
+# dynamic room ordering. Grounded ONLY in switch entities already declared in
+# environments/prd_main_house/global_hardware_map.json and the svitlo
+# reference content map (STD-06 — no invented entities).
+#
+# Three layers:
+#   1. input_number.m2m_room_usage_<room>  — rolling 7-day turn-on counters
+#   2. automation                          — tick on switch turn-on + weekly reset
+#   3. template sensors                    — live most-used-first ordering:
+#        sensor.m2m_room_usage_order    (state = top room; attr `order` = full
+#                                        sorted room_id list, most-used first)
+#        sensor.m2m_room_usage_rank_1..3 (state = room_id at that rank)
+#      Ties break deterministically by the same seed order that
+#      local_content_map.json ordering_policy.seed_ranking documents.
+#
+# NOT auto-applied to the live host — same manual-apply note as
+# laundry_delay.yaml (publish_edge does NOT deploy packages/; operator copy +
+# `ha core check` + reload).
+
+input_number:
+  m2m_room_usage_vitalnia:
+    name: "M2M usage count — vitalnia"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_dushova:
+    name: "M2M usage count — dushova"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_kukhnia:
+    name: "M2M usage count — kukhnia"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_zal:
+    name: "M2M usage count — zal"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_kabinet:
+    name: "M2M usage count — kabinet"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_skhody_i_korydor:
+    name: "M2M usage count — skhody_i_korydor"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_spalnia:
+    name: "M2M usage count — spalnia"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_ditiacha:
+    name: "M2M usage count — ditiacha"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_vanna:
+    name: "M2M usage count — vanna"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_tualet:
+    name: "M2M usage count — tualet"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+  m2m_room_usage_pralnia:
+    name: "M2M usage count — pralnia"
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+
+template:
+  - sensor:
+      - name: "M2M room usage order"
+        unique_id: m2m_room_usage_order
+        icon: mdi:sort-descending
+        state: >-
+          {% set seed = ['kukhnia', 'zal', 'vitalnia', 'dushova',
+                         'skhody_i_korydor', 'kabinet', 'ditiacha', 'spalnia',
+                         'vanna', 'tualet', 'pralnia'] %}
+          {% set ns = namespace(rows=[]) %}
+          {% for r in seed %}
+            {% set c = states('input_number.m2m_room_usage_' ~ r) | int(0) %}
+            {% set ns.rows = ns.rows + [{'id': r, 'n': c}] %}
+          {% endfor %}
+          {{ (ns.rows | sort(attribute='n', reverse=true) | map(attribute='id') | list) | first }}
+        attributes:
+          order: >-
+            {% set seed = ['kukhnia', 'zal', 'vitalnia', 'dushova',
+                           'skhody_i_korydor', 'kabinet', 'ditiacha', 'spalnia',
+                           'vanna', 'tualet', 'pralnia'] %}
+            {% set ns = namespace(rows=[]) %}
+            {% for r in seed %}
+              {% set c = states('input_number.m2m_room_usage_' ~ r) | int(0) %}
+              {% set ns.rows = ns.rows + [{'id': r, 'n': c}] %}
+            {% endfor %}
+            {{ ns.rows | sort(attribute='n', reverse=true) | map(attribute='id') | list }}
+          counts: >-
+            {% set seed = ['kukhnia', 'zal', 'vitalnia', 'dushova',
+                           'skhody_i_korydor', 'kabinet', 'ditiacha', 'spalnia',
+                           'vanna', 'tualet', 'pralnia'] %}
+            {% set ns = namespace(rows=[]) %}
+            {% for r in seed %}
+              {% set ns.rows = ns.rows + [[r, states('input_number.m2m_room_usage_' ~ r) | int(0)]] %}
+            {% endfor %}
+            {{ dict(ns.rows) }}
+          labels: >-
+            {{ {'vitalnia': 'Вітальня', 'dushova': 'Душова', 'kukhnia': 'Кухня',
+                'zal': 'Зал', 'kabinet': 'Кабінет',
+                'skhody_i_korydor': 'Сходи і коридор', 'spalnia': 'Спальня',
+                'ditiacha': 'Дитяча', 'vanna': 'Ванна', 'tualet': 'Туалет',
+                'pralnia': 'Пральня'} }}
+
+      - name: "M2M room usage rank 1"
+        unique_id: m2m_room_usage_rank_1
+        icon: mdi:podium-gold
+        state: >-
+          {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia'])[0] }}
+
+      - name: "M2M room usage rank 2"
+        unique_id: m2m_room_usage_rank_2
+        icon: mdi:podium-silver
+        state: >-
+          {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia', 'zal'])[1] }}
+
+      - name: "M2M room usage rank 3"
+        unique_id: m2m_room_usage_rank_3
+        icon: mdi:podium-bronze
+        state: >-
+          {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia', 'zal', 'vitalnia'])[2] }}
+
+  # Throttled derivative (2026-08-10, spec v2.6.0 phase 4 — live room
+  # reordering via custom:auto-entities). The live dashboard grid re-sorts
+  # off THIS sensor, not sensor.m2m_room_usage_order directly: the raw
+  # sensor re-evaluates (and fires state_changed, since attribute changes
+  # count) on every tracked switch turn-on anywhere in the house, which
+  # would re-flow the whole room grid that often — a real jank/flicker risk
+  # on a live family dashboard. This HA 2024+ trigger-based template sensor
+  # only recomputes on a 5-minute timer, decoupling "live" (auto-updating,
+  # no rebuild) from "instant" (every light flip). Operator can shorten/
+  # remove the throttle later if the real-world cadence proves too slow.
+  - trigger:
+      - platform: time_pattern
+        minutes: "/5"
+    sensor:
+      - name: "M2M room usage order (throttled)"
+        unique_id: m2m_room_usage_order_throttled
+        icon: mdi:sort-descending
+        state: >-
+          {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia'])[0] }}
+        attributes:
+          order: "{{ state_attr('sensor.m2m_room_usage_order', 'order') or [] }}"
+
+automation:
+  - id: m2m_room_usage_tick
+    alias: M2M — increment room usage counter on switch turn-on
+    mode: queued
+    trigger:
+      - platform: state
+        entity_id: switch.vitalnia_svitlo_switch
+        to: "on"
+        id: vitalnia
+      - platform: state
+        entity_id: switch.vitalnia_svitlo_switch_2
+        to: "on"
+        id: vitalnia
+      - platform: state
+        entity_id: switch.vimikach_switch_2
+        to: "on"
+        id: dushova
+      - platform: state
+        entity_id: switch.vimikach_switch
+        to: "on"
+        id: dushova
+      - platform: state
+        entity_id: switch.pidsvitka_switch
+        to: "on"
+        id: kukhnia
+      - platform: state
+        entity_id: switch.svitlo_switch_3
+        to: "on"
+        id: kukhnia
+      - platform: state
+        entity_id: switch.svitlo_switch_4
+        to: "on"
+        id: kukhnia
+      - platform: state
+        entity_id: switch.svitlo_3
+        to: "on"
+        id: kukhnia
+      - platform: state
+        entity_id: switch.zal_switch_2
+        to: "on"
+        id: zal
+      - platform: state
+        entity_id: switch.zal_switch
+        to: "on"
+        id: zal
+      - platform: state
+        entity_id: switch.svitlo_4
+        to: "on"
+        id: zal
+      - platform: state
+        entity_id: switch.kabinet_vimikach_kabinet
+        to: "on"
+        id: kabinet
+      - platform: state
+        entity_id: switch.svitlo_switch
+        to: "on"
+        id: skhody_i_korydor
+      - platform: state
+        entity_id: switch.svitlo_switch_2
+        to: "on"
+        id: skhody_i_korydor
+      - platform: state
+        entity_id: switch.vimikach_bilia_vkhodu_switch_2
+        to: "on"
+        id: spalnia
+      - platform: state
+        entity_id: switch.vimikach_bilia_vkhodu_switch
+        to: "on"
+        id: spalnia
+      - platform: state
+        entity_id: switch.balkon_spalnia_svitlo_switch
+        to: "on"
+        id: spalnia
+      - platform: state
+        entity_id: switch.pidsvitka
+        to: "on"
+        id: ditiacha
+      - platform: state
+        entity_id: switch.ditiacha_svitlo_switch
+        to: "on"
+        id: ditiacha
+      - platform: state
+        entity_id: switch.ditiacha_svitlo_switch_2
+        to: "on"
+        id: ditiacha
+      - platform: state
+        entity_id: switch.ditiacha_pidsvitka_terasi
+        to: "on"
+        id: ditiacha
+      - platform: state
+        entity_id: switch.svitlo_2
+        to: "on"
+        id: ditiacha
+      - platform: state
+        entity_id: switch.lumi_lumi_ctrl_ln1_aq1
+        to: "on"
+        id: vanna
+      - platform: state
+        entity_id: switch.vitiazhka
+        to: "on"
+        id: vanna
+      - platform: state
+        entity_id: switch.svitlo
+        to: "on"
+        id: tualet
+      - platform: state
+        entity_id: switch.pralnia_switch
+        to: "on"
+        id: pralnia
+    action:
+      - service: input_number.increment
+        target:
+          entity_id: "input_number.m2m_room_usage_{{ trigger.id }}"
+
+  - id: m2m_room_usage_weekly_reset
+    alias: M2M — weekly reset of room usage counters (rolling-frequency window)
+    mode: single
+    trigger:
+      - platform: time
+        at: "03:00:00"
+    condition:
+      - condition: time
+        weekday:
+          - mon
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id:
+            - input_number.m2m_room_usage_vitalnia
+            - input_number.m2m_room_usage_dushova
+            - input_number.m2m_room_usage_kukhnia
+            - input_number.m2m_room_usage_zal
+            - input_number.m2m_room_usage_kabinet
+            - input_number.m2m_room_usage_skhody_i_korydor
+            - input_number.m2m_room_usage_spalnia
+            - input_number.m2m_room_usage_ditiacha
+            - input_number.m2m_room_usage_vanna
+            - input_number.m2m_room_usage_tualet
+            - input_number.m2m_room_usage_pralnia
+        data:
+          value: 0
