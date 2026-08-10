@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-from pipeline.harness.adr_policy import (
-    classify_domain,
-    evaluate_paths,
-    parse_adr_index,
-)
+from pipeline.harness.adr_policy import classify_domain, evaluate_paths
 from pipeline.harness.paths import STD_INDEX_PATH, STD_MONOLITH_PATH
 from pipeline.harness.std_registry import (
     get_entity_state,
@@ -64,17 +60,6 @@ def test_repair_blacklist() -> None:
     )
     assert result.ok is False
     assert "STD-09" in result.citations
-
-
-def test_parse_adr_index_smoke() -> None:
-    sample = (
-        "| Number | Title | Date | Status |\n"
-        "|---|---|---|---|\n"
-        "| [0059](0059-execution-harness-json-patch-mcp.md) | "
-        "Execution Harness | 2026-08-03 | Accepted |\n"
-    )
-    rows = parse_adr_index(sample)
-    assert rows == [{"number": "0059", "title": "Execution Harness"}]
 
 
 def test_std_index_is_lightweight_and_monolith_gone() -> None:
@@ -145,7 +130,7 @@ def test_get_entity_state_by_key_and_entity_id() -> None:
 
 
 def test_mix_waived_for_nextgen_namespace() -> None:
-    """ADR-0068: WHAT+HOW mixing is allowed when every design_system path
+    """STD-17: WHAT+HOW mixing is allowed when every design_system path
     in the Change Set is m2m-nextgen-scoped (m2m_* basename or the isolated
     home_view_m2m.yaml shell fork)."""
     result = evaluate_paths(
@@ -162,7 +147,7 @@ def test_mix_waived_for_nextgen_namespace() -> None:
 
 
 def test_mix_with_legacy_design_system_still_violation() -> None:
-    """ADR-0068: one legacy (non-m2m) design_system path in the mix re-arms
+    """STD-17: one legacy (non-m2m) design_system path in the mix re-arms
     the full STD-05 violation — legacy scope enforcement is untouched."""
     result = evaluate_paths(
         [

@@ -1,7 +1,7 @@
 {
   "dashboard_id": "m2m_nextgen",
   "theme_reference": "m2m_glass_carbon_neon",
-  "background_image": "/local/liquid_glass/ipad_dark_mesh.jpg",
+  "background_image": "/local/liquid_glass/m2m_neon_splatter.jpg",
   "rebuild_meta": {
     "intent_id": "INTENT-HA-DASHBOARD-DUAL-SCOPE-ISOLATION-V9",
     "supersedes": "INTENT-HA-DASHBOARD-PURE-BUSINESS-LOGIC-V7",

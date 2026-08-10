@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 
@@ -16,7 +15,8 @@ FORBIDDEN_WRITE_PREFIXES = (
     ".github/workflows/",
 )
 
-# ADR-0068 dual-scope rule isolation (INTENT-HA-DASHBOARD-DUAL-SCOPE-ISOLATION-V9):
+# STD-17 dual-scope rule isolation (INTENT-HA-DASHBOARD-DUAL-SCOPE-ISOLATION-V9,
+# recorded as STD-17 in _local_ai/memory/ltm/std/core.json; docs/adr/ is retired):
 # the STD-05 WHAT⟂HOW mixing rule stays fully enforced for the legacy scope
 # (svitlo + every shared design_system primitive/token), but is waived for a
 # Change Set whose design_system paths ALL belong to the m2m-nextgen namespace.
@@ -77,7 +77,7 @@ def is_nextgen_design_system_path(path: str) -> bool:
 
     Legacy design_system paths (svitlo shells, shared primitives, shared
     tokens) never match, so STD-05 mixing enforcement for the legacy scope
-    is untouched (ADR-0068 dual-scope isolation).
+    is untouched (STD-17 dual-scope isolation).
     """
     rel = normalize_repo_path(path)
     if not rel.startswith("design_system/"):
@@ -160,20 +160,7 @@ def evaluate_paths(
     )
 
 
-_ADR_ROW_RE = re.compile(
-    r"^\|\s*\[(\d{4})\]\([^)]+\)\s*\|\s*([^|]+?)\s*\|",
-    re.MULTILINE,
-)
-
-
-def parse_adr_index(readme_text: str) -> list[dict[str, str]]:
-    """Parse docs/adr/README.md table rows into {number, title} dicts."""
-    rows: list[dict[str, str]] = []
-    for match in _ADR_ROW_RE.finditer(readme_text):
-        rows.append(
-            {
-                "number": match.group(1),
-                "title": match.group(2).strip(),
-            }
-        )
-    return rows
+# Note (2026-08-09): parse_adr_index() / docs/adr/README.md table parsing was
+# removed here — docs/adr/ was retired repo-wide (superseding ADR-0065's
+# "archive stays" clause; full history remains in git tag
+# archive/pre-cursor-adr-retirement). It had no callers outside its own test.

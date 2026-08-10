@@ -4,25 +4,25 @@
   "target_agent": "@architect",
   "source_spec": "specs/m2m-nextgen-dashboard-intent.md",
   "payload": {
-    "action_summary": "New isolated dashboard 'm2m_nextgen' (glassmorphism/carbon/neon violet-green vector): climate + lighting + laundry views reusing existing svitlo entities/composites under a new theme and SPA shell; active-climate/active-lighting summary header widgets; per-room usage-frequency tracking package; native view tabs for iOS/Android swipe. Composite EXTRACTIVE+STRUCTURAL+STYLISTIC delivery — see source_spec for the full sequence.",
+    "action_summary": "Multi-dashboard publish: extend build_engine.py with a nested output mode (staging dashboards/<id>/ with its own dashboard.yaml + views/ + button_card_templates.yaml copy) and wire CI to build m2m_nextgen alongside the primary svitlo artifact, so every deploy ships both. m2m_nextgen becomes reachable on Edge at /config/edge-state/dashboards/m2m_nextgen/dashboard.yaml after a one-time manual lovelace.dashboards registration by the operator (outside agent scope per STD-01/ADR-0037 lineage).",
     "requested_entities": [
       "global_hardware_map.json",
       "global_spatial_topology.json",
-      "liquid_glass_v1.0"
+      "m2m_glass_carbon_neon"
     ],
     "preserve_behavior": [
-      "svitlo dashboard (build/staging output, config.json, local_content_map.json) byte-for-byte unchanged",
-      "design_system/templates/layout/home_view.yaml unchanged (new shell is an isolated fork)",
-      "build_engine.py default CLI invocation still builds svitlo (ADR-0061 backward compatibility)"
+      "root staging artifact (svitlo) byte-for-byte unchanged; nested build never touches root dashboard.yaml/views (pinned by test_nested_build_is_isolated_from_root_artifact)",
+      "publish_edge.sh unchanged (git add -A already carries the nested subtree)",
+      "build_engine.py default CLI invocation still builds svitlo at staging root"
     ]
   },
   "flags": {
-    "allow_template_layout_edit": true,
+    "allow_template_layout_edit": false,
     "allow_new_dashboard_isolated_path": true,
     "tokens_and_button_card_templates_only": false
   },
   "constraints": {
-    "adr": ["0000", "0001", "0003", "0010", "0014", "0037", "0059", "0061"],
-    "deploy": ["build_engine.py m2m_nextgen", "local_commit_only_no_push"]
+    "std": ["STD-01", "STD-05", "STD-07", "STD-09"],
+    "deploy": ["ci_builds_svitlo_root_plus_m2m_nextgen_nested", "operator_registers_lovelace_dashboard_manually"]
   }
 }

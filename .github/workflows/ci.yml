@@ -56,7 +56,11 @@ jobs:
         run: python -m pipeline.harness evals
 
       - name: Generate Artifacts
-        run: python pipeline/scripts/build_engine.py
+        run: |
+          python pipeline/scripts/build_engine.py
+          # Multi-dashboard publish: m2m_nextgen ships as a nested tree under
+          # staging dashboards/m2m_nextgen/ (root svitlo artifact untouched).
+          python pipeline/scripts/build_engine.py m2m_nextgen --nested
 
       - name: Run Tests
         run: |
@@ -122,6 +126,10 @@ jobs:
         run: |
           set -euo pipefail
           python pipeline/scripts/build_engine.py
+          # Multi-dashboard publish: m2m_nextgen rides along in edge-state
+          # under dashboards/m2m_nextgen/ (registered in HA via a manual
+          # lovelace.dashboards entry — see PR description).
+          python pipeline/scripts/build_engine.py m2m_nextgen --nested
 
       - name: Publish edge-state artifact branch
         env:
