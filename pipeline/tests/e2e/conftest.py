@@ -54,12 +54,20 @@ SANDBOX_PLUGINS: tuple[tuple[str, str], ...] = (
         # STD-18 (2026-08-10, spec v2.6.0 phase 4 — new ADR-0010 exception,
         # nextgen-scoped only via LIVE_RANKING_AUTHORIZED_DASHBOARDS in
         # build_engine.py). Live room-order reordering for m2m_nextgen's home
-        # view. URL pattern matches this repo's own release-asset convention
-        # (unverified by direct fetch here — robots.txt blocks the raw
-        # download URL from this sandbox; confirm it resolves on the first
-        # CI run and pin harder if not).
+        # view.
+        #
+        # FIX (2026-08-10, CI run failed with 404 on the original URL):
+        # unlike button-card/mushroom/slider-button-card above,
+        # thomasloven/lovelace-auto-entities does NOT publish auto-entities.js
+        # as a GitHub *release asset* — confirmed via the GitHub API that its
+        # latest release (v1.16.1) has an empty `assets` list, so no
+        # /releases/download/... URL exists for this repo at all (the guessed
+        # v1.14.0/release-asset URL was simply never a real object). The built
+        # file lives at the repo root instead and is fetched via
+        # raw.githubusercontent.com pinned to a release tag — confirmed this
+        # resolves with a direct fetch (real minified JS, not a 404 page).
         "auto-entities.js",
-        "https://github.com/thomasloven/lovelace-auto-entities/releases/download/v1.14.0/auto-entities.js",
+        "https://raw.githubusercontent.com/thomasloven/lovelace-auto-entities/v1.16.1/auto-entities.js",
     ),
 )
 
