@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 
@@ -130,20 +129,7 @@ def evaluate_paths(
     )
 
 
-_ADR_ROW_RE = re.compile(
-    r"^\|\s*\[(\d{4})\]\([^)]+\)\s*\|\s*([^|]+?)\s*\|",
-    re.MULTILINE,
-)
-
-
-def parse_adr_index(readme_text: str) -> list[dict[str, str]]:
-    """Parse docs/adr/README.md table rows into {number, title} dicts."""
-    rows: list[dict[str, str]] = []
-    for match in _ADR_ROW_RE.finditer(readme_text):
-        rows.append(
-            {
-                "number": match.group(1),
-                "title": match.group(2).strip(),
-            }
-        )
-    return rows
+# Note (2026-08-09): parse_adr_index() / docs/adr/README.md table parsing was
+# removed here — docs/adr/ was retired repo-wide (superseding ADR-0065's
+# "archive stays" clause; full history remains in git tag
+# archive/pre-cursor-adr-retirement). It had no callers outside its own test.

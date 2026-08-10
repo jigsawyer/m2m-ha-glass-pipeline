@@ -1,7 +1,7 @@
 {
   "dashboard_id": "m2m_nextgen",
   "theme_reference": "m2m_glass_carbon_neon",
-  "background_image": "/local/liquid_glass/ipad_dark_mesh.jpg",
+  "background_image": "/local/liquid_glass/m2m_neon_splatter.jpg",
   "rebuild_meta": {
     "intent_id": "INTENT-HA-DASHBOARD-PURE-BUSINESS-LOGIC-V7",
     "rebuild": "zero-base WHAT-layer rebuild; entity grounding audited against environments/prd_main_house/global_hardware_map.json, dashboards/svitlo/local_content_map.json (reference-only) and ha_operator packages (STD-06 — no invented entities)",

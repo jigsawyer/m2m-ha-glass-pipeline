@@ -2,11 +2,6 @@ build/*
 logs/*
 pipeline/logs/*
 !pipeline/logs/.gitkeep
-.cursor/*
-!.cursor/mcp.json
-!.cursor/rules/
-!.cursor/rules/**
-!.cursor/STATE.md
 .env/*
 .venv/*
 __pycache__/
