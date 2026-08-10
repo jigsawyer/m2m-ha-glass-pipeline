@@ -1,0 +1,71 @@
+{#- ADR-0068-style nextgen MOBILE SPA shell (spec v2.6.0 section 2.2 — a
+   FULLY INDEPENDENT shell from m2m_home_shell.yaml, not a shared-breakpoint
+   variant, per operator directive 2026-08-10). Single-column, always —
+   never auto-fit multi-column even on a wide phone-in-landscape, because
+   this shell is only ever reached via the dedicated m2m_nextgen_mobile
+   dashboard URL (a phone user opens THAT url, not a responsive collapse of
+   the desktop one). Bigger gap/padding tokens than the desktop shell for
+   thumb reach. Native HA view tab-strip still gives free swipe-between-tabs
+   on iOS/Android (ADR-0010 — no unlisted HACS plugins for navigation). #}
+title: "{{ title }}"
+path: {{ path }}
+theme: m2m_glass_carbon_neon
+background: "center / cover no-repeat url('{{ background_image | default('/local/liquid_glass/m2m_neon_splatter.jpg') }}') fixed"
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    layout:
+      grid-template-columns: "1fr"
+      grid-gap: "var(--lg_space_gap_header_mosaic)"
+      justify-content: stretch
+      justify-items: stretch
+      width: 100%
+      max-width: 100%
+      margin: 0 auto
+      padding: clamp(0.75rem, 4vw, 1.25rem) clamp(0.75rem, 4vw, 1.25rem)
+      box-sizing: border-box
+{%- if card_blocks or extra_card_blocks %}
+    cards:
+{%- if extra_card_blocks %}
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: "repeat(auto-fit, minmax(min(11rem, 100%), 1fr))"
+          grid-gap: "var(--lg_space_gap_sm)"
+          place-content: start stretch
+          place-items: stretch
+          margin: "0"
+          padding: "0"
+        cards:
+{%- for block in extra_card_blocks %}
+{%- set lines = block.strip().split('\n') %}
+          - {{ lines[0] }}
+{%- for line in lines[1:] %}
+            {{ line }}
+{%- endfor %}
+
+{%- endfor %}
+{%- endif %}
+{%- if card_blocks %}
+      - type: custom:layout-card
+        layout_type: custom:grid-layout
+        layout:
+          grid-template-columns: "1fr"
+          grid-gap: "var(--lg_space_gap_header_mosaic)"
+          place-content: start stretch
+          place-items: stretch
+          margin: "0"
+          padding: "0"
+        cards:
+{%- for block in card_blocks %}
+{%- set lines = block.strip().split('\n') %}
+          - {{ lines[0] }}
+{%- for line in lines[1:] %}
+            {{ line }}
+{%- endfor %}
+
+{%- endfor %}
+{%- endif %}
+{%- else %}
+    cards: []
+{%- endif %}

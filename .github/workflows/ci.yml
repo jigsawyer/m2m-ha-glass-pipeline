@@ -61,6 +61,11 @@ jobs:
           # Multi-dashboard publish: m2m_nextgen ships as a nested tree under
           # staging dashboards/m2m_nextgen/ (root svitlo artifact untouched).
           python pipeline/scripts/build_engine.py m2m_nextgen --nested
+          # spec v2.6.0 phase 2 (2026-08-10): m2m_nextgen_mobile — a fully
+          # independent mobile shell, third dashboard tree, same generic
+          # --nested publish mechanism (no build_engine.py code changes
+          # needed — dashboard_id is already a free-form arg).
+          python pipeline/scripts/build_engine.py m2m_nextgen_mobile --nested
 
       - name: Run Tests
         run: |
@@ -130,6 +135,12 @@ jobs:
           # under dashboards/m2m_nextgen/ (registered in HA via a manual
           # lovelace.dashboards entry — see PR description).
           python pipeline/scripts/build_engine.py m2m_nextgen --nested
+          # spec v2.6.0 phase 2 (2026-08-10): m2m_nextgen_mobile rides along
+          # the same way, under dashboards/m2m_nextgen_mobile/ — also needs
+          # its own manual lovelace.dashboards entry on the HA box (second
+          # one, see PR description). The rsync step below already publishes
+          # the whole dashboards/ tree generically, no change needed there.
+          python pipeline/scripts/build_engine.py m2m_nextgen_mobile --nested
 
       - name: Publish edge-state artifact branch
         env:

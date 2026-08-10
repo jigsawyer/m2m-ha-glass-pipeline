@@ -10,6 +10,14 @@ loads dashboard config/content and orchestrates the stages in order. No
 behavior change — verified by diffing build/staging/ output before/after the
 split for both `svitlo` and `m2m_nextgen`.
 
+2026-08-10 (Admin/Settings, spec v2.6.0 phase 3): added load_dashboard_preferences()
++ widget_visibility gating / render_preferences injection in the SPA view loop
+below. Build-time-toggle model (operator decision) — preferences.json is the
+single source of truth, no new HA input_helpers or runtime frontend logic.
+Backward compatible: dashboards without a preferences.json (e.g. svitlo) get
+`preferences = {}`, so widget_visibility defaults every card to visible and
+render_preferences injection never triggers — zero behavior change for them.
+
 CLI: `python pipeline/scripts/build_engine.py [dashboard_id]`
 (defaults to "svitlo" — unchanged from before this file accepted an arg).
 """
@@ -21,11 +29,6 @@ from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
-# Direct `python pipeline/scripts/build_engine.py` invocation (this is how
-# CI and every documented workflow run it) puts pipeline/scripts/ on
-# sys.path[0], not the project root, so the internal `pipeline.*` package
-# imports below would fail with ModuleNotFoundError without this — same
-# pattern already used by pipeline/scripts/agentic_repair.py.
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
@@ -47,14 +50,40 @@ from pipeline.scripts.build_stages.theme_stage import stage_ha_theme
 from pipeline.scripts.build_stages.view_compiler import (
     compile_flat_view,
     compile_hierarchical_view,
+    compile_live_ranked_view,
     render_component,
     write_legacy_room_view,
 )
+
+# STD-18 (2026-08-10, spec v2.6.0 phase 4 — new ADR-0010 exception for
+# custom:auto-entities, nextgen-scoped only). A view_def's live_room_ranking
+# flag is inert unless BOTH (a) the dashboard_id is in this allowlist and
+# (b) preferences.json's room_order_mode == "usage_rank" — same
+# belt-and-suspenders pattern as STD-17's nextgen-namespace scoping, just
+# keyed on dashboard_id instead of design_system path (the thing being
+# gated here is a content-map behavior flag, not a file path, so path-based
+# adr_policy.py scanning doesn't apply — this is the functional gate).
+LIVE_RANKING_AUTHORIZED_DASHBOARDS = frozenset({"m2m_nextgen", "m2m_nextgen_mobile"})
 
 
 def load_dashboard_config(dashboard_id):
     """Optional stylist-owned config (theme + background). Missing file is OK."""
     path = ENV_DIR / "dashboards" / dashboard_id / "config.json"
+    if not path.is_file():
+        return {}
+    return load_json(path)
+
+
+def load_dashboard_preferences(dashboard_id):
+    """Optional Admin/Settings source of truth (density/theme-accent/room-order
+    mode/widget visibility) — spec v2.6.0 section 2.4.
+
+    Build-time-toggle model (operator decision, 2026-08-10): editing this
+    file and re-running the pipeline is what applies a change; no new HA
+    input_helpers or runtime frontend logic. Missing file is OK — existing
+    dashboards without a Settings page (e.g. svitlo) are unaffected.
+    """
+    path = ENV_DIR / "dashboards" / dashboard_id / "preferences.json"
     if not path.is_file():
         return {}
     return load_json(path)
@@ -88,6 +117,7 @@ def build_dashboard(dashboard_id, *, nested=False):
         ENV_DIR / "dashboards" / dashboard_id / "local_content_map.json"
     )
     dash_config = load_dashboard_config(dashboard_id)
+    preferences = load_dashboard_preferences(dashboard_id)
     topology = load_json(ENV_DIR / "global_spatial_topology.json")
     names = index_topology(topology)
 
@@ -107,9 +137,6 @@ def build_dashboard(dashboard_id, *, nested=False):
     print("[1b/4] Staging button_card_templates...")
     stage_button_card_templates(env)
     if nested:
-        # dashboard.yaml uses a relative `!include button_card_templates.yaml`
-        # (HA resolves !include relative to the including file), so the nested
-        # tree needs its own copy of the shared bundle next to it.
         shutil.copyfile(
             STAGING_DIR / "button_card_templates.yaml",
             out_root / "button_card_templates.yaml",
@@ -167,7 +194,46 @@ def build_dashboard(dashboard_id, *, nested=False):
                 room_corner_actions_key, default_room_corner_actions
             )
 
-            if "include_floors" in view_def:
+            live_ranking_requested = bool(view_def.get("live_room_ranking"))
+            if live_ranking_requested and dashboard_id not in LIVE_RANKING_AUTHORIZED_DASHBOARDS:
+                print(
+                    "FATAL_EXCEPTION: view "
+                    f"'{view_path}' sets live_room_ranking=true but dashboard "
+                    f"'{dashboard_id}' is not in LIVE_RANKING_AUTHORIZED_DASHBOARDS "
+                    "(STD-18 / ADR-0010 exception is nextgen-scoped only)"
+                )
+                exit(1)
+            live_ranking_active = (
+                live_ranking_requested
+                and preferences.get("room_order_mode") == "usage_rank"
+            )
+
+            if live_ranking_active:
+                all_rooms = view_def.get("include_rooms")
+                if all_rooms is None and "include_floors" in view_def:
+                    all_rooms = [
+                        room
+                        for floor_rooms in view_def["include_floors"].values()
+                        for room in floor_rooms
+                    ]
+                if not all_rooms:
+                    all_rooms = list(room_content.keys())
+                card_blocks = [
+                    compile_live_ranked_view(
+                        env,
+                        hardware_map,
+                        content_map,
+                        view_def,
+                        room_content,
+                        names,
+                        all_rooms,
+                        room_corner_actions_map=room_corner_actions_map,
+                    )
+                ]
+                strategy = "live_ranked"
+                floor_count = 0
+                room_count = len(all_rooms)
+            elif "include_floors" in view_def:
                 card_blocks = compile_hierarchical_view(
                     env,
                     hardware_map,
@@ -194,14 +260,35 @@ def build_dashboard(dashboard_id, *, nested=False):
 
             # View-level extras (e.g. Bubble pop-ups) — siblings of the floor stack,
             # not nested inside vertical-stack (Bubble standalone + hui-view setConfig).
+            #
+            # Admin/Settings (2026-08-10, build-time-toggle model — preferences.json
+            # is the source of truth, no new HA input_helpers): widget_visibility
+            # gates which extra_cards render at all (keyed by template_ref); a view
+            # flagged render_preferences=true additionally gets the live
+            # preferences dict merged into its m2m_settings_panel card's
+            # custom_props so the Settings page always reflects what was actually
+            # built, never a second hand-copied source of truth.
+            widget_visibility = preferences.get("widget_visibility", {})
+            extra_card_defs = [
+                extra
+                for extra in (view_def.get("extra_cards", []) or [])
+                if widget_visibility.get(extra.get("template_ref"), True)
+            ]
+            if view_def.get("render_preferences"):
+                patched_defs = []
+                for extra in extra_card_defs:
+                    if extra.get("template_ref") == "m2m_settings_panel":
+                        extra = dict(extra)
+                        extra["custom_props"] = {
+                            **(extra.get("custom_props") or {}),
+                            **preferences,
+                        }
+                    patched_defs.append(extra)
+                extra_card_defs = patched_defs
             extra_card_blocks = []
-            for extra in view_def.get("extra_cards", []) or []:
+            for extra in extra_card_defs:
                 extra_card_blocks.append(render_component(env, hardware_map, extra))
 
-            # Optional per-view shell override (default preserves every existing
-            # dashboard byte-for-byte — ADR-0014 isolation: a dashboard that wants
-            # different SPA-shell behavior forks a NEW layout/*.yaml instead of
-            # editing the shared home_view.yaml that other dashboards depend on).
             layout_template_ref = view_def.get("layout_template", "layout/home_view.yaml")
             try:
                 home_template = env.get_template(layout_template_ref)
@@ -273,12 +360,6 @@ def build_dashboard(dashboard_id, *, nested=False):
 
 
 if __name__ == "__main__":
-    # Backward-compatible: no arg still builds "svitlo" exactly as before.
-    # `python pipeline/scripts/build_engine.py <dashboard_id>` builds any
-    # dashboard under environments/prd_main_house/dashboards/.
-    # `--nested` writes the dashboard tree under staging dashboards/<id>/
-    # instead of the staging root (multi-dashboard publish, 2026-08-09) —
-    # used by CI to ship m2m_nextgen alongside the primary svitlo build.
     args = [a for a in sys.argv[1:] if a != "--nested"]
     nested_flag = "--nested" in sys.argv[1:]
     target = args[0] if args else "svitlo"

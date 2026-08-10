@@ -1,13 +1,9 @@
 {
-  "dashboard_id": "m2m_nextgen",
+  "dashboard_id": "m2m_nextgen_mobile",
   "theme_reference": "m2m_glass_carbon_neon",
   "background_image": "/local/liquid_glass/m2m_neon_splatter.jpg",
   "rebuild_meta": {
-    "intent_id": "INTENT-HA-DASHBOARD-DUAL-SCOPE-ISOLATION-V9",
-    "supersedes": "INTENT-HA-DASHBOARD-PURE-BUSINESS-LOGIC-V7",
-    "scope": "ADR-0068 dual-scope isolation: home view runs on the m2m_* freedom namespace (m2m_home_shell / m2m_floor_container / m2m_room_container / m2m_top_rooms_shelf); legacy shared templates untouched",
-    "rebuild": "zero-base WHAT-layer rebuild; entity grounding audited against environments/prd_main_house/global_hardware_map.json, dashboards/svitlo/local_content_map.json (reference-only) and ha_operator packages (STD-06 — no invented entities)",
-    "adaptive_delivery": "desktop and mobile render as two independent masonry instances selected by HA native screen conditions inside floor_container/climate_floor_container (HOW-layer contract, unchanged here)"
+    "note": "spec v2.6.0 section 2.2 — fully independent MOBILE shell (operator directive 2026-08-10: two independent shells, full rebuild of both, not a shared-breakpoint variant of the desktop one). room_content / floor_actions / *_room_corner_actions / climate_room_content / laundry_room_content are reused 1:1 from the desktop m2m_nextgen map (same entities, STD-06 — no invented entities; same precedent as m2m_nextgen itself reusing svitlo's content 1:1). Only routing + layout_containers differ."
   },
   "ordering_policy": {
     "rule": "rooms inside each floor are ordered most-used-first by switch turn-on frequency",
@@ -38,12 +34,11 @@
       {
         "path": "home",
         "title": "Огляд",
-        "layout_template": "layout/m2m_home_shell.yaml",
+        "layout_template": "layout/m2m_mobile_shell.yaml",
         "room_corner_actions_key": "light_room_corner_actions",
-        "floor_switch": false,
-        "floor_wrapper": "m2m_floor_container",
-        "room_wrapper": "m2m_room_container",
-        "floor_tab_flankers": {},
+        "floor_switch": true,
+        "floor_wrapper": "m2m_mobile_floor_container",
+        "room_wrapper": "m2m_mobile_room_container",
         "include_floors": {
           "floor_1": [
             "kukhnia",
@@ -260,14 +255,14 @@
       {
         "path": "settings",
         "title": "Налаштування",
-        "layout_template": "layout/m2m_home_shell.yaml",
+        "layout_template": "layout/m2m_mobile_shell.yaml",
         "include_rooms": [],
         "render_preferences": true,
         "extra_cards": [
           {
             "template_ref": "m2m_settings_panel",
             "custom_props": {
-              "label": "Поточні налаштування панелі"
+              "label": "Поточні налаштування мобільної панелі"
             }
           }
         ]
@@ -275,8 +270,18 @@
     ]
   },
   "layout_containers": {
-    "floor_wrapper": "m2m_floor_container",
-    "room_wrapper": "m2m_room_container"
+    "floor_wrapper": "m2m_mobile_floor_container",
+    "room_wrapper": "m2m_mobile_room_container",
+    "floor_switch": {
+      "logical_id": "svitlo_floor_tab",
+      "template_ref": "floor_tab_switch",
+      "custom_props": {
+        "label_floor_1": "Перший поверх",
+        "label_floor_2": "Другий поверх",
+        "option_floor_1": "floor_1",
+        "option_floor_2": "floor_2"
+      }
+    }
   },
   "floor_actions": {
     "floor_1": [

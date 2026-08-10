@@ -1,0 +1,29 @@
+{#- Mobile room wrapper (spec v2.6.0 section 2.2). Bigger minimum cell size
+   than the desktop m2m_room_container (9rem -> 11.5rem) — the actual
+   touch-target increase for phones: same switch_button/climate leaf
+   templates (Shared Component Ecosystem, spec 2.1), just given more room
+   to breathe per tap target. Otherwise byte-identical structure to the
+   desktop wrapper (same underlying m2m_room_container chrome, same
+   corner_card slot for e.g. "turn off whole room"). #}
+type: custom:button-card
+template: m2m_room_container
+name: {{ name }}
+custom_fields:
+  content:
+    card:
+      type: custom:layout-card
+      layout_type: custom:grid-layout
+      layout:
+        grid-template-columns: "repeat(auto-fill, minmax(min(11.5rem, 100%), 1fr))"
+        grid-gap: "var(--lg_space_gap_sm)"
+        place-content: start stretch
+        place-items: start center
+        margin: "0"
+        padding: "0"
+      cards:
+{{ cards | yaml_cards(8) }}
+{%- if corner_card %}
+  corner:
+    card:
+{{ corner_card | indent(6, first=True) }}
+{%- endif %}

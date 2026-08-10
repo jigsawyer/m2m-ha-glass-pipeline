@@ -162,6 +162,21 @@
         "ADR-0068",
         "INTENT-HA-DASHBOARD-DUAL-SCOPE-ISOLATION-V9"
       ]
+    },
+    {
+      "id": "STD-18",
+      "title": "Live Room-Order Reordering via custom:auto-entities (NextGen-Scoped ADR-0010 Exception)",
+      "status": "ACTIVE",
+      "rule": "The HACS card custom:auto-entities is authorized ONLY for the m2m_nextgen dashboard's live room-ranking grid (view_def.live_room_ranking=true), gated in code by LIVE_RANKING_AUTHORIZED_DASHBOARDS in pipeline/scripts/build_engine.py and only active when preferences.json's room_order_mode == \"usage_rank\". No other dashboard (svitlo above all) may reference custom:auto-entities. The e2e sandbox allowlist (pipeline/tests/e2e/conftest.py SANDBOX_PLUGINS) is the functional enforcement point — an unlisted card renders hui-error-card and fails test_dashboard_integrity.py, which as of this STD covers BOTH dashboards, not just svitlo.",
+      "enforcement": [
+        "build_engine.py runtime guard (FATAL_EXCEPTION if live_room_ranking is set for an unauthorized dashboard_id)",
+        "e2e sandbox plugin allowlist",
+        "test_dashboard_integrity.py (parametrized across both dashboards)"
+      ],
+      "legacy_adr": [
+        "ADR-0010",
+        "INTENT-HA-DASHBOARD-M2M-REBUILD-2026-V2"
+      ]
     }
   ]
 }

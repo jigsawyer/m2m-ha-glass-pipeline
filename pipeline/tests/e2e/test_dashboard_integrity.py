@@ -11,8 +11,19 @@ import re
 
 import pytest
 
-# Lovelace yaml dashboard id from pipeline/tests/e2e/conftest.py bootstrap.
-DASHBOARD_PATH = "/dashboard-glass"
+# Lovelace yaml dashboard ids from pipeline/tests/e2e/conftest.py bootstrap.
+# Parametrized (2026-08-10, spec v2.6.0 phase 4): this test previously only
+# ever visited the primary svitlo dashboard, so the nested m2m_nextgen
+# dashboard tree (build_engine.py --nested, CI multi-dashboard publish,
+# PR #33) had ZERO Playwright coverage even though CI builds it every run.
+# That gap is exactly what would have hidden a broken custom:auto-entities
+# card (STD-18 / new ADR-0010 exception) in m2m_nextgen's home view — fixed
+# by covering both dashboards with the same integrity assertions.
+DASHBOARD_PATHS = (
+    "/dashboard-glass",
+    "/dashboard-m2m-nextgen",
+    "/dashboard-m2m-nextgen-mobile",
+)
 
 # Frontend noise that is common on a fresh HA sandbox and is not a YAML failure.
 # Includes Chromium Popover API races in HA tooltips/menus (showPopover on a node
@@ -46,7 +57,10 @@ def browser_context_args(browser_context_args):
     }
 
 
-def test_dashboard_integrity(page, ha_base_url: str) -> None:
+@pytest.mark.parametrize(
+    "dashboard_path", DASHBOARD_PATHS, ids=["svitlo", "m2m_nextgen", "m2m_nextgen_mobile"]
+)
+def test_dashboard_integrity(page, ha_base_url: str, dashboard_path: str) -> None:
     """Navigate to the sandbox dashboard and assert no Lovelace error cards."""
     severe_js_errors: list[str] = []
 
@@ -67,7 +81,7 @@ def test_dashboard_integrity(page, ha_base_url: str) -> None:
     page.on("pageerror", _on_page_error)
     page.on("console", _on_console)
 
-    target = f"{ha_base_url.rstrip('/')}{DASHBOARD_PATH}"
+    target = f"{ha_base_url.rstrip('/')}{dashboard_path}"
     page.goto(target, wait_until="domcontentloaded", timeout=120_000)
 
     # trusted_networks + allow_bypass_login should redirect off /auth/* once the

@@ -1,0 +1,51 @@
+  m2m_settings_panel:
+    # Read-only status card for the m2m_nextgen Settings view (STRUCTURAL,
+    # 2026-08-10). Displays the CURRENT contents of preferences.json
+    # (density, theme accent, room-order mode, per-widget visibility).
+    # Operator decision (2026-08-10): build-time-toggle model — editing
+    # preferences.json and re-running the pipeline is what applies a
+    # change; this card never writes to HA state and no new input_helpers
+    # are introduced (STD-06 — no invented entities). All displayed text is
+    # baked in at build time from the same file build_engine.py reads, so
+    # this can never drift from what was actually deployed.
+    show_icon: true
+    show_name: true
+    show_state: false
+    show_label: true
+    color_type: icon
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+    extra_styles: |
+      :host {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      ha-card {
+        border-radius: var(--lg_radius_container);
+        border: var(--lg_stroke_glass) solid var(--lg_color_glass_rim);
+        box-shadow: var(--lg_shadow_container);
+        padding: var(--lg_space_pad_y) var(--lg_space_pad_x);
+      }
+      {{ lg_glass_stack_extra_styles('--lg_radius_container') }}
+      #name {
+        color: var(--lg_color_text);
+        font-weight: 600;
+        opacity: 0.85;
+      }
+      #label {
+        color: var(--lg_color_text);
+        opacity: 0.75;
+        font-size: 0.85em;
+        white-space: pre-line;
+        text-align: left;
+      }
+      ha-icon {
+        color: var(--lg_color_climate_cool);
+        filter: var(--lg_filter_climate_cool);
+      }
+    custom_fields:
+      liquid_clip: >
+        {{ lg_liquid_clip_shell_html() }}
