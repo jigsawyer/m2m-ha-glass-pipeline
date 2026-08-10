@@ -1,0 +1,50 @@
+{#- Mobile floor wrapper (spec v2.6.0 section 2.2 — fully independent from
+   the desktop m2m_floor_container, not a shared-breakpoint variant, per
+   operator directive 2026-08-10). Always single column — rooms stack
+   top-to-bottom for one-thumb scrolling; desktop's fans out to multiple
+   columns via auto-fill, this never does. Reuses the SAME underlying
+   m2m_floor_container button-card template (glass chrome/ha-card styling)
+   as desktop — only the grid geometry differs, matching spec 2.1's "Shared
+   Component Ecosystem" at the chrome level while forking the layout. #}
+type: custom:button-card
+template: m2m_floor_container
+{% if name -%}
+name: {{ name }}
+show_name: true
+{% else -%}
+show_name: false
+{% endif -%}
+custom_fields:
+  content:
+    card:
+      type: custom:layout-card
+      layout_type: custom:grid-layout
+      layout:
+        grid-template-columns: "1fr"
+        grid-gap: "var(--lg_space_gap_header_mosaic)"
+        place-content: start stretch
+        margin: "0"
+        padding: "0"
+      cards:
+{%- if header_cards %}
+        - type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: "1fr"
+            place-items: stretch
+            margin: "0"
+            padding: "0"
+          cards:
+{{ header_cards | yaml_cards(12) }}
+{%- endif %}
+        - type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: "1fr"
+            grid-gap: "var(--lg_space_gap_sm)"
+            place-content: start stretch
+            place-items: start stretch
+            margin: "0"
+            padding: "0"
+          cards:
+{{ cards | yaml_cards(12) }}

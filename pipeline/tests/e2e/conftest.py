@@ -123,6 +123,15 @@ lovelace:
       icon: mdi:hexagon-multiple
       show_in_sidebar: true
       filename: dashboards/m2m_nextgen/dashboard.yaml
+    dashboard-m2m-nextgen-mobile:
+      # spec v2.6.0 phase 2 (2026-08-10) — fully independent mobile shell,
+      # same generic --nested publish + e2e-coverage pattern as m2m_nextgen
+      # above (CI runs `build_engine.py m2m_nextgen_mobile --nested` too).
+      mode: yaml
+      title: M2M Nextgen Mobile
+      icon: mdi:cellphone
+      show_in_sidebar: true
+      filename: dashboards/m2m_nextgen_mobile/dashboard.yaml
 
 frontend:
   themes: !include_dir_merge_named themes

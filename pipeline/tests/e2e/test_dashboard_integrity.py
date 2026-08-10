@@ -19,7 +19,11 @@ import pytest
 # That gap is exactly what would have hidden a broken custom:auto-entities
 # card (STD-18 / new ADR-0010 exception) in m2m_nextgen's home view — fixed
 # by covering both dashboards with the same integrity assertions.
-DASHBOARD_PATHS = ("/dashboard-glass", "/dashboard-m2m-nextgen")
+DASHBOARD_PATHS = (
+    "/dashboard-glass",
+    "/dashboard-m2m-nextgen",
+    "/dashboard-m2m-nextgen-mobile",
+)
 
 # Frontend noise that is common on a fresh HA sandbox and is not a YAML failure.
 # Includes Chromium Popover API races in HA tooltips/menus (showPopover on a node
@@ -54,7 +58,7 @@ def browser_context_args(browser_context_args):
 
 
 @pytest.mark.parametrize(
-    "dashboard_path", DASHBOARD_PATHS, ids=["svitlo", "m2m_nextgen"]
+    "dashboard_path", DASHBOARD_PATHS, ids=["svitlo", "m2m_nextgen", "m2m_nextgen_mobile"]
 )
 def test_dashboard_integrity(page, ha_base_url: str, dashboard_path: str) -> None:
     """Navigate to the sandbox dashboard and assert no Lovelace error cards."""
