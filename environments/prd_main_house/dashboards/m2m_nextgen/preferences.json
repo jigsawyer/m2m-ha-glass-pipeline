@@ -1,7 +1,7 @@
 {
   "layout_density": "comfortable",
   "theme_accent": "violet_green",
-  "room_order_mode": "usage_rank",
+  "room_order_mode": "static",
   "widget_visibility": {
     "active_climate_summary": true,
     "active_lighting_summary": true,

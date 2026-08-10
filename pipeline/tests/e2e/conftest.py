@@ -50,6 +50,17 @@ SANDBOX_PLUGINS: tuple[tuple[str, str], ...] = (
         "slider-button-card.js",
         "https://github.com/mattieha/slider-button-card/releases/download/v1.10.3/slider-button-card.js",
     ),
+    (
+        # STD-18 (2026-08-10, spec v2.6.0 phase 4 — new ADR-0010 exception,
+        # nextgen-scoped only via LIVE_RANKING_AUTHORIZED_DASHBOARDS in
+        # build_engine.py). Live room-order reordering for m2m_nextgen's home
+        # view. URL pattern matches this repo's own release-asset convention
+        # (unverified by direct fetch here — robots.txt blocks the raw
+        # download URL from this sandbox; confirm it resolves on the first
+        # CI run and pin harder if not).
+        "auto-entities.js",
+        "https://github.com/thomasloven/lovelace-auto-entities/releases/download/v1.14.0/auto-entities.js",
+    ),
 )
 
 # Written into staging so the mounted /config tree is a bootable HA config that
@@ -92,6 +103,8 @@ lovelace:
       type: module
     - url: /local/community/slider-button-card.js
       type: module
+    - url: /local/community/auto-entities.js
+      type: module
   dashboards:
     dashboard-glass:
       mode: yaml
@@ -99,6 +112,17 @@ lovelace:
       icon: mdi:view-dashboard
       show_in_sidebar: true
       filename: dashboard.yaml
+    dashboard-m2m-nextgen:
+      # CI already runs `build_engine.py m2m_nextgen --nested` before e2e
+      # (pipeline/tests/e2e/conftest.py assumes staging/ is pre-built — see
+      # the FATAL check below), so this file exists by the time the sandbox
+      # boots. Registering it here is what finally gives m2m_nextgen real
+      # Playwright coverage (see test_dashboard_integrity.py).
+      mode: yaml
+      title: M2M Nextgen
+      icon: mdi:hexagon-multiple
+      show_in_sidebar: true
+      filename: dashboards/m2m_nextgen/dashboard.yaml
 
 frontend:
   themes: !include_dir_merge_named themes

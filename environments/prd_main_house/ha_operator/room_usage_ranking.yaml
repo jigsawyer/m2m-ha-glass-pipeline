@@ -157,6 +157,28 @@ template:
         state: >-
           {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia', 'zal', 'vitalnia'])[2] }}
 
+  # Throttled derivative (2026-08-10, spec v2.6.0 phase 4 — live room
+  # reordering via custom:auto-entities). The live dashboard grid re-sorts
+  # off THIS sensor, not sensor.m2m_room_usage_order directly: the raw
+  # sensor re-evaluates (and fires state_changed, since attribute changes
+  # count) on every tracked switch turn-on anywhere in the house, which
+  # would re-flow the whole room grid that often — a real jank/flicker risk
+  # on a live family dashboard. This HA 2024+ trigger-based template sensor
+  # only recomputes on a 5-minute timer, decoupling "live" (auto-updating,
+  # no rebuild) from "instant" (every light flip). Operator can shorten/
+  # remove the throttle later if the real-world cadence proves too slow.
+  - trigger:
+      - platform: time_pattern
+        minutes: "/5"
+    sensor:
+      - name: "M2M room usage order (throttled)"
+        unique_id: m2m_room_usage_order_throttled
+        icon: mdi:sort-descending
+        state: >-
+          {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia'])[0] }}
+        attributes:
+          order: "{{ state_attr('sensor.m2m_room_usage_order', 'order') or [] }}"
+
 automation:
   - id: m2m_room_usage_tick
     alias: M2M — increment room usage counter on switch turn-on

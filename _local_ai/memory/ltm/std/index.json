@@ -152,6 +152,12 @@
       "domain": "core",
       "status": "ACTIVE",
       "title": "Dual-Scope Rule Isolation (Legacy Preserved / NextGen Unconstrained)"
+    },
+    {
+      "id": "STD-18",
+      "domain": "core",
+      "status": "ACTIVE",
+      "title": "Live Room-Order Reordering via custom:auto-entities (NextGen-Scoped ADR-0010 Exception)"
     }
   ]
 }

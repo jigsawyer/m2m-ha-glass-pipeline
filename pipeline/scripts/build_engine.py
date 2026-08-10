@@ -50,9 +50,20 @@ from pipeline.scripts.build_stages.theme_stage import stage_ha_theme
 from pipeline.scripts.build_stages.view_compiler import (
     compile_flat_view,
     compile_hierarchical_view,
+    compile_live_ranked_view,
     render_component,
     write_legacy_room_view,
 )
+
+# STD-18 (2026-08-10, spec v2.6.0 phase 4 — new ADR-0010 exception for
+# custom:auto-entities, nextgen-scoped only). A view_def's live_room_ranking
+# flag is inert unless BOTH (a) the dashboard_id is in this allowlist and
+# (b) preferences.json's room_order_mode == "usage_rank" — same
+# belt-and-suspenders pattern as STD-17's nextgen-namespace scoping, just
+# keyed on dashboard_id instead of design_system path (the thing being
+# gated here is a content-map behavior flag, not a file path, so path-based
+# adr_policy.py scanning doesn't apply — this is the functional gate).
+LIVE_RANKING_AUTHORIZED_DASHBOARDS = frozenset({"m2m_nextgen"})
 
 
 def load_dashboard_config(dashboard_id):
@@ -183,7 +194,46 @@ def build_dashboard(dashboard_id, *, nested=False):
                 room_corner_actions_key, default_room_corner_actions
             )
 
-            if "include_floors" in view_def:
+            live_ranking_requested = bool(view_def.get("live_room_ranking"))
+            if live_ranking_requested and dashboard_id not in LIVE_RANKING_AUTHORIZED_DASHBOARDS:
+                print(
+                    "FATAL_EXCEPTION: view "
+                    f"'{view_path}' sets live_room_ranking=true but dashboard "
+                    f"'{dashboard_id}' is not in LIVE_RANKING_AUTHORIZED_DASHBOARDS "
+                    "(STD-18 / ADR-0010 exception is nextgen-scoped only)"
+                )
+                exit(1)
+            live_ranking_active = (
+                live_ranking_requested
+                and preferences.get("room_order_mode") == "usage_rank"
+            )
+
+            if live_ranking_active:
+                all_rooms = view_def.get("include_rooms")
+                if all_rooms is None and "include_floors" in view_def:
+                    all_rooms = [
+                        room
+                        for floor_rooms in view_def["include_floors"].values()
+                        for room in floor_rooms
+                    ]
+                if not all_rooms:
+                    all_rooms = list(room_content.keys())
+                card_blocks = [
+                    compile_live_ranked_view(
+                        env,
+                        hardware_map,
+                        content_map,
+                        view_def,
+                        room_content,
+                        names,
+                        all_rooms,
+                        room_corner_actions_map=room_corner_actions_map,
+                    )
+                ]
+                strategy = "live_ranked"
+                floor_count = 0
+                room_count = len(all_rooms)
+            elif "include_floors" in view_def:
                 card_blocks = compile_hierarchical_view(
                     env,
                     hardware_map,

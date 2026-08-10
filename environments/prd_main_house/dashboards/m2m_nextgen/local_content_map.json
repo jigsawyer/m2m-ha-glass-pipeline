@@ -169,7 +169,9 @@
             "template_ref": "house_disable_button",
             "custom_props": {}
           }
-        ]
+        ],
+        "live_room_ranking": true,
+        "order_sensor_id": "sensor.m2m_room_usage_order_throttled"
       },
       {
         "path": "klimat",

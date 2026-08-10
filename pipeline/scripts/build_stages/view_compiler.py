@@ -5,6 +5,7 @@ Split out of pipeline/scripts/build_engine.py (2026-08-09 code review).
 Pure extraction: no behavior changes.
 """
 
+import yaml
 from jinja2 import TemplateNotFound
 
 from pipeline.scripts.build_stages.common import with_build_stamp, yaml_card_list
@@ -403,3 +404,125 @@ def write_legacy_room_view(views_dir, room_id, room_yaml_blocks):
     else:
         chunks.append("cards: []\n")
     room_file.write_text(with_build_stamp("".join(chunks)), encoding="utf-8")
+
+
+def compile_live_ranked_view(
+    env,
+    hardware_map,
+    content_map,
+    view_def,
+    room_content,
+    names,
+    include_rooms,
+    room_corner_actions_map=None,
+):
+    """Flat, ALL-rooms grid whose card ORDER is driven live by an HA sensor's
+    ``order`` attribute, via a single ``custom:auto-entities`` card (spec
+    v2.6.0 section 2.3.2 — live dynamic room ordering; STD-18 / new ADR-0010
+    exception, nextgen-scoped only, gated in build_engine.py by
+    LIVE_RANKING_AUTHORIZED_DASHBOARDS — see that module).
+
+    Each room renders EXACTLY like compile_hierarchical_view's per-room step
+    (same wrapper, same corner action — visually identical mosaics), so this
+    is purely a re-ordering mechanism, not a re-design of the room cards
+    themselves. Every room's rendered card YAML is parsed back into a plain
+    dict (str/int/float/bool/None/list/dict only — safe for both Python
+    ``repr()`` and Jinja2's literal grammar, which mirrors Python's) and
+    embedded as a literal Jinja expression inside the ``filter.template``
+    string that HA evaluates at ITS OWN runtime (not at our build time) —
+    that template looks up the live sensor's ``order`` list and emits the
+    matching pre-baked cards via HA's ``to_json`` filter (HA's own filter,
+    NOT Jinja's built-in ``tojson`` — HA's is the documented one for
+    auto-entities filter.template output, since Jinja's default HTML-escapes).
+
+    Caveat (2026-08-10): verified this builds and produces syntactically
+    valid YAML + a well-formed HA-Jinja template string (git-archive scratch
+    build, see project memory). The actual custom:auto-entities runtime
+    behavior (does it really accept literal pre-built card dicts via
+    filter.template the way this assumes) is NOT verified here — no Docker
+    in this environment to run the real Playwright e2e sandbox. Must be
+    confirmed green in CI before this ships to the live dashboard.
+    """
+    layout = content_map.get("layout_containers", {})
+    room_wrapper = view_def.get(
+        "room_wrapper", layout.get("room_wrapper", "room_container")
+    )
+    room_names = names[1]
+    order_sensor_id = view_def.get(
+        "order_sensor_id", "sensor.m2m_room_usage_order_throttled"
+    )
+
+    rooms_by_id = {}
+    for room_id in include_rooms:
+        components = room_content.get(room_id)
+        if components is None:
+            print(
+                f"FATAL_EXCEPTION: room '{room_id}' missing from room_content "
+                "(live_room_ranking)"
+            )
+            exit(1)
+        cards = [render_component(env, hardware_map, comp) for comp in components]
+        room_name = room_names.get(room_id, room_id.replace("_", " ").title())
+        corner_defs = (room_corner_actions_map or {}).get(room_id) or []
+        corner_card = (
+            render_component(env, hardware_map, corner_defs[0])
+            if corner_defs
+            else None
+        )
+        card_yaml = render_wrapper(
+            env, room_wrapper, room_name, cards, corner_card=corner_card
+        )
+        try:
+            rooms_by_id[room_id] = yaml.safe_load(card_yaml)
+        except yaml.YAMLError as e:
+            print(
+                f"FATAL_EXCEPTION: room '{room_id}' card failed to parse as "
+                f"YAML for live ranking: {e}"
+            )
+            exit(1)
+
+    # repr() of plain dict/list/str/int/float/bool/None data is valid Jinja2
+    # literal syntax (Jinja2's expression grammar is a documented subset of
+    # Python's) — this is how the pre-rendered card dicts cross from "our
+    # build-time Python" into "HA's runtime Jinja template source" without
+    # any hand-rolled string escaping.
+    rooms_literal = repr(rooms_by_id)
+    fallback_literal = repr(list(include_rooms))
+
+    template_src = (
+        "{%- set order = state_attr('" + order_sensor_id + "', 'order') "
+        "or " + fallback_literal + " %}\n"
+        "{%- set rooms = " + rooms_literal + " %}\n"
+        "{%- set ns = namespace(cards=[]) %}\n"
+        "{%- for room_id in order %}\n"
+        "  {%- if room_id in rooms %}\n"
+        "    {%- set ns.cards = ns.cards + [rooms[room_id]] %}\n"
+        "  {%- endif %}\n"
+        "{%- endfor %}\n"
+        "{{ ns.cards | to_json }}"
+    )
+
+    auto_entities_card = {
+        "type": "custom:auto-entities",
+        "card_param": "cards",
+        "card": {
+            "type": "custom:layout-card",
+            "layout_type": "custom:grid-layout",
+            "layout": {
+                "grid-template-columns": (
+                    "repeat(auto-fit, minmax(min(34rem, 100%), 1fr))"
+                ),
+                "grid-gap": "var(--lg_space_gap_header_mosaic)",
+                "place-content": "start stretch",
+                "place-items": "start stretch",
+                "margin": "0",
+                "padding": "0",
+            },
+        },
+        "filter": {"template": template_src},
+        "show_empty": True,
+    }
+    return yaml.safe_dump(
+        auto_entities_card, default_flow_style=False, sort_keys=False,
+        allow_unicode=True,
+    ).strip()
