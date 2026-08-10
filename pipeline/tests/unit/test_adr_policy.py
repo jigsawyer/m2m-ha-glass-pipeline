@@ -127,3 +127,34 @@ def test_get_entity_state_by_key_and_entity_id() -> None:
     by_id = get_entity_state("climate.kabinet_konditsioner_kabinet")
     assert by_id["ok"] is True
     assert any(m["hardware_key"] == "kabinet_ac" for m in by_id["matches"])
+
+
+def test_mix_waived_for_nextgen_namespace() -> None:
+    """STD-17: WHAT+HOW mixing is allowed when every design_system path
+    in the Change Set is m2m-nextgen-scoped (m2m_* basename or the isolated
+    home_view_m2m.yaml shell fork)."""
+    result = evaluate_paths(
+        [
+            "environments/prd_main_house/dashboards/m2m_nextgen/local_content_map.json",
+            "design_system/templates/layout/m2m_floor_container.yaml",
+            "design_system/templates/composites/m2m_top_rooms_shelf.yaml",
+            "design_system/templates/layout/home_view_m2m.yaml",
+        ]
+    )
+    assert result.ok is True
+    assert "environments" in result.domains
+    assert "design_system" in result.domains
+
+
+def test_mix_with_legacy_design_system_still_violation() -> None:
+    """STD-17: one legacy (non-m2m) design_system path in the mix re-arms
+    the full STD-05 violation — legacy scope enforcement is untouched."""
+    result = evaluate_paths(
+        [
+            "environments/prd_main_house/dashboards/m2m_nextgen/local_content_map.json",
+            "design_system/templates/layout/m2m_floor_container.yaml",
+            "design_system/templates/layout/floor_container.yaml",
+        ]
+    )
+    assert result.ok is False
+    assert "STD-05" in result.citations

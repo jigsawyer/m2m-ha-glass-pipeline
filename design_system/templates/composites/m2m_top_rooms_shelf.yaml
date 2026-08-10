@@ -1,0 +1,32 @@
+{# ADR-0068 nextgen live top-rooms shelf (V9 freedom namespace).
+   Renders one m2m_rank_chip per rank slot. Every chip is fully client-side
+   dynamic: room id from sensor.m2m_room_usage_rank_N, label from the order
+   sensor's `labels` attribute, weekly count from the room's input_number
+   counter, active/total lights from the caller-supplied room→entity map
+   (grounded in the content map — STD-06). #}
+{%- set props = custom_props | default({}) %}
+{%- set slots = props.get('slots', 3) %}
+{%- set room_entity_map = props.get('room_entity_map') %}
+{%- set order_sensor = props.get('order_sensor_id', 'sensor.m2m_room_usage_order') %}
+{%- set rank_prefix = props.get('rank_sensor_prefix', 'sensor.m2m_room_usage_rank_') %}
+{%- set counter_prefix = props.get('usage_counter_prefix', 'input_number.m2m_room_usage_') %}
+type: custom:layout-card
+layout_type: custom:grid-layout
+layout:
+  grid-template-columns: "repeat(auto-fit, minmax(min(11rem, 100%), 1fr))"
+  grid-gap: "var(--lg_space_gap_sm)"
+  place-content: start stretch
+  place-items: stretch
+  margin: "0"
+  padding: "0"
+cards:
+{%- for i in range(1, slots + 1) %}
+  - type: custom:button-card
+    template: m2m_rank_chip
+    variables:
+      m2m_rank_index: {{ i }}
+      m2m_rank_sensor: {{ rank_prefix }}{{ i }}
+      m2m_order_sensor: {{ order_sensor }}
+      m2m_usage_counter_prefix: {{ counter_prefix }}
+      m2m_room_entity_map: {{ (room_entity_map if room_entity_map is mapping else {}) | tojson }}
+{%- endfor %}
