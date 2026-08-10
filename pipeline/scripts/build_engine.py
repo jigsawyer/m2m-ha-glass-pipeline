@@ -63,7 +63,7 @@ from pipeline.scripts.build_stages.view_compiler import (
 # keyed on dashboard_id instead of design_system path (the thing being
 # gated here is a content-map behavior flag, not a file path, so path-based
 # adr_policy.py scanning doesn't apply — this is the functional gate).
-LIVE_RANKING_AUTHORIZED_DASHBOARDS = frozenset({"m2m_nextgen"})
+LIVE_RANKING_AUTHORIZED_DASHBOARDS = frozenset({"m2m_nextgen", "m2m_nextgen_mobile"})
 
 
 def load_dashboard_config(dashboard_id):

@@ -100,6 +100,170 @@
                 "switch.pralnia_switch"
               ]
             }
+          },
+          {
+            "template_ref": "m2m_top_rooms_shelf",
+            "custom_props": {
+              "slots": 3,
+              "order_sensor_id": "sensor.m2m_room_usage_order",
+              "rank_sensor_prefix": "sensor.m2m_room_usage_rank_",
+              "usage_counter_prefix": "input_number.m2m_room_usage_",
+              "room_entity_map": {
+                "kukhnia": [
+                  "switch.pidsvitka_switch",
+                  "switch.svitlo_switch_3",
+                  "switch.svitlo_switch_4",
+                  "switch.svitlo_3"
+                ],
+                "zal": [
+                  "switch.zal_switch_2",
+                  "switch.zal_switch",
+                  "switch.svitlo_4"
+                ],
+                "vitalnia": [
+                  "switch.vitalnia_svitlo_switch",
+                  "switch.vitalnia_svitlo_switch_2"
+                ],
+                "dushova": [
+                  "switch.vimikach_switch_2",
+                  "switch.vimikach_switch"
+                ],
+                "skhody_i_korydor": [
+                  "switch.svitlo_switch",
+                  "switch.svitlo_switch_2"
+                ],
+                "kabinet": [
+                  "switch.kabinet_vimikach_kabinet"
+                ],
+                "ditiacha": [
+                  "switch.pidsvitka",
+                  "switch.ditiacha_svitlo_switch",
+                  "switch.ditiacha_svitlo_switch_2",
+                  "switch.ditiacha_pidsvitka_terasi",
+                  "switch.svitlo_2"
+                ],
+                "spalnia": [
+                  "switch.vimikach_bilia_vkhodu_switch_2",
+                  "switch.vimikach_bilia_vkhodu_switch",
+                  "switch.balkon_spalnia_svitlo_switch"
+                ],
+                "vanna": [
+                  "switch.lumi_lumi_ctrl_ln1_aq1",
+                  "switch.vitiazhka"
+                ],
+                "tualet": [
+                  "switch.svitlo"
+                ],
+                "pralnia": [
+                  "switch.pralnia_switch"
+                ]
+              }
+            }
+          },
+          {
+            "template_ref": "house_disable_button",
+            "custom_props": {}
+          }
+        ],
+        "live_room_ranking": true,
+        "order_sensor_id": "sensor.m2m_room_usage_order_throttled"
+      },
+      {
+        "path": "klimat",
+        "title": "Клімат",
+        "layout_template": "layout/home_view_m2m.yaml",
+        "content_key": "climate_room_content",
+        "room_corner_actions_key": "climate_room_corner_actions",
+        "floor_switch": false,
+        "floor_presentation": "flat",
+        "floor_wrapper": "climate_floor_container",
+        "room_wrapper": "climate_room_container",
+        "include_floors": {
+          "floor_1": [
+            "kabinet"
+          ],
+          "floor_2": [
+            "spalnia"
+          ]
+        },
+        "floor_tab_flankers": {
+          "left": {
+            "template_ref": "floor_voice_placeholder",
+            "custom_props": {}
+          },
+          "right": {
+            "template_ref": "climate_house_off_button",
+            "custom_props": {
+              "ha_entity_ids": [
+                "climate.kabinet_konditsioner_kabinet",
+                "climate.spalnia_konditsioner_spalnia"
+              ]
+            }
+          }
+        },
+        "extra_cards": []
+      },
+      {
+        "path": "pralnia-dash",
+        "title": "Пральня",
+        "layout_template": "layout/home_view_m2m.yaml",
+        "content_key": "laundry_room_content",
+        "floor_switch": false,
+        "floor_presentation": "flat",
+        "floor_wrapper": "floor_container",
+        "room_wrapper": "laundry_room_container",
+        "include_floors": {
+          "floor_2": [
+            "pralnia"
+          ]
+        },
+        "floor_tab_flankers": {
+          "left": {
+            "template_ref": "floor_voice_placeholder",
+            "custom_props": {}
+          },
+          "right": {
+            "template_ref": "floor_voice_placeholder",
+            "custom_props": {}
+          }
+        },
+        "extra_cards": [
+          {
+            "template_ref": "laundry_delay_popup",
+            "custom_props": {
+              "popup_hash": "#laundry-delay-washer",
+              "label": "Пральна машина",
+              "armed_entity_id": "input_boolean.washer_delay_armed",
+              "cycle_duration_entity_id": "input_number.washer_cycle_duration_minutes",
+              "delay_mode_entity_id": "input_select.washer_delay_mode",
+              "schedule_script_id": "script.washer_delay_schedule"
+            }
+          },
+          {
+            "template_ref": "laundry_delay_popup",
+            "custom_props": {
+              "popup_hash": "#laundry-delay-dryer",
+              "label": "Сушильна машина",
+              "armed_entity_id": "input_boolean.dryer_delay_armed",
+              "cycle_duration_entity_id": "input_number.dryer_cycle_duration_minutes",
+              "delay_mode_entity_id": "input_select.dryer_delay_mode",
+              "schedule_script_id": "script.dryer_delay_schedule"
+            }
+          }
+        ]
+      },
+      {
+        "path": "settings",
+        "title": "Налаштування",
+        "layout_template": "layout/m2m_mobile_shell.yaml",
+        "include_rooms": [],
+        "render_preferences": true,
+        "extra_cards": [
+          {
+            "template_ref": "m2m_settings_panel",
+            "custom_props": {
+              "label": "Поточні налаштування мобільної панелі"
+            }
           }
         ]
       }
