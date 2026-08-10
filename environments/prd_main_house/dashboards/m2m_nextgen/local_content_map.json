@@ -2,6 +2,20 @@
   "dashboard_id": "m2m_nextgen",
   "theme_reference": "m2m_glass_carbon_neon",
   "background_image": "/local/liquid_glass/ipad_dark_mesh.jpg",
+  "rebuild_meta": {
+    "intent_id": "INTENT-HA-DASHBOARD-PURE-BUSINESS-LOGIC-V7",
+    "rebuild": "zero-base WHAT-layer rebuild; entity grounding audited against environments/prd_main_house/global_hardware_map.json, dashboards/svitlo/local_content_map.json (reference-only) and ha_operator packages (STD-06 — no invented entities)",
+    "adaptive_delivery": "desktop and mobile render as two independent masonry instances selected by HA native screen conditions inside floor_container/climate_floor_container (HOW-layer contract, unchanged here)"
+  },
+  "ordering_policy": {
+    "rule": "rooms inside each floor are ordered most-used-first by switch turn-on frequency",
+    "runtime_engine": "ha_operator/room_usage_ranking.yaml — input_number.m2m_room_usage_* rolling 7-day counters + sensor.m2m_room_usage_order / sensor.m2m_room_usage_rank_1..3 live ranking sensors",
+    "static_seed": "this content map's include_floors order is the deterministic seed: tracked-switch count per room (descending), ties broken by global_spatial_topology.json order",
+    "seed_ranking": {
+      "floor_1": ["kukhnia", "zal", "vitalnia", "dushova", "skhody_i_korydor", "kabinet"],
+      "floor_2": ["ditiacha", "spalnia", "vanna", "tualet", "pralnia"]
+    }
+  },
   "routing": {
     "mode": "spa",
     "views": [
@@ -12,16 +26,16 @@
         "room_corner_actions_key": "light_room_corner_actions",
         "include_floors": {
           "floor_1": [
-            "vitalnia",
-            "dushova",
             "kukhnia",
             "zal",
-            "kabinet",
-            "skhody_i_korydor"
+            "vitalnia",
+            "dushova",
+            "skhody_i_korydor",
+            "kabinet"
           ],
           "floor_2": [
-            "spalnia",
             "ditiacha",
+            "spalnia",
             "vanna",
             "tualet",
             "pralnia"
@@ -43,10 +57,6 @@
             "custom_props": {
               "label": "Світло активне",
               "ha_entity_ids": [
-                "switch.vitalnia_svitlo_switch",
-                "switch.vitalnia_svitlo_switch_2",
-                "switch.vimikach_switch_2",
-                "switch.vimikach_switch",
                 "switch.pidsvitka_switch",
                 "switch.svitlo_switch_3",
                 "switch.svitlo_switch_4",
@@ -54,17 +64,21 @@
                 "switch.zal_switch_2",
                 "switch.zal_switch",
                 "switch.svitlo_4",
-                "switch.kabinet_vimikach_kabinet",
+                "switch.vitalnia_svitlo_switch",
+                "switch.vitalnia_svitlo_switch_2",
+                "switch.vimikach_switch_2",
+                "switch.vimikach_switch",
                 "switch.svitlo_switch",
                 "switch.svitlo_switch_2",
-                "switch.vimikach_bilia_vkhodu_switch_2",
-                "switch.vimikach_bilia_vkhodu_switch",
-                "switch.balkon_spalnia_svitlo_switch",
+                "switch.kabinet_vimikach_kabinet",
                 "switch.pidsvitka",
                 "switch.ditiacha_svitlo_switch",
                 "switch.ditiacha_svitlo_switch_2",
                 "switch.ditiacha_pidsvitka_terasi",
                 "switch.svitlo_2",
+                "switch.vimikach_bilia_vkhodu_switch_2",
+                "switch.vimikach_bilia_vkhodu_switch",
+                "switch.balkon_spalnia_svitlo_switch",
                 "switch.lumi_lumi_ctrl_ln1_aq1",
                 "switch.vitiazhka",
                 "switch.svitlo",
@@ -79,7 +93,6 @@
         "title": "Клімат",
         "layout_template": "layout/home_view_m2m.yaml",
         "content_key": "climate_room_content",
-        "floor_actions_key": "climate_floor_actions",
         "room_corner_actions_key": "climate_room_corner_actions",
         "floor_switch": false,
         "floor_presentation": "flat",
@@ -227,42 +240,6 @@
     ]
   },
   "room_content": {
-    "vitalnia": [
-      {
-        "logical_id": "vitalnia_svitlo_switch",
-        "template_ref": "switch_button",
-        "label": "Вітальня",
-        "custom_props": {
-          "icon": "mdi:sofa"
-        }
-      },
-      {
-        "logical_id": "vitalnia_svitlo_switch_2",
-        "template_ref": "switch_button",
-        "label": "Закуток біля роутеру",
-        "custom_props": {
-          "icon": "mdi:router-wireless"
-        }
-      }
-    ],
-    "dushova": [
-      {
-        "logical_id": "dushova_svitlo_switch_2",
-        "template_ref": "switch_button",
-        "label": "Світло",
-        "custom_props": {
-          "icon": "mdi:lightbulb"
-        }
-      },
-      {
-        "logical_id": "dushova_vitiazhka_switch",
-        "template_ref": "switch_button",
-        "label": "Витяжка",
-        "custom_props": {
-          "icon": "mdi:fan"
-        }
-      }
-    ],
     "kukhnia": [
       {
         "logical_id": "kukhnia_pidsvitka_switch",
@@ -323,13 +300,39 @@
         }
       }
     ],
-    "kabinet": [
+    "vitalnia": [
       {
-        "logical_id": "kabinet_svitlo_switch",
+        "logical_id": "vitalnia_svitlo_switch",
+        "template_ref": "switch_button",
+        "label": "Вітальня",
+        "custom_props": {
+          "icon": "mdi:sofa"
+        }
+      },
+      {
+        "logical_id": "vitalnia_svitlo_switch_2",
+        "template_ref": "switch_button",
+        "label": "Закуток біля роутеру",
+        "custom_props": {
+          "icon": "mdi:router-wireless"
+        }
+      }
+    ],
+    "dushova": [
+      {
+        "logical_id": "dushova_svitlo_switch_2",
         "template_ref": "switch_button",
         "label": "Світло",
         "custom_props": {
           "icon": "mdi:lightbulb"
+        }
+      },
+      {
+        "logical_id": "dushova_vitiazhka_switch",
+        "template_ref": "switch_button",
+        "label": "Витяжка",
+        "custom_props": {
+          "icon": "mdi:fan"
         }
       }
     ],
@@ -351,29 +354,13 @@
         }
       }
     ],
-    "spalnia": [
+    "kabinet": [
       {
-        "logical_id": "spalnia_pidsvitka_switch",
+        "logical_id": "kabinet_svitlo_switch",
         "template_ref": "switch_button",
-        "label": "Підсвітка",
+        "label": "Світло",
         "custom_props": {
-          "icon": "mdi:led-strip-variant"
-        }
-      },
-      {
-        "logical_id": "spalnia_tochki_switch",
-        "template_ref": "switch_button",
-        "label": "Точки",
-        "custom_props": {
-          "icon": "mdi:lightbulb-group"
-        }
-      },
-      {
-        "logical_id": "spalnia_balkon_svitlo",
-        "template_ref": "switch_button",
-        "label": "Балкон",
-        "custom_props": {
-          "icon": "mdi:balcony"
+          "icon": "mdi:lightbulb"
         }
       }
     ],
@@ -412,6 +399,32 @@
       },
       {
         "logical_id": "ditiacha_balkon_svitlo",
+        "template_ref": "switch_button",
+        "label": "Балкон",
+        "custom_props": {
+          "icon": "mdi:balcony"
+        }
+      }
+    ],
+    "spalnia": [
+      {
+        "logical_id": "spalnia_pidsvitka_switch",
+        "template_ref": "switch_button",
+        "label": "Підсвітка",
+        "custom_props": {
+          "icon": "mdi:led-strip-variant"
+        }
+      },
+      {
+        "logical_id": "spalnia_tochki_switch",
+        "template_ref": "switch_button",
+        "label": "Точки",
+        "custom_props": {
+          "icon": "mdi:lightbulb-group"
+        }
+      },
+      {
+        "logical_id": "spalnia_balkon_svitlo",
         "template_ref": "switch_button",
         "label": "Балкон",
         "custom_props": {
@@ -459,20 +472,6 @@
     ]
   },
   "light_room_corner_actions": {
-    "vitalnia": [
-      {
-        "logical_id": "vitalnia_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
-      }
-    ],
-    "dushova": [
-      {
-        "logical_id": "dushova_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
-      }
-    ],
     "kukhnia": [
       {
         "logical_id": "kukhnia_disable",
@@ -501,30 +500,23 @@
         "label": "Вимкнути всю кімнату"
       }
     ],
+    "vitalnia": [
+      {
+        "logical_id": "vitalnia_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "dushova": [
+      {
+        "logical_id": "dushova_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
     "skhody_i_korydor": [
       {
         "logical_id": "korydor_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
-      }
-    ],
-    "spalnia": [
-      {
-        "logical_id": "spalnia_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
-      }
-    ],
-    "ditiacha": [
-      {
-        "logical_id": "ditiacha_disable",
-        "template_ref": "disable_room_button",
-        "label": "Вимкнути всю кімнату"
-      }
-    ],
-    "vanna": [
-      {
-        "logical_id": "vanna_disable",
         "template_ref": "disable_room_button",
         "label": "Вимкнути всю кімнату"
       }
@@ -540,29 +532,48 @@
           ]
         }
       }
-    ]
-  },
-  "climate_floor_actions": {
-    "floor_1": [
+    ],
+    "ditiacha": [
       {
-        "logical_id": "kabinet_ac",
-        "template_ref": "climate_floor_off_button",
-        "label": "Вимкнути клімат поверху",
+        "logical_id": "ditiacha_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "spalnia": [
+      {
+        "logical_id": "spalnia_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "vanna": [
+      {
+        "logical_id": "vanna_disable",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату"
+      }
+    ],
+    "tualet": [
+      {
+        "logical_id": "tualet_svitlo_switch",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату",
         "custom_props": {
           "ha_entity_ids": [
-            "climate.kabinet_konditsioner_kabinet"
+            "switch.svitlo"
           ]
         }
       }
     ],
-    "floor_2": [
+    "pralnia": [
       {
-        "logical_id": "spalnia_ac",
-        "template_ref": "climate_floor_off_button",
-        "label": "Вимкнути клімат поверху",
+        "logical_id": "pralnia_svitlo_switch",
+        "template_ref": "disable_room_button",
+        "label": "Вимкнути всю кімнату",
         "custom_props": {
           "ha_entity_ids": [
-            "climate.spalnia_konditsioner_spalnia"
+            "switch.pralnia_switch"
           ]
         }
       }

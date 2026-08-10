@@ -1,10 +1,23 @@
-# M2M Nextgen — Room Usage Frequency Tracker (STRUCTURAL, ADR-0003 @architect)
+# M2M Nextgen — Room Usage Frequency Engine (STRUCTURAL, ADR-0003 @architect)
+# V7 pure-business-logic rebuild (INTENT-HA-DASHBOARD-PURE-BUSINESS-LOGIC-V7).
 # Feeds design_system-agnostic room ranking for the m2m_nextgen dashboard's
 # dynamic room ordering. Grounded ONLY in switch entities already declared in
-# environments/prd_main_house/dashboards/svitlo/local_content_map.json room_content
-# (STD-06 — no invented entities). Rolling 7-day usage-turn-on counter per room;
-# NOT auto-applied to the live host — same manual-apply note as laundry_delay.yaml
-# (publish_edge does NOT deploy packages/; operator copy + `ha core check` + reload).
+# environments/prd_main_house/global_hardware_map.json and the svitlo
+# reference content map (STD-06 — no invented entities).
+#
+# Three layers:
+#   1. input_number.m2m_room_usage_<room>  — rolling 7-day turn-on counters
+#   2. automation                          — tick on switch turn-on + weekly reset
+#   3. template sensors                    — live most-used-first ordering:
+#        sensor.m2m_room_usage_order    (state = top room; attr `order` = full
+#                                        sorted room_id list, most-used first)
+#        sensor.m2m_room_usage_rank_1..3 (state = room_id at that rank)
+#      Ties break deterministically by the same seed order that
+#      local_content_map.json ordering_policy.seed_ranking documents.
+#
+# NOT auto-applied to the live host — same manual-apply note as
+# laundry_delay.yaml (publish_edge does NOT deploy packages/; operator copy +
+# `ha core check` + reload).
 
 input_number:
   m2m_room_usage_vitalnia:
@@ -83,6 +96,66 @@ input_number:
     max: 100000
     step: 1
     mode: box
+
+template:
+  - sensor:
+      - name: "M2M room usage order"
+        unique_id: m2m_room_usage_order
+        icon: mdi:sort-descending
+        state: >-
+          {% set seed = ['kukhnia', 'zal', 'vitalnia', 'dushova',
+                         'skhody_i_korydor', 'kabinet', 'ditiacha', 'spalnia',
+                         'vanna', 'tualet', 'pralnia'] %}
+          {% set ns = namespace(rows=[]) %}
+          {% for r in seed %}
+            {% set c = states('input_number.m2m_room_usage_' ~ r) | int(0) %}
+            {% set ns.rows = ns.rows + [{'id': r, 'n': c}] %}
+          {% endfor %}
+          {{ (ns.rows | sort(attribute='n', reverse=true) | map(attribute='id') | list) | first }}
+        attributes:
+          order: >-
+            {% set seed = ['kukhnia', 'zal', 'vitalnia', 'dushova',
+                           'skhody_i_korydor', 'kabinet', 'ditiacha', 'spalnia',
+                           'vanna', 'tualet', 'pralnia'] %}
+            {% set ns = namespace(rows=[]) %}
+            {% for r in seed %}
+              {% set c = states('input_number.m2m_room_usage_' ~ r) | int(0) %}
+              {% set ns.rows = ns.rows + [{'id': r, 'n': c}] %}
+            {% endfor %}
+            {{ ns.rows | sort(attribute='n', reverse=true) | map(attribute='id') | list }}
+          counts: >-
+            {% set seed = ['kukhnia', 'zal', 'vitalnia', 'dushova',
+                           'skhody_i_korydor', 'kabinet', 'ditiacha', 'spalnia',
+                           'vanna', 'tualet', 'pralnia'] %}
+            {% set ns = namespace(rows=[]) %}
+            {% for r in seed %}
+              {% set ns.rows = ns.rows + [[r, states('input_number.m2m_room_usage_' ~ r) | int(0)]] %}
+            {% endfor %}
+            {{ dict(ns.rows) }}
+          labels: >-
+            {{ {'vitalnia': 'Вітальня', 'dushova': 'Душова', 'kukhnia': 'Кухня',
+                'zal': 'Зал', 'kabinet': 'Кабінет',
+                'skhody_i_korydor': 'Сходи і коридор', 'spalnia': 'Спальня',
+                'ditiacha': 'Дитяча', 'vanna': 'Ванна', 'tualet': 'Туалет',
+                'pralnia': 'Пральня'} }}
+
+      - name: "M2M room usage rank 1"
+        unique_id: m2m_room_usage_rank_1
+        icon: mdi:podium-gold
+        state: >-
+          {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia'])[0] }}
+
+      - name: "M2M room usage rank 2"
+        unique_id: m2m_room_usage_rank_2
+        icon: mdi:podium-silver
+        state: >-
+          {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia', 'zal'])[1] }}
+
+      - name: "M2M room usage rank 3"
+        unique_id: m2m_room_usage_rank_3
+        icon: mdi:podium-bronze
+        state: >-
+          {{ (state_attr('sensor.m2m_room_usage_order', 'order') or ['kukhnia', 'zal', 'vitalnia'])[2] }}
 
 automation:
   - id: m2m_room_usage_tick
@@ -211,70 +284,17 @@ automation:
     action:
       - service: input_number.set_value
         target:
-          entity_id: input_number.m2m_room_usage_vitalnia
+          entity_id:
+            - input_number.m2m_room_usage_vitalnia
+            - input_number.m2m_room_usage_dushova
+            - input_number.m2m_room_usage_kukhnia
+            - input_number.m2m_room_usage_zal
+            - input_number.m2m_room_usage_kabinet
+            - input_number.m2m_room_usage_skhody_i_korydor
+            - input_number.m2m_room_usage_spalnia
+            - input_number.m2m_room_usage_ditiacha
+            - input_number.m2m_room_usage_vanna
+            - input_number.m2m_room_usage_tualet
+            - input_number.m2m_room_usage_pralnia
         data:
           value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_dushova
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_kukhnia
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_zal
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_kabinet
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_skhody_i_korydor
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_spalnia
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_ditiacha
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_vanna
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_tualet
-        data:
-          value: 0
-      - service: input_number.set_value
-        target:
-          entity_id: input_number.m2m_room_usage_pralnia
-        data:
-          value: 0
-
-template:
-  - sensor:
-      - name: "M2M Room Usage Rank"
-        unique_id: m2m_room_usage_rank
-        state: >-
-          {{ now().isoformat() }}
-        attributes:
-          rooms_by_usage: >-
-            {% set ns = namespace(pairs=[]) %}
-            {%- for r in ["vitalnia", "dushova", "kukhnia", "zal", "kabinet", "skhody_i_korydor", "spalnia", "ditiacha", "vanna", "tualet", "pralnia"] %}
-            {%- set ns.pairs = ns.pairs + [(r, states('input_number.m2m_room_usage_' ~ r) | float(0))] %}
-            {%- endfor %}
-            {{ ns.pairs | sort(attribute='1', reverse=true) | map(attribute='0') | list }}
