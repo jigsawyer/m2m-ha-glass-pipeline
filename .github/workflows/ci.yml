@@ -34,6 +34,14 @@ jobs:
       - name: Install Playwright browsers
         run: playwright install --with-deps chromium
 
+      # D-3: Node 22 LTS toolchain, standalone backend intent (M0a).
+      # No spa/** files exist yet — this step only establishes the
+      # toolchain so later milestones (M0b+) can build spa/ in CI.
+      - name: Set up Node 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: ADR Policy Gate
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
